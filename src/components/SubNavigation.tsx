@@ -249,20 +249,6 @@ export function SubNavigation({ visible = true }: { visible?: boolean }) {
 
   const currentTabs = getCurrentTabs();
 
-  const handleTabClick = (tab: TabConfig) => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    if (tab.path) {
-      if (tab.id === 'feed') {
-        localStorage.setItem('lumatha_feed_filter', 'all');
-        window.dispatchEvent(new CustomEvent('feedFilterChange', { detail: 'all' }));
-      }
-      navigate(tab.path);
-    } else if ((tab.id === 'profile' || tab.id === 'user') && user) {
-      navigate(`/profile/${user.id}`);
-    }
-  };
-
   const isActive = (tab: TabConfig) => {
     if (tab.id === 'feed') return location.pathname === '/' && !location.search.includes('videos');
     if (tab.id === 'search') return location.pathname === '/search';
@@ -280,12 +266,44 @@ export function SubNavigation({ visible = true }: { visible?: boolean }) {
   const isInSubsection = () => {
     const path = location.pathname;
     // These are subsections that should show back button
-    const subsectionPaths = ['/profile', '/notifications', '/settings', '/chat', '/search', '/private', '/create', '/diary', '/saved', '/liked'];
+    const subsectionPaths = ['/profile', '/notifications', '/settings', '/chat', '/search', '/private', '/create', '/diary', '/saved', '/liked', '/marketplace', '/education', '/music-adventure', '/random-connect', '/funpun'];
     return subsectionPaths.some(subPath => path.startsWith(subPath)) && path !== '/';
   };
 
   const handleBack = () => {
     navigate('/');
+  };
+
+  // Force refresh zone when navigating to ensure proper tab switching
+  const handleTabClick = (tab: TabConfig) => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    if (tab.path) {
+      if (tab.id === 'feed') {
+        localStorage.setItem('lumatha_feed_filter', 'all');
+        window.dispatchEvent(new CustomEvent('feedFilterChange', { detail: 'all' }));
+      }
+      // Force zone update for Layout 2 & 3
+      if (layoutMode === 2 || layoutMode === 3) {
+        let zone = '';
+        if (layoutMode === 2) {
+          if (tab.path === '/private') zone = 'private';
+          else if (tab.path === '/search') zone = 'neutral';
+          else if (tab.path === '/') zone = 'public';
+        } else if (layoutMode === 3) {
+          if (tab.path === '/education') zone = 'education';
+          else if (tab.path === '/') zone = 'social';
+          else if (tab.path === '/search') zone = 'neutral';
+        }
+        if (zone) {
+          localStorage.setItem('lumatha_active_zone', zone);
+          window.dispatchEvent(new CustomEvent('lumatha_zone_change', { detail: zone }));
+        }
+      }
+      navigate(tab.path);
+    } else if ((tab.id === 'profile' || tab.id === 'user') && user) {
+      navigate(`/profile/${user.id}`);
+    }
   };
 
 
