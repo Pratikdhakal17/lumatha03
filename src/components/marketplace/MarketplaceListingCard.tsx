@@ -77,6 +77,7 @@ export function MarketplaceListingCard({
   onDelete, onEdit, onViewProfile
 }: Props) {
   const [imgIndex, setImgIndex] = useState(0);
+  const [showFullDesc, setShowFullDesc] = useState(false);
   const isOwner = listing.user_id === currentUserId;
   const media = listing.media_urls || [];
   const TypeIcon = typeIcons[listing.type] || ShoppingBag;
@@ -86,8 +87,8 @@ export function MarketplaceListingCard({
       "border-0 overflow-hidden animate-fade-in backdrop-blur-sm",
       "bg-gradient-to-br", typeGradients[listing.type] || 'from-card/80 to-card/40'
     )}>
-      {/* Header - Username & Price */}
-      <div className="flex items-center justify-between p-3 pb-2">
+      {/* Top Row: Profile pic, username, time, three dots */}
+      <div className="flex items-center justify-between p-3">
         <div className="flex items-center gap-2">
           <button onClick={() => onViewProfile(listing.user_id)}>
             <Avatar className="w-10 h-10 ring-1 ring-border/50">
@@ -101,25 +102,16 @@ export function MarketplaceListingCard({
             <button onClick={() => onViewProfile(listing.user_id)} className="font-semibold text-sm truncate block hover:text-blue-400 transition-colors">
               {listing.profiles?.name || 'User'}
             </button>
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <span>{formatDistanceToNow(new Date(listing.created_at), { addSuffix: true })}</span>
+            <div className="text-[10px] text-muted-foreground">
+              {formatDistanceToNow(new Date(listing.created_at), { addSuffix: true })}
             </div>
           </div>
         </div>
         
-        {/* Price - High contrast, prominent */}
-        {listing.price != null && (
-          <div className="text-right">
-            <div className="font-bold text-lg text-blue-400">
-              {listing.currency || 'NPR'} {listing.price.toLocaleString()}
-            </div>
-          </div>
-        )}
-        
         {/* More options */}
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 ml-2"><MoreVertical className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="w-4 h-4" /></Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="z-[100] bg-popover shadow-xl">
             {isOwner && (
@@ -134,31 +126,83 @@ export function MarketplaceListingCard({
         </DropdownMenu>
       </div>
 
-      {/* Media - Square/Portrait ratio, full width */}
-      {media.length > 0 && (
-        <div className="relative">
-          <img
-            src={media[imgIndex]}
-            alt={listing.title}
-            className="w-full aspect-square object-cover"
-            loading="lazy"
-          />
-          {media.length > 1 && (
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-              {media.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setImgIndex(i)}
-                  className={cn("w-1.5 h-1.5 rounded-full transition-all", i === imgIndex ? "bg-white w-3" : "bg-white/50")}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      {/* Title */}
+      <div className="px-3 pb-2">
+        <h3 className="font-bold text-base">{listing.title}</h3>
+      </div>
 
-      {/* Social & Utility Row */}
-      <div className="flex items-center gap-2 px-3 py-3">
+      {/* Price (left) and Location (right) */}
+      <div className="flex items-center justify-between px-3 pb-3">
+        {listing.price != null && (
+          <div className="font-bold text-lg text-blue-400">
+            {listing.currency || 'NPR'} {listing.price.toLocaleString()}
+          </div>
+        )}
+        {listing.location && (
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <MapPin className="w-3 h-3" />
+            {listing.location}
+          </div>
+        )}
+      </div>
+
+      {/* 50/50 Split: Image left, Description right */}
+      <div className="flex gap-3 px-3 pb-3">
+        {/* Left side - Image */}
+        {media.length > 0 && (
+          <div className="w-1/2 flex-shrink-0">
+            <div className="relative">
+              <img
+                src={media[imgIndex]}
+                alt={listing.title}
+                className="w-full aspect-square object-cover rounded-lg"
+                loading="lazy"
+              />
+              {media.length > 1 && (
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                  {media.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setImgIndex(i)}
+                      className={cn("w-1.5 h-1.5 rounded-full transition-all", i === imgIndex ? "bg-white w-3" : "bg-white/50")}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Right side - Description */}
+        <div className="w-1/2 flex flex-col">
+          {listing.description && (
+            <>
+              <p className={cn(
+                "text-sm text-muted-foreground",
+                !showFullDesc && "line-clamp-4"
+              )}>
+                {listing.description}
+              </p>
+              {listing.description.length > 150 && (
+                <button 
+                  onClick={() => setShowFullDesc(!showFullDesc)}
+                  className="text-xs text-blue-400 mt-1 hover:underline"
+                >
+                  {showFullDesc ? 'See less' : 'See more'}
+                </button>
+              )}
+            </>
+          )}
+          <div className="flex items-center gap-2 mt-auto flex-wrap">
+            {listing.category && <Badge variant="secondary" className="text-xs">{listing.category}</Badge>}
+            {listing.qualification && <Badge variant="secondary" className="text-xs">{listing.qualification}</Badge>}
+            {listing.salary_range && <Badge variant="outline" className="text-xs border-blue-600/20 text-blue-400">{listing.salary_range}</Badge>}
+          </div>
+        </div>
+      </div>
+
+      {/* Social Icons: Like, Comment, Share, Save */}
+      <div className="flex items-center gap-2 px-3 py-3 border-t border-border/50">
         <Button variant="ghost" size="sm" onClick={() => onLike(listing.id)} className="h-10 w-10 p-0">
           <Heart className={cn("w-6 h-6", isLiked ? "fill-red-500 text-red-500" : "")} />
         </Button>
@@ -174,35 +218,25 @@ export function MarketplaceListingCard({
         <span className="text-xs text-muted-foreground ml-auto">{likesCount} likes</span>
       </div>
 
-      {/* Content - Title & Description */}
-      <div className="px-3 pb-2">
-        <h3 className="font-bold text-base">{listing.title}</h3>
-        {listing.description && (
-          <p className="text-sm text-muted-foreground mt-1 line-clamp-3">{listing.description}</p>
-        )}
-        {listing.location && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
-            <MapPin className="w-3 h-3" />
-            {listing.location}
-          </div>
-        )}
-        <div className="flex items-center gap-2 mt-2 flex-wrap">
-          {listing.category && <Badge variant="secondary" className="text-xs">{listing.category}</Badge>}
-          {listing.qualification && <Badge variant="secondary" className="text-xs">{listing.qualification}</Badge>}
-          {listing.salary_range && <Badge variant="outline" className="text-xs border-blue-600/20 text-blue-400">{listing.salary_range}</Badge>}
-        </div>
-      </div>
-
-      {/* Sticky Action Buttons - Message */}
+      {/* Bottom: Message and Call buttons */}
       {!isOwner && (
         <div className="flex gap-2 p-3 pt-2 border-t border-border/50">
+          <Button 
+            variant="outline" 
+            size="lg" 
+            className="flex-1 h-12 border-blue-600/30 text-blue-400 hover:bg-blue-600/10"
+            onClick={() => onChat(listing.user_id, listing.id)}
+          >
+            <MessageCircle className="w-5 h-5 mr-2" />
+            Message
+          </Button>
           <Button 
             size="lg" 
             className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white"
             onClick={() => onChat(listing.user_id, listing.id)}
           >
-            <MessageCircle className="w-5 h-5 mr-2" />
-            Message
+            <Phone className="w-5 h-5 mr-2" />
+            Call
           </Button>
         </div>
       )}
