@@ -171,13 +171,15 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
         contact_phone: contactPhone.trim() || null,
         relationship: relationship.trim() || null,
         occupation: occupation.trim() || null,
-        profile_visibility: Object.fromEntries(
-          Array.from(privateFields).map(field => [field, false])
-        )
       };
 
+      // Build profile_visibility at top level
+      const profile_visibility = Object.fromEntries(
+        Array.from(privateFields).map(field => [field, false])
+      );
+
       // Build update data - ONLY fields that exist in database schema
-      const updateData = {
+      const updateData: any = {
         name: name.trim(),
         username: username.trim() || null,
         bio: bio.trim() || null,
@@ -191,6 +193,11 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
         section_order: { ...(profile.section_order as Record<string, any> || {}), extra_data },
         updated_at: new Date().toISOString(),
       };
+
+      // Add profile_visibility if there are private fields
+      if (Object.keys(profile_visibility).length > 0) {
+        updateData.profile_visibility = profile_visibility;
+      }
 
       const { error } = await supabase
         .from('profiles')
