@@ -14,6 +14,8 @@ export interface MarketplaceValidation {
   canPost: boolean;
   isPhoneVerified: boolean;
   profileComplete: boolean;
+  allowed?: boolean;
+  message?: string;
 }
 
 /**
@@ -34,6 +36,8 @@ export const validateMarketplaceAccess = async (
       canPost: false,
       isPhoneVerified: false,
       profileComplete: false,
+      allowed: false,
+      message: 'Please create an account to access marketplace',
     };
   }
 
@@ -41,7 +45,7 @@ export const validateMarketplaceAccess = async (
     // Fetch marketplace profile
     const { data: mpProfile, error } = await supabase
       .from('marketplace_profiles')
-      .select('username, phone, location, is_phone_verified')
+      .select('*')
       .eq('user_id', userId)
       .maybeSingle();
 
@@ -54,6 +58,8 @@ export const validateMarketplaceAccess = async (
         canPost: false,
         isPhoneVerified: false,
         profileComplete: false,
+        allowed: false,
+        message: 'Could not load marketplace profile',
       };
     }
 
@@ -68,6 +74,8 @@ export const validateMarketplaceAccess = async (
         canPost: false,
         isPhoneVerified: false,
         profileComplete: false,
+        allowed: false,
+        message: 'You need to create a marketplace profile first',
       };
     }
 
@@ -88,6 +96,8 @@ export const validateMarketplaceAccess = async (
         canPost: false,
         isPhoneVerified: false,
         profileComplete: false,
+        allowed: false,
+        message: 'Complete your marketplace profile (name, phone, location)',
       };
     }
 
@@ -104,6 +114,10 @@ export const validateMarketplaceAccess = async (
       canPost: true, // Can post even without phone verification, but will show as unverified
       isPhoneVerified,
       profileComplete: true,
+      allowed: true,
+      message: isPhoneVerified
+        ? 'Your profile is verified and ready!'
+        : 'Profile complete. Verify phone for trusted badge.',
     };
   } catch (err) {
     console.error('Marketplace validation error:', err);
@@ -115,6 +129,8 @@ export const validateMarketplaceAccess = async (
       canPost: false,
       isPhoneVerified: false,
       profileComplete: false,
+      allowed: false,
+      message: 'Error validating marketplace access',
     };
   }
 };
