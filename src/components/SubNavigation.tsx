@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
   Home, Lock, Bell, User, Search, Heart, MessageSquare, 
   Mountain, ShoppingCart, Gamepad2, BarChart3, Trophy,
-  Ghost, CheckSquare, StickyNote, Compass, Library, UserCircle
+  Ghost, CheckSquare, StickyNote, Compass, Library, UserCircle, ArrowLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -276,6 +276,18 @@ export function SubNavigation({ visible = true }: { visible?: boolean }) {
     return false;
   };
 
+  // Check if we're in a subsection that needs a back button
+  const isInSubsection = () => {
+    const path = location.pathname;
+    // These are subsections that should show back button
+    const subsectionPaths = ['/profile', '/notifications', '/settings', '/chat', '/search', '/private', '/create', '/diary', '/saved', '/liked'];
+    return subsectionPaths.some(subPath => path.startsWith(subPath)) && path !== '/';
+  };
+
+  const handleBack = () => {
+    navigate('/');
+  };
+
 
   return (
     <div
@@ -289,47 +301,60 @@ export function SubNavigation({ visible = true }: { visible?: boolean }) {
         height: 68,
       }}
     >
-      {currentTabs.map((tab) => {
-        const Icon = tab.icon;
-        const active = isActive(tab);
-        const showBadge = (tab.id === 'notifications' || tab.id === 'notify') && unreadCount > 0;
-        const isProfileTab = tab.id === 'profile';
+      {isInSubsection() ? (
+        // Show back button when in subsection
+        <button
+          onClick={handleBack}
+          className="flex flex-col items-center justify-center flex-1 h-full relative transition-all active:scale-90"
+          style={{ minWidth: 36 }}
+        >
+          <ArrowLeft className="w-[22px] h-[22px]" style={{ color: 'var(--accent)' }} />
+          <div className="w-1 h-1 rounded-full mt-1.5" style={{ background: 'var(--accent)' }} />
+        </button>
+      ) : (
+        // Show regular tabs when not in subsection
+        currentTabs.map((tab) => {
+          const Icon = tab.icon;
+          const active = isActive(tab);
+          const showBadge = (tab.id === 'notifications' || tab.id === 'notify') && unreadCount > 0;
+          const isProfileTab = tab.id === 'profile';
 
-        return (
-          <button
-            key={tab.id}
-            onClick={() => handleTabClick(tab)}
-            className="flex flex-col items-center justify-center flex-1 h-full relative transition-all active:scale-90"
-            style={{ minWidth: 36 }}
-            title={tab.label}
-          >
-            <div className="relative">
-              {isProfileTab ? (
-                <Avatar
-                  className={cn('w-6 h-6 transition-all', active ? 'ring-2 ring-offset-1 ring-offset-background' : '')}
-                  style={active ? { boxShadow: '0 0 0 2px var(--accent)' } : undefined}
-                >
-                  <AvatarImage src={profile?.avatar_url || undefined} />
-                  <AvatarFallback className="text-[9px] font-bold text-white" style={{ background: 'var(--grad-1)' }}>
-                    {profile?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-              ) : (
-                <Icon className="w-[22px] h-[22px]" style={{ color: active ? 'var(--accent)' : 'var(--text-3)' }} />
-              )}
-              {showBadge && (
-                <span
-                  className="absolute -top-1 -right-1.5 text-[7px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5 text-white"
-                  style={{ background: 'var(--danger)' }}
-                >
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-              )}
-            </div>
-            {active && <div className="w-1 h-1 rounded-full mt-1.5" style={{ background: 'var(--accent)' }} />}
-          </button>
-        );
-      })}
+          return (
+            <button
+              key={tab.id}
+              onClick={() => handleTabClick(tab)}
+              className="flex flex-col items-center justify-center flex-1 h-full relative transition-all active:scale-90"
+              style={{ minWidth: 36 }}
+              title={tab.label}
+            >
+              <div className="relative">
+                {isProfileTab ? (
+                  <Avatar
+                    className={cn('w-6 h-6 transition-all', active ? 'ring-2 ring-offset-1 ring-offset-background' : '')}
+                    style={active ? { boxShadow: '0 0 0 2px var(--accent)' } : undefined}
+                  >
+                    <AvatarImage src={profile?.avatar_url || undefined} />
+                    <AvatarFallback className="text-[9px] font-bold text-white" style={{ background: 'var(--grad-1)' }}>
+                      {profile?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <Icon className="w-[22px] h-[22px]" style={{ color: active ? 'var(--accent)' : 'var(--text-3)' }} />
+                )}
+                {showBadge && (
+                  <span
+                    className="absolute -top-1 -right-1.5 text-[7px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5 text-white"
+                    style={{ background: 'var(--danger)' }}
+                  >
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </div>
+              {active && <div className="w-1 h-1 rounded-full mt-1.5" style={{ background: 'var(--accent)' }} />}
+            </button>
+          );
+        })
+      )}
     </div>
   );
 }
