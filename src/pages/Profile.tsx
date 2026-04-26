@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -425,11 +425,11 @@ export default function Profile() {
     }
   };
 
-  const profileTabs = [
+  const profileTabs = useMemo(() => [
     { id: 'posts', label: 'Posts' },
     { id: 'info', label: 'Info' },
     { id: 'marketplace', label: 'Marketplace' },
-  ];
+  ], []);
   const visibleTabs = useVisibleTabContent(activeTab, profileTabs.map((tab) => tab.id));
 
   if (showSkeleton || loading || !userId) return <ProfileSkeleton />;

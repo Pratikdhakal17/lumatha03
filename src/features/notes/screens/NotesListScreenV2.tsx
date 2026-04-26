@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, Search, Filter, Archive, Pin } from 'lucide-react';
 import { useSupabaseNotes } from '../context/SupabaseNotesContext';
 import { NoteCardV2 } from '../components/NoteCardV2';
-import { NoteEditorScreenV2 } from './NoteEditorScreenV2';
+import { KeepNotesEditor } from './KeepNotesEditor';
 import { LumaNote } from '../types';
 
 type FilterTab = 'all' | 'pinned' | 'archived';
@@ -278,7 +278,7 @@ export const NotesListScreenV2: React.FC = () => {
       {/* Note Editor */}
       <AnimatePresence>
         {editingNoteId && (
-          <NoteEditorScreenV2 
+          <KeepNotesEditor 
             noteId={editingNoteId} 
             onClose={() => setEditingNoteId(null)} 
           />
