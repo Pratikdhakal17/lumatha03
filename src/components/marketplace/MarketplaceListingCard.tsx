@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Heart, MessageCircle, Share2, Bookmark, MapPin, MoreVertical, Edit3, Trash2, ShoppingBag, Briefcase, Home as HomeIcon, DollarSign } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Bookmark, MapPin, MoreVertical, Edit3, Trash2, ShoppingBag, Briefcase, Home as HomeIcon, Phone, ChevronDown } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -54,15 +54,15 @@ const typeIcons: Record<string, any> = {
 };
 
 const typeGradients: Record<string, string> = {
-  sell: 'from-emerald-500/20 to-teal-500/10 border-emerald-500/25',
-  job: 'from-violet-500/20 to-purple-500/10 border-violet-500/25',
-  rent: 'from-amber-500/20 to-orange-500/10 border-amber-500/25',
+  sell: 'from-blue-600/20 to-indigo-600/10 border-blue-600/25',
+  job: 'from-blue-600/20 to-indigo-600/10 border-blue-600/25',
+  rent: 'from-blue-600/20 to-indigo-600/10 border-blue-600/25',
 };
 
 const typeBadgeColors: Record<string, string> = {
-  sell: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20',
-  job: 'bg-violet-500/15 text-violet-400 border-violet-500/20',
-  rent: 'bg-amber-500/15 text-amber-400 border-amber-500/20',
+  sell: 'bg-blue-600/15 text-blue-400 border-blue-600/20',
+  job: 'bg-blue-600/15 text-blue-400 border-blue-600/20',
+  rent: 'bg-blue-600/15 text-blue-400 border-blue-600/20',
 };
 
 const actionLabels: Record<string, string> = {
@@ -86,13 +86,61 @@ export function MarketplaceListingCard({
       "border-0 overflow-hidden animate-fade-in backdrop-blur-sm",
       "bg-gradient-to-br", typeGradients[listing.type] || 'from-card/80 to-card/40'
     )}>
-      {/* Media - Top section for image-first layout */}
+      {/* Header - Username & Price */}
+      <div className="flex items-center justify-between p-3 pb-2">
+        <div className="flex items-center gap-2">
+          <button onClick={() => onViewProfile(listing.user_id)}>
+            <Avatar className="w-10 h-10 ring-1 ring-border/50">
+              <AvatarImage src={listing.profiles?.avatar_url || undefined} />
+              <AvatarFallback className="bg-gradient-to-br from-blue-600/30 to-indigo-600/30 text-foreground text-xs font-bold">
+                {listing.profiles?.name?.[0]?.toUpperCase() || '?'}
+              </AvatarFallback>
+            </Avatar>
+          </button>
+          <div className="min-w-0">
+            <button onClick={() => onViewProfile(listing.user_id)} className="font-semibold text-sm truncate block hover:text-blue-400 transition-colors">
+              {listing.profiles?.name || 'User'}
+            </button>
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <span>{formatDistanceToNow(new Date(listing.created_at), { addSuffix: true })}</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Price - High contrast, prominent */}
+        {listing.price != null && (
+          <div className="text-right">
+            <div className="font-bold text-lg text-blue-400">
+              {listing.currency || 'NPR'} {listing.price.toLocaleString()}
+            </div>
+          </div>
+        )}
+        
+        {/* More options */}
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 ml-2"><MoreVertical className="w-4 h-4" /></Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="z-[100] bg-popover shadow-xl">
+            {isOwner && (
+              <>
+                <DropdownMenuItem onClick={() => onEdit?.(listing)}><Edit3 className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onDelete?.(listing.id)} className="text-destructive"><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
+              </>
+            )}
+            <DropdownMenuItem onClick={() => onShare(listing.id)}><Share2 className="w-4 h-4 mr-2" />Share</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onSave(listing.id)}><Bookmark className="w-4 h-4 mr-2" />{isSaved ? 'Unsave' : 'Save'}</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Media - Square/Portrait ratio, full width */}
       {media.length > 0 && (
         <div className="relative">
           <img
             src={media[imgIndex]}
             alt={listing.title}
-            className="w-full aspect-[4/3] object-cover"
+            className="w-full aspect-square object-cover"
             loading="lazy"
           />
           {media.length > 1 && (
@@ -106,99 +154,58 @@ export function MarketplaceListingCard({
               ))}
             </div>
           )}
-          {/* Type badge overlay on image */}
-          <div className="absolute top-2 right-2">
-            <Badge className={cn("text-[10px] px-2 py-0.5 border", typeBadgeColors[listing.type] || 'bg-primary/20 text-primary')}>
-              <TypeIcon className="w-3 h-3 mr-1" />
-              {listing.type === 'sell' ? 'Buy/Sell' : listing.type.charAt(0).toUpperCase() + listing.type.slice(1)}
-            </Badge>
-          </div>
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-center gap-3 p-3 pb-2">
-        <button onClick={() => onViewProfile(listing.user_id)}>
-          <Avatar className="w-9 h-9 ring-1 ring-border/50">
-            <AvatarImage src={listing.profiles?.avatar_url || undefined} />
-            <AvatarFallback className="bg-gradient-to-br from-primary/30 to-secondary/30 text-foreground text-xs font-bold">
-              {listing.profiles?.name?.[0]?.toUpperCase() || '?'}
-            </AvatarFallback>
-          </Avatar>
-        </button>
-        <div className="flex-1 min-w-0">
-          <button onClick={() => onViewProfile(listing.user_id)} className="font-semibold text-sm truncate block hover:text-primary transition-colors">
-            {listing.profiles?.name || 'User'}
-          </button>
-          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-            <span>{formatDistanceToNow(new Date(listing.created_at), { addSuffix: true })}</span>
-            {listing.location && (
-              <span className="flex items-center gap-0.5"><MapPin className="w-3 h-3" />{listing.location}</span>
-            )}
-          </div>
-        </div>
-        {isOwner && (
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="w-4 h-4" /></Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="z-[100] bg-popover shadow-xl">
-              <DropdownMenuItem onClick={() => onEdit?.(listing)}><Edit3 className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onDelete?.(listing.id)} className="text-destructive"><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+      {/* Social & Utility Row */}
+      <div className="flex items-center gap-2 px-3 py-3">
+        <Button variant="ghost" size="sm" onClick={() => onLike(listing.id)} className="h-10 w-10 p-0">
+          <Heart className={cn("w-6 h-6", isLiked ? "fill-red-500 text-red-500" : "")} />
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => onComment(listing.id)} className="h-10 w-10 p-0">
+          <MessageCircle className="w-6 h-6" />
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => onShare(listing.id)} className="h-10 w-10 p-0">
+          <Share2 className="w-6 h-6" />
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => onSave(listing.id)} className="h-10 w-10 p-0">
+          <Bookmark className={cn("w-6 h-6", isSaved ? "fill-blue-400 text-blue-400" : "")} />
+        </Button>
+        <span className="text-xs text-muted-foreground ml-auto">{likesCount} likes</span>
       </div>
 
-      {/* Content */}
+      {/* Content - Title & Description */}
       <div className="px-3 pb-2">
-        <h3 className="font-bold text-sm">{listing.title}</h3>
-        {listing.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-3">{listing.description}</p>}
-        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-          {listing.price != null && (
-            <Badge variant="outline" className="text-xs gap-1 border-primary/20 bg-primary/5">
-              <DollarSign className="w-3 h-3" />
-              {listing.currency || 'NPR'} {listing.price.toLocaleString()}
-            </Badge>
-          )}
-          {listing.salary_range && <Badge variant="outline" className="text-xs border-violet-500/20 bg-violet-500/5">{listing.salary_range}</Badge>}
-          {listing.qualification && <Badge variant="secondary" className="text-[10px]">{listing.qualification}</Badge>}
-          {listing.category && <Badge variant="secondary" className="text-[10px]">{listing.category}</Badge>}
+        <h3 className="font-bold text-base">{listing.title}</h3>
+        {listing.description && (
+          <p className="text-sm text-muted-foreground mt-1 line-clamp-3">{listing.description}</p>
+        )}
+        {listing.location && (
+          <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
+            <MapPin className="w-3 h-3" />
+            {listing.location}
+          </div>
+        )}
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
+          {listing.category && <Badge variant="secondary" className="text-xs">{listing.category}</Badge>}
+          {listing.qualification && <Badge variant="secondary" className="text-xs">{listing.qualification}</Badge>}
+          {listing.salary_range && <Badge variant="outline" className="text-xs border-blue-600/20 text-blue-400">{listing.salary_range}</Badge>}
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center justify-between px-3 py-2">
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" onClick={() => onLike(listing.id)} className="h-8 gap-1 px-2">
-            <Heart className={cn("w-4 h-4", isLiked ? "fill-red-500 text-red-500" : "")} />
-            <span className="text-xs">{likesCount}</span>
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => onComment(listing.id)} className="h-8 gap-1 px-2">
-            <MessageCircle className="w-4 h-4" />
-            <span className="text-xs">{commentsCount}</span>
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => onShare(listing.id)} className="h-8 gap-1 px-2">
-            <Share2 className="w-4 h-4" />
+      {/* Sticky Action Buttons - Message */}
+      {!isOwner && (
+        <div className="flex gap-2 p-3 pt-2 border-t border-border/50">
+          <Button 
+            size="lg" 
+            className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white"
+            onClick={() => onChat(listing.user_id, listing.id)}
+          >
+            <MessageCircle className="w-5 h-5 mr-2" />
+            Message
           </Button>
         </div>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" onClick={() => onSave(listing.id)} className="h-8 px-2">
-            <Bookmark className={cn("w-4 h-4", isSaved ? "fill-primary text-primary" : "")} />
-          </Button>
-          {!isOwner && (
-            <Button size="sm" onClick={() => onChat(listing.user_id, listing.id)} className={cn(
-              "h-8 text-xs gap-1",
-              listing.type === 'sell' ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30" :
-                listing.type === 'job' ? "bg-violet-500/20 text-violet-400 hover:bg-violet-500/30" :
-                  "bg-amber-500/20 text-amber-400 hover:bg-amber-500/30"
-            )}>
-              <MessageCircle className="w-3.5 h-3.5" />
-              {actionLabels[listing.type] || 'Chat'}
-            </Button>
-          )}
-        </div>
-      </div>
+      )}
     </Card>
   );
 }
