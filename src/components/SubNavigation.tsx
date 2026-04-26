@@ -226,25 +226,9 @@ export function SubNavigation({ visible = true }: { visible?: boolean }) {
 
   // Get current tabs for bottom navigation
   const getCurrentTabs = (): TabConfig[] => {
-    const { zone } = getCurrentZoneFromPath();
-    
-    switch (layoutMode) {
-      case 2:
-      case 3:
-        // Show subsections of current zone
-        if (zone) {
-          return zone.subsections.map(sub => ({
-            id: sub.id,
-            icon: sub.icon,
-            path: sub.path,
-            label: sub.label
-          }));
-        }
-        return classicTabs;
-      case 1:
-      default:
-        return classicTabs;
-    }
+    // Keep mobile nav stable with exactly 5 core tabs regardless of layout mode.
+    // This avoids section-switch regressions when zone-based subsection sets change.
+    return classicTabs;
   };
 
   const currentTabs = getCurrentTabs();

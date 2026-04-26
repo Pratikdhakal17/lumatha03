@@ -86,27 +86,34 @@ export default function Marketplace() {
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState<string | null>(null);
   const [headerVisible, setHeaderVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const lastScrollYRef = useRef(0);
 
   useRouteLoadTrace('Marketplace');
 
-  // Scroll-based header hide/show - entire header (profile search + categories) hides together
+  // Scroll-based header hide/show - entire header (profile search + categories) hides together.
+  // Listen on the app's feed scroll container rather than window to avoid sticky/header desync.
   useEffect(() => {
+    const scrollContainer = document.querySelector('.feed-center') as HTMLElement | null;
+    const target: HTMLElement | Window = scrollContainer || window;
+
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      if (currentScrollY > lastScrollY && currentScrollY > 80) {
+      const currentScrollY = scrollContainer ? scrollContainer.scrollTop : window.scrollY;
+      const previousScrollY = lastScrollYRef.current;
+
+      if (currentScrollY > previousScrollY && currentScrollY > 80) {
         // Scrolling down - hide entire header
         setHeaderVisible(false);
-      } else if (currentScrollY < lastScrollY) {
+      } else if (currentScrollY < previousScrollY || currentScrollY <= 24) {
         // Scrolling up - show entire header
         setHeaderVisible(true);
       }
-      setLastScrollY(currentScrollY);
+
+      lastScrollYRef.current = currentScrollY;
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
+    target.addEventListener('scroll', handleScroll, { passive: true });
+    return () => target.removeEventListener('scroll', handleScroll as EventListener);
+  }, []);
 
   const fetchListings = useCallback(async () => {
     setLoading(true);

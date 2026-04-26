@@ -149,9 +149,54 @@ export function MarketplaceListingCard({
           )}
         </div>
 
-        {/* 50/50 Split: Image left, Description right */}
-        <div className="flex gap-3 px-3 pb-3">
-          {/* Left side - Image */}
+        {/* Mobile: full-width swipeable media */}
+        {media.length > 0 && (
+          <div className="md:hidden px-3 pb-3">
+            <div
+              className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory rounded-lg"
+              onScroll={(e) => {
+                const container = e.currentTarget;
+                if (!container.clientWidth) return;
+                const nextIndex = Math.round(container.scrollLeft / container.clientWidth);
+                if (nextIndex !== imgIndex) setImgIndex(nextIndex);
+              }}
+            >
+              {media.map((url, i) => (
+                <button
+                  key={`${url}-${i}`}
+                  type="button"
+                  className="w-full shrink-0 snap-center"
+                  onClick={() => {
+                    setImgIndex(i);
+                    setImageDialogOpen(true);
+                  }}
+                >
+                  <img
+                    src={url}
+                    alt={`${listing.title} ${i + 1}`}
+                    className="w-full aspect-square object-cover"
+                    loading="lazy"
+                  />
+                </button>
+              ))}
+            </div>
+            {media.length > 1 && (
+              <div className="mt-2 flex justify-center gap-1">
+                {media.map((_, i) => (
+                  <button
+                    key={`dot-${i}`}
+                    type="button"
+                    onClick={() => setImgIndex(i)}
+                    className={cn('h-1.5 rounded-full transition-all', i === imgIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/45')}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Desktop: 50/50 image and description */}
+        <div className="hidden md:flex gap-3 px-3 pb-3">
           {media.length > 0 && (
             <div className="w-1/2 flex-shrink-0">
               <div className="relative cursor-pointer" onClick={() => setImageDialogOpen(true)}>
@@ -167,7 +212,7 @@ export function MarketplaceListingCard({
                       <button
                         key={i}
                         onClick={(e) => { e.stopPropagation(); setImgIndex(i); }}
-                        className={cn("w-1.5 h-1.5 rounded-full transition-all", i === imgIndex ? "bg-white w-3" : "bg-white/50")}
+                        className={cn('w-1.5 h-1.5 rounded-full transition-all', i === imgIndex ? 'bg-white w-3' : 'bg-white/50')}
                       />
                     ))}
                   </div>
@@ -176,21 +221,14 @@ export function MarketplaceListingCard({
             </div>
           )}
 
-          {/* Right side - Description */}
           <div className="w-1/2 flex flex-col">
             {listing.description && (
               <>
-                <p className={cn(
-                  "text-sm text-muted-foreground",
-                  !showFullDesc && "line-clamp-4"
-                )}>
+                <p className={cn('text-sm text-muted-foreground', !showFullDesc && 'line-clamp-4')}>
                   {listing.description}
                 </p>
                 {listing.description.length > 150 && (
-                  <button 
-                    onClick={() => setShowFullDesc(!showFullDesc)}
-                    className="text-xs text-white mt-1 hover:underline"
-                  >
+                  <button onClick={() => setShowFullDesc(!showFullDesc)} className="text-xs text-white mt-1 hover:underline">
                     {showFullDesc ? 'See less' : 'See more'}
                   </button>
                 )}
@@ -201,6 +239,27 @@ export function MarketplaceListingCard({
               {listing.qualification && <Badge variant="secondary" className="text-xs">{listing.qualification}</Badge>}
               {listing.salary_range && <Badge variant="outline" className="text-xs border-gray-600/50 text-white">{listing.salary_range}</Badge>}
             </div>
+          </div>
+        </div>
+
+        {/* Mobile description and badges below media */}
+        <div className="md:hidden px-3 pb-3">
+          {listing.description && (
+            <>
+              <p className={cn('text-sm text-muted-foreground', !showFullDesc && 'line-clamp-4')}>
+                {listing.description}
+              </p>
+              {listing.description.length > 150 && (
+                <button onClick={() => setShowFullDesc(!showFullDesc)} className="text-xs text-white mt-1 hover:underline">
+                  {showFullDesc ? 'See less' : 'See more'}
+                </button>
+              )}
+            </>
+          )}
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            {listing.category && <Badge variant="secondary" className="text-xs">{listing.category}</Badge>}
+            {listing.qualification && <Badge variant="secondary" className="text-xs">{listing.qualification}</Badge>}
+            {listing.salary_range && <Badge variant="outline" className="text-xs border-gray-600/50 text-white">{listing.salary_range}</Badge>}
           </div>
         </div>
 

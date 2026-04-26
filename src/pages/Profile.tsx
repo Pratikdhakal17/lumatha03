@@ -725,8 +725,8 @@ export default function Profile() {
               className="flex-1 py-2.5 rounded-xl text-white text-sm font-bold transition-all active:scale-[0.98] shadow-sm flex items-center justify-center gap-2 sm:mt-0 mt-1"
               style={{ background: '#111827', border: '1px solid #374151', fontFamily: "'Inter'" }}
             >
-              <Pencil className="w-4 h-4 sm:translate-y-0 translate-y-[2px]" />
-              <span className="sm:translate-y-0 translate-y-[2px]">Edit Profile</span>
+              <Pencil className="w-4 h-4 sm:translate-y-0 translate-y-[3px]" />
+              <span className="sm:translate-y-0 translate-y-[3px]">Edit Profile</span>
             </button>
             <button 
               onClick={() => {

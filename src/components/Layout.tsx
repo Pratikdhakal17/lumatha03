@@ -486,6 +486,10 @@ function LayoutContent({ children }: LayoutProps) {
   };
 
   const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
     navigate('/');
   };
   const sectionLabel = location.pathname === '/search'
@@ -574,7 +578,7 @@ function LayoutContent({ children }: LayoutProps) {
         <header className={cn("sticky top-0 z-50 w-full h-16 bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 transition-transform duration-300", headerVisible ? "translate-y-0" : "-translate-y-full")}>
           <div className="flex items-center justify-between h-full px-4 gap-3">
             {/* Left side - menu button and Lumatha branding */}
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-1 min-w-0">
               {/* Desktop: Back button in subsections, nothing on home */}
               {!isMobile && isInSubsection() && (
                 <button onClick={handleBack} className="w-10 h-10 flex items-center justify-center rounded-xl transition-transform active:scale-90 hover:bg-white/5">
@@ -583,7 +587,7 @@ function LayoutContent({ children }: LayoutProps) {
               )}
               {/* Mobile: Sidebar menu button in all sections */}
               {isMobile && (
-                <button onClick={() => setMobileSidebarOpen(true)} className="w-10 h-10 flex items-center justify-center rounded-xl transition-transform active:scale-90 hover:bg-white/5 -ml-1">
+                <button onClick={() => setMobileSidebarOpen(true)} className="w-10 h-10 flex items-center justify-center rounded-xl transition-transform active:scale-90 hover:bg-white/5 -ml-2">
                   <Menu className="w-6 h-6 text-blue-500" strokeWidth={2} />
                 </button>
               )}
@@ -592,7 +596,7 @@ function LayoutContent({ children }: LayoutProps) {
                 <p className="text-lg font-black tracking-wide text-blue-600">LUMATHA</p>
               </div>
               {/* Lumatha Navy text for mobile - shifted to proper left corner */}
-              <div className="flex lg:hidden items-center -ml-1">
+              <div className="flex lg:hidden items-center -ml-2">
                 <p className="text-base font-black tracking-wide text-blue-600">LUMATHA</p>
               </div>
             </div>
