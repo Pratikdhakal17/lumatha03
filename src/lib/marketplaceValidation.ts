@@ -79,17 +79,18 @@ export const validateMarketplaceAccess = async (
       };
     }
 
-    // Check if profile is complete (minimum requirements)
-    const profileComplete = Boolean(
-      mpProfile.username?.trim() &&
-      mpProfile.phone?.trim() &&
-      mpProfile.location?.trim()
+    // Check if profile is at least 50% complete
+    const requiredFields = ['display_name', 'phone', 'location'];
+    const filledFields = requiredFields.filter(field => 
+      mpProfile[field]?.trim()
     );
+    const completionPercentage = (filledFields.length / requiredFields.length) * 100;
+    const profileComplete = completionPercentage >= 50;
 
     if (!profileComplete) {
       return {
         isValid: false,
-        reason: 'Complete your marketplace profile (name, phone, location)',
+        reason: `Complete at least 50% of your profile (${filledFields.length}/${requiredFields.length} fields filled)`,
         requiresSetup: true,
         requiresPhone: true,
         setupUrl: '/marketplace/edit-profile?setup=1',
@@ -97,7 +98,7 @@ export const validateMarketplaceAccess = async (
         isPhoneVerified: false,
         profileComplete: false,
         allowed: false,
-        message: 'Complete your marketplace profile (name, phone, location)',
+        message: `Complete at least 50% of your profile (${filledFields.length}/${requiredFields.length} fields filled)`,
       };
     }
 

@@ -86,6 +86,36 @@ export function MarketplaceListingCard({
       "border-0 overflow-hidden animate-fade-in backdrop-blur-sm",
       "bg-gradient-to-br", typeGradients[listing.type] || 'from-card/80 to-card/40'
     )}>
+      {/* Media - Top section for image-first layout */}
+      {media.length > 0 && (
+        <div className="relative">
+          <img
+            src={media[imgIndex]}
+            alt={listing.title}
+            className="w-full aspect-[4/3] object-cover"
+            loading="lazy"
+          />
+          {media.length > 1 && (
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+              {media.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setImgIndex(i)}
+                  className={cn("w-1.5 h-1.5 rounded-full transition-all", i === imgIndex ? "bg-white w-3" : "bg-white/50")}
+                />
+              ))}
+            </div>
+          )}
+          {/* Type badge overlay on image */}
+          <div className="absolute top-2 right-2">
+            <Badge className={cn("text-[10px] px-2 py-0.5 border", typeBadgeColors[listing.type] || 'bg-primary/20 text-primary')}>
+              <TypeIcon className="w-3 h-3 mr-1" />
+              {listing.type === 'sell' ? 'Buy/Sell' : listing.type.charAt(0).toUpperCase() + listing.type.slice(1)}
+            </Badge>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center gap-3 p-3 pb-2">
         <button onClick={() => onViewProfile(listing.user_id)}>
@@ -107,10 +137,6 @@ export function MarketplaceListingCard({
             )}
           </div>
         </div>
-        <Badge className={cn("text-[10px] px-2 py-0.5 border", typeBadgeColors[listing.type] || 'bg-primary/20 text-primary')}>
-          <TypeIcon className="w-3 h-3 mr-1" />
-          {listing.type === 'sell' ? 'Buy/Sell' : listing.type.charAt(0).toUpperCase() + listing.type.slice(1)}
-        </Badge>
         {isOwner && (
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
@@ -140,29 +166,6 @@ export function MarketplaceListingCard({
           {listing.category && <Badge variant="secondary" className="text-[10px]">{listing.category}</Badge>}
         </div>
       </div>
-
-      {/* Media */}
-      {media.length > 0 && (
-        <div className="relative">
-          <img
-            src={media[imgIndex]}
-            alt={listing.title}
-            className="w-full aspect-[4/3] object-cover"
-            loading="lazy"
-          />
-          {media.length > 1 && (
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-              {media.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setImgIndex(i)}
-                  className={cn("w-1.5 h-1.5 rounded-full transition-all", i === imgIndex ? "bg-white w-3" : "bg-white/50")}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Actions */}
       <div className="flex items-center justify-between px-3 py-2">
