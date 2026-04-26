@@ -695,13 +695,13 @@ export default function Profile() {
 
       {/* Bio */}
       {profile.bio && (
-        <p className="px-5 mt-3 text-[14px] text-slate-200 leading-relaxed font-medium" style={{ fontFamily: "'Inter'" }}>
+        <p className="px-5 mt-8 text-[14px] text-slate-200 leading-relaxed font-medium" style={{ fontFamily: "'Inter'" }}>
           {profile.bio}
         </p>
       )}
 
       {/* Action Buttons */}
-      <div className="px-5 mt-4">
+      <div className="px-5 mt-8">
         {hasBlockedMe ? (
           <div className="p-3 rounded-xl text-center" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
             <Ban className="w-5 h-5 mx-auto mb-1" style={{ color: '#ef4444' }} />
