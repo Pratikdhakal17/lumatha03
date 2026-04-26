@@ -438,7 +438,7 @@ export default function Profile() {
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a0f1e' }}>
         <div className="text-center">
           <h2 className="text-white text-xl font-bold mb-4">Profile not found</h2>
-          <Button onClick={() => navigate(-1)}>Go Back</Button>
+          <Button onClick={() => navigate('/')}>Go Back</Button>
         </div>
       </div>
     );
@@ -722,11 +722,11 @@ export default function Profile() {
           <div className="flex gap-2">
             <button
               onClick={() => setEditOpen(true)}
-              className="flex-1 py-2.5 rounded-xl text-white text-sm font-bold transition-all active:scale-[0.98] shadow-sm flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 rounded-xl text-white text-sm font-bold transition-all active:scale-[0.98] shadow-sm flex items-center justify-center gap-2 sm:mt-0 mt-1"
               style={{ background: '#111827', border: '1px solid #374151', fontFamily: "'Inter'" }}
             >
-              <Pencil className="w-4 h-4" />
-              Edit Profile
+              <Pencil className="w-4 h-4 sm:translate-y-0 translate-y-[2px]" />
+              <span className="sm:translate-y-0 translate-y-[2px]">Edit Profile</span>
             </button>
             <button 
               onClick={() => {

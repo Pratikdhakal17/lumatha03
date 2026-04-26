@@ -575,23 +575,24 @@ function LayoutContent({ children }: LayoutProps) {
           <div className="flex items-center justify-between h-full px-4 gap-3">
             {/* Left side - menu button and Lumatha branding */}
             <div className="flex items-center gap-2 min-w-0">
-              {isInSubsection() ? (
-                // Show back button when in subsection
+              {/* Desktop: Back button in subsections, nothing on home */}
+              {!isMobile && isInSubsection() && (
                 <button onClick={handleBack} className="w-10 h-10 flex items-center justify-center rounded-xl transition-transform active:scale-90 hover:bg-white/5">
                   <ArrowLeft className="w-6 h-6 text-blue-500" strokeWidth={2} />
                 </button>
-              ) : isMobile ? (
-                // Show menu button on mobile when not in subsection
-                <button onClick={() => setMobileSidebarOpen(true)} className="w-10 h-10 flex items-center justify-center rounded-xl transition-transform active:scale-90 hover:bg-white/5">
+              )}
+              {/* Mobile: Sidebar menu button in all sections */}
+              {isMobile && (
+                <button onClick={() => setMobileSidebarOpen(true)} className="w-10 h-10 flex items-center justify-center rounded-xl transition-transform active:scale-90 hover:bg-white/5 -ml-1">
                   <Menu className="w-6 h-6 text-blue-500" strokeWidth={2} />
                 </button>
-              ) : null}
-              {/* Lumatha Navy text for desktop - no image */}
-              <div className="hidden lg:flex items-center">
+              )}
+              {/* Lumatha Navy text for desktop - shifted left */}
+              <div className="hidden lg:flex items-center -ml-1">
                 <p className="text-lg font-black tracking-wide text-blue-600">LUMATHA</p>
               </div>
-              {/* Lumatha Navy text for mobile */}
-              <div className="flex lg:hidden items-center">
+              {/* Lumatha Navy text for mobile - shifted to proper left corner */}
+              <div className="flex lg:hidden items-center -ml-1">
                 <p className="text-base font-black tracking-wide text-blue-600">LUMATHA</p>
               </div>
             </div>

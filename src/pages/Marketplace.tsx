@@ -85,24 +85,21 @@ export default function Marketplace() {
 
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState<string | null>(null);
-  const [bannerVisible, setBannerVisible] = useState(true);
-  const [categoriesVisible, setCategoriesVisible] = useState(true);
+  const [headerVisible, setHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
   useRouteLoadTrace('Marketplace');
 
-  // Scroll-based banner and categories hide/show
+  // Scroll-based header hide/show - entire header (profile search + categories) hides together
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        // Scrolling down - hide everything
-        setBannerVisible(false);
-        setCategoriesVisible(false);
+      if (currentScrollY > lastScrollY && currentScrollY > 80) {
+        // Scrolling down - hide entire header
+        setHeaderVisible(false);
       } else if (currentScrollY < lastScrollY) {
-        // Scrolling up - show banner but not categories
-        setBannerVisible(true);
-        setCategoriesVisible(false);
+        // Scrolling up - show entire header
+        setHeaderVisible(true);
       }
       setLastScrollY(currentScrollY);
     };
@@ -390,7 +387,7 @@ export default function Marketplace() {
       {/* Premium Top Bar */}
       <div className={cn(
         "sticky top-0 z-50 px-3 md:px-4 py-4 bg-background/80 backdrop-blur-xl border-b border-border/40 transition-transform duration-300",
-        !bannerVisible && "-translate-y-full"
+        !headerVisible && "-translate-y-full"
       )}>
         <div className="flex items-center gap-3">
           <button
@@ -424,11 +421,8 @@ export default function Marketplace() {
           </button>
         </div>
 
-        {/* Categories Scroller */}
-        <div className={cn(
-          "mt-4 flex gap-2 overflow-x-auto no-scrollbar pb-1 transition-all duration-300",
-          !categoriesVisible && "opacity-0 pointer-events-none -translate-y-2"
-        )}>
+        {/* Categories Scroller - part of sticky header */}
+        <div className="mt-4 flex gap-2 overflow-x-auto no-scrollbar pb-1 transition-all duration-300">
           {CATEGORIES.map(cat => {
             const isActive = activeCategory === cat.id;
             return (
