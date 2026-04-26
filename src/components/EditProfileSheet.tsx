@@ -248,31 +248,14 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
           <h2 className="text-white" style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 20 }}>
             Edit Profile
           </h2>
-          <div className="flex items-center gap-3">
-             <button
-               onClick={() => onOpenChange(false)}
-               className="px-4 py-2 rounded-full text-slate-400 text-sm font-medium hover:text-white transition-colors"
-             >
-               Cancel
-             </button>
-             <button
-               onClick={handleSave}
-               disabled={saving}
-               className="px-6 py-2 rounded-full text-white text-sm font-bold transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-primary/20"
-               style={{ background: 'linear-gradient(135deg, #7C3AED, #3B82F6)', fontFamily: "'Inter'" }}
-             >
-               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Done'}
-             </button>
-          </div>
         </div>
 
         {/* Scrollable content */}
-        <div className="overflow-y-auto h-[calc(99vh-88px)] pb-20 no-scrollbar">
+        <div className="overflow-y-auto h-[calc(99vh-140px)] pb-20 no-scrollbar">
           {/* Avatar */}
           <div className="px-5 pt-3">
             <div
-              className="w-24 h-24 rounded-full overflow-hidden cursor-pointer relative"
-              onClick={() => avatarRef.current?.click()}
+              className="w-24 h-24 rounded-full overflow-hidden relative"
               style={{ border: '3px solid #111827', boxShadow: '0 0 0 2px #7C3AED' }}
             >
               {avatarPreview ? (
@@ -287,9 +270,14 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
                   {name[0]?.toUpperCase() || '?'}
                 </div>
               )}
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full">
-                <Camera className="w-5 h-5 text-white" />
-              </div>
+              {/* Camera icon at bottom right */}
+              <button
+                onClick={() => avatarRef.current?.click()}
+                className="absolute bottom-0 right-0 w-8 h-8 rounded-full flex items-center justify-center shadow-lg"
+                style={{ background: '#7C3AED' }}
+              >
+                <Camera className="w-4 h-4 text-white" />
+              </button>
             </div>
             <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
           </div>
@@ -573,6 +561,26 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
                 })}
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Sticky footer with Cancel/Done buttons */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-900/50" style={{ background: '#0a0f1e' }}>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => onOpenChange(false)}
+              className="flex-1 py-3 rounded-full text-slate-400 text-sm font-medium hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex-1 py-3 rounded-full text-white text-sm font-bold transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-primary/20"
+              style={{ background: 'linear-gradient(135deg, #7C3AED, #3B82F6)', fontFamily: "'Inter'" }}
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Done'}
+            </button>
           </div>
         </div>
       </SheetContent>
