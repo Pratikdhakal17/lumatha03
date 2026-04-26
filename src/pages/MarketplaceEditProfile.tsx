@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera, Sparkles, Search, X, Check, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,7 +17,6 @@ import { sendPhoneOtp, verifyPhoneOtp, markPhoneVerified } from '@/lib/phoneOtpS
 export default function MarketplaceEditProfile() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const fileRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [mpProfile, setMpProfile] = useState<any>(null);
@@ -218,12 +217,7 @@ export default function MarketplaceEditProfile() {
       }
 
       toast.success('Seller profile saved! 🎉');
-      const returnTo = searchParams.get('returnTo');
-      if (returnTo) {
-        navigate(returnTo);
-      } else {
-        navigate(-1);
-      }
+      navigate(-1);
     } catch (err: any) {
       toast.error(err?.message || 'Save failed');
     }
