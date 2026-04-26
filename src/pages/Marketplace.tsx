@@ -9,6 +9,16 @@ import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { MarketplaceCommentsDialog } from '@/components/marketplace/MarketplaceCommentsDialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { validateMarketplaceAccess } from '@/lib/marketplaceValidation';
@@ -82,6 +92,9 @@ export default function Marketplace() {
   const [detailListing, setDetailListing] = useState<any>(null);
   const [commentOpen, setCommentOpen] = useState(false);
   const [commentListingId, setCommentListingId] = useState<string | null>(null);
+  const [setupPromptOpen, setSetupPromptOpen] = useState(false);
+  const [pendingSetupUrl, setPendingSetupUrl] = useState<string | null>(null);
+  const [pendingSetupMessage, setPendingSetupMessage] = useState('');
 
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState<string | null>(null);
@@ -271,7 +284,11 @@ export default function Marketplace() {
     if (!validation.allowed) {
       toast.error(validation.message || 'You cannot post right now');
       if (validation.requiresSetup && validation.setupUrl) {
-        navigate(validation.setupUrl);
+        setPendingSetupUrl(
+          `${validation.setupUrl}${validation.setupUrl.includes('?') ? '&' : '?'}returnTo=${encodeURIComponent('/marketplace?create=true')}`
+        );
+        setPendingSetupMessage(validation.message || 'Complete your seller profile first.');
+        setSetupPromptOpen(true);
       }
       return;
     }
@@ -437,6 +454,29 @@ export default function Marketplace() {
         listingId={commentListingId}
         onCountChange={() => fetchListings()}
       />
+
+      <AlertDialog open={setupPromptOpen} onOpenChange={setSetupPromptOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Complete profile now</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingSetupMessage || 'Complete your marketplace profile before creating a listing.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Not now</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingSetupUrl) {
+                  navigate(pendingSetupUrl);
+                }
+              }}
+            >
+              Complete profile now
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
