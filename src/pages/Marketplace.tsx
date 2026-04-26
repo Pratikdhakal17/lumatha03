@@ -86,18 +86,23 @@ export default function Marketplace() {
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState<string | null>(null);
   const [bannerVisible, setBannerVisible] = useState(true);
+  const [categoriesVisible, setCategoriesVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
   useRouteLoadTrace('Marketplace');
 
-  // Scroll-based banner hide/show
+  // Scroll-based banner and categories hide/show
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down - hide everything
         setBannerVisible(false);
+        setCategoriesVisible(false);
       } else if (currentScrollY < lastScrollY) {
+        // Scrolling up - show banner but not categories
         setBannerVisible(true);
+        setCategoriesVisible(false);
       }
       setLastScrollY(currentScrollY);
     };
@@ -420,7 +425,10 @@ export default function Marketplace() {
         </div>
 
         {/* Categories Scroller */}
-        <div className="mt-4 flex gap-2 overflow-x-auto no-scrollbar pb-1">
+        <div className={cn(
+          "mt-4 flex gap-2 overflow-x-auto no-scrollbar pb-1 transition-all duration-300",
+          !categoriesVisible && "opacity-0 pointer-events-none -translate-y-2"
+        )}>
           {CATEGORIES.map(cat => {
             const isActive = activeCategory === cat.id;
             return (
