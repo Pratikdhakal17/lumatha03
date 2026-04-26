@@ -16,9 +16,9 @@ import { useRouteLoadTrace } from '@/hooks/useRouteLoadTrace';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MarketplaceFeedCard } from '@/components/marketplace/MarketplaceFeedCard';
+import { MarketplaceListingCard } from '@/components/marketplace/MarketplaceListingCard';
+import { CreateListingSheet } from '@/components/marketplace/CreateListingSheet';
 import { ListingDetail } from '@/components/marketplace/redesign/ListingDetail';
-import { MarketplaceCreateDialog } from '@/components/marketplace/MarketplaceCreateDialog';
 
 // ===== CONSTANTS =====
 const CATEGORIES = [
@@ -251,8 +251,8 @@ export default function Marketplace() {
     }
   };
 
-  const handleChat = (userId: string, listingId: string, title: string) => {
-    navigate(`/chat/${userId}?listing=${listingId}&msg=${encodeURIComponent(`Hi! I'm interested in "${title}". Is it still available?`)}`);
+  const handleChat = (userId: string, listingId: string, title?: string) => {
+    navigate(`/chat/${userId}?listing=${listingId}&msg=${encodeURIComponent(`Hi! I'm interested in "${title || 'this listing'}". Is it still available?`)}`);
   };
 
   const deleteListing = async (id: string) => {
@@ -310,7 +310,7 @@ export default function Marketplace() {
       >
         {listings.map(l => (
           <motion.div key={l.id} variants={itemVariants}>
-            <MarketplaceFeedCard
+            <MarketplaceListingCard
               listing={l}
               isLiked={likedSet.has(l.id)}
               isSaved={savedSet.has(l.id)}
@@ -417,19 +417,14 @@ export default function Marketplace() {
         )}
       </AnimatePresence>
 
-      <MarketplaceCreateDialog
-        open={createOpen}
-        onOpenChange={(open) => {
-          setCreateOpen(open);
-          if (!open) setEditListing(null);
-        }}
-        editListing={editListing}
-        onSuccess={() => {
-          setCreateOpen(false);
-          setEditListing(null);
-          fetchListings();
-        }}
-      />
+      {createOpen && (
+        <CreateListingSheet
+          editListing={editListing}
+          defaultDetectedLocation={detectedLocation}
+          onClose={() => { setCreateOpen(false); setEditListing(null); }}
+          onSuccess={() => { setCreateOpen(false); setEditListing(null); fetchListings(); }}
+        />
+      )}
 
       <MarketplaceCommentsDialog
         open={commentOpen}

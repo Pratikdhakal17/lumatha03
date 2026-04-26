@@ -6,8 +6,6 @@ import { supabase } from '@/integrations/supabase/client';
  */
 
 export interface MarketplaceValidation {
-  allowed: boolean;
-  message: string;
   isValid: boolean;
   reason: string;
   requiresSetup: boolean;
@@ -28,8 +26,6 @@ export const validateMarketplaceAccess = async (
   // Not logged in
   if (!userId) {
     return {
-      allowed: false,
-      message: 'Please create an account to access marketplace',
       isValid: false,
       reason: 'Please create an account to access marketplace',
       requiresSetup: true,
@@ -45,32 +41,12 @@ export const validateMarketplaceAccess = async (
     // Fetch marketplace profile
     const { data: mpProfile, error } = await supabase
       .from('marketplace_profiles')
-      .select('*')
+      .select('username, phone, location, is_phone_verified')
       .eq('user_id', userId)
       .maybeSingle();
 
     if (error) {
-      const errorMessage = String(error.message || '').toLowerCase();
-      const tableMissing = error.code === '42P01' || error.code === 'PGRST205' || errorMessage.includes('marketplace_profiles');
-
-      // If profile table is not available in the deployed DB yet, allow posting.
-      if (tableMissing) {
-        return {
-          allowed: true,
-          message: 'Marketplace profile table is unavailable. You can still post listings.',
-          isValid: true,
-          reason: 'Marketplace profile table is unavailable. You can still post listings.',
-          requiresSetup: false,
-          requiresPhone: false,
-          canPost: true,
-          isPhoneVerified: false,
-          profileComplete: false,
-        };
-      }
-
       return {
-        allowed: false,
-        message: 'Could not load marketplace profile',
         isValid: false,
         reason: 'Could not load marketplace profile',
         requiresSetup: false,
@@ -84,8 +60,6 @@ export const validateMarketplaceAccess = async (
     // No marketplace profile exists
     if (!mpProfile) {
       return {
-        allowed: false,
-        message: 'You need to create a marketplace profile first',
         isValid: false,
         reason: 'You need to create a marketplace profile first',
         requiresSetup: true,
@@ -98,15 +72,14 @@ export const validateMarketplaceAccess = async (
     }
 
     // Check if profile is complete (minimum requirements)
-    const displayName = ((mpProfile as any).username || (mpProfile as any).display_name || '').trim();
-    const phone = ((mpProfile as any).phone || '').trim();
-    const location = ((mpProfile as any).location || '').trim();
-    const profileComplete = Boolean(displayName && phone && location);
+    const profileComplete = Boolean(
+      mpProfile.username?.trim() &&
+      mpProfile.phone?.trim() &&
+      mpProfile.location?.trim()
+    );
 
     if (!profileComplete) {
       return {
-        allowed: false,
-        message: 'Complete your marketplace profile (name, phone, location)',
         isValid: false,
         reason: 'Complete your marketplace profile (name, phone, location)',
         requiresSetup: true,
@@ -119,13 +92,9 @@ export const validateMarketplaceAccess = async (
     }
 
     // Profile is complete. Check phone verification
-    const isPhoneVerified = Boolean((mpProfile as any).is_phone_verified);
+    const isPhoneVerified = Boolean(mpProfile.is_phone_verified);
 
     return {
-      allowed: true,
-      message: isPhoneVerified
-        ? 'Your profile is verified and ready!'
-        : 'Profile complete. Verify phone for trusted badge.',
       isValid: true,
       reason: isPhoneVerified
         ? 'Your profile is verified and ready!'
@@ -139,8 +108,6 @@ export const validateMarketplaceAccess = async (
   } catch (err) {
     console.error('Marketplace validation error:', err);
     return {
-      allowed: false,
-      message: 'Error validating marketplace access',
       isValid: false,
       reason: 'Error validating marketplace access',
       requiresSetup: false,
@@ -179,8 +146,8 @@ export const getMarketplaceProfileSummary = async (
     if (!mpProfile.data) return null;
 
     return {
-      displayName: (mpProfile.data as any).username || (mpProfile.data as any).display_name || 'Seller',
-      isVerified: Boolean((mpProfile.data as any).is_phone_verified),
+      displayName: mpProfile.data.username || 'Seller',
+      isVerified: Boolean(mpProfile.data.is_phone_verified),
       listingsCount: listingsResult.count || 0,
     };
   } catch (err) {

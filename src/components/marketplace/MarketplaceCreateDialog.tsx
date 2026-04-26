@@ -63,30 +63,6 @@ export function MarketplaceCreateDialog({ open, onOpenChange, editListing, onSuc
     }
   }, [open, isEditing]);
 
-  useEffect(() => {
-    if (!open || isEditing || !user || location.trim()) return;
-
-    const prefillLocationFromProfile = async () => {
-      try {
-        const { data } = await supabase
-          .from('marketplace_profiles')
-          .select('location')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        const fallback = String((data as any)?.location || '').trim();
-        if (fallback) {
-          setLocation(fallback);
-          setLocationDetected(true);
-        }
-      } catch {
-        // Non-blocking fallback: user can still type location manually.
-      }
-    };
-
-    prefillLocationFromProfile();
-  }, [open, isEditing, user, location]);
-
   const detectLocation = async () => {
     setDetectingLocation(true);
     try {
@@ -103,7 +79,7 @@ export function MarketplaceCreateDialog({ open, onOpenChange, editListing, onSuc
       setLocation(parts.join(', '));
       setLocationDetected(true);
     } catch {
-      toast.error('Could not detect GPS location. You can enter location manually.');
+      toast.error('Location access required to post listings. Please enable GPS.');
     } finally {
       setDetectingLocation(false);
     }
@@ -119,8 +95,8 @@ export function MarketplaceCreateDialog({ open, onOpenChange, editListing, onSuc
 
   const handleSubmit = async () => {
     if (!user || !title.trim()) return;
-    if (!location.trim()) {
-      toast.error('Location is required to post listings.');
+    if (!locationDetected || !location.trim()) {
+      toast.error('Location is required. Please enable GPS to detect your location.');
       return;
     }
     setSaving(true);
@@ -225,20 +201,15 @@ export function MarketplaceCreateDialog({ open, onOpenChange, editListing, onSuc
             </>
           )}
 
-          {/* Location */}
+          {/* Location - Auto-detected, read-only */}
           <div>
             <Label className="text-xs flex items-center gap-1">
               <MapPin className="w-3 h-3" />Location *
-              {!locationDetected && <span className="text-muted-foreground text-[10px]">(auto-detect optional)</span>}
+              {!locationDetected && <span className="text-destructive text-[10px]">(GPS required)</span>}
             </Label>
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <Input
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="flex-1"
-                  placeholder="Enter or detect your location"
-                />
+                <Input value={location} readOnly className="flex-1 bg-muted/30" placeholder="Detecting location..." />
                 {locationDetected && <MapPin className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-400" />}
               </div>
               <Button
@@ -253,9 +224,9 @@ export function MarketplaceCreateDialog({ open, onOpenChange, editListing, onSuc
                 <span className="text-xs">{locationDetected ? 'Refresh' : 'Detect'}</span>
               </Button>
             </div>
-            {!location.trim() && !detectingLocation && (
+            {!locationDetected && !detectingLocation && (
               <p className="text-[10px] text-destructive mt-1 flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" />Location is required (manual or auto-detected)
+                <AlertCircle className="w-3 h-3" />Enable location to post listings
               </p>
             )}
           </div>
@@ -291,7 +262,7 @@ export function MarketplaceCreateDialog({ open, onOpenChange, editListing, onSuc
             </div>
           )}
 
-          <Button onClick={handleSubmit} disabled={saving || !title.trim() || !location.trim()} className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90">
+          <Button onClick={handleSubmit} disabled={saving || !title.trim() || (!locationDetected && !isEditing)} className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90">
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             {isEditing ? 'Update' : 'Post Listing'}
           </Button>
