@@ -6,7 +6,7 @@ import {
   Home, BookOpen, MessageSquare, Gamepad2,
   Mountain, Heart, ShoppingCart, Settings, Plus, Sparkles,
   ChevronDown, Menu, X, Globe, Search, Flag, Ghost,
-  Lock, BarChart3, Trophy, FileText
+  Lock, BarChart3, Trophy, FileText, ArrowLeft
 } from 'lucide-react';
 import { CreatePostSheet } from '@/components/CreatePostSheet';
 import { DesktopRightRail } from '@/components/DesktopRightRail';
@@ -477,6 +477,17 @@ function LayoutContent({ children }: LayoutProps) {
   const isAdventureGrid = location.pathname === '/music-adventure';
   const isFeedPage = location.pathname === '/';
   const educationTab = new URLSearchParams(location.search).get('tab')?.toLowerCase();
+
+  // Check if we're in a subsection that needs a back button (desktop)
+  const isInSubsection = () => {
+    const path = location.pathname;
+    const subsectionPaths = ['/profile', '/notifications', '/settings', '/chat', '/search', '/private', '/create', '/diary', '/saved', '/liked', '/marketplace', '/education', '/music-adventure', '/random-connect', '/funpun'];
+    return subsectionPaths.some(subPath => path.startsWith(subPath)) && path !== '/';
+  };
+
+  const handleBack = () => {
+    navigate('/');
+  };
   const sectionLabel = location.pathname === '/search'
     ? 'Search'
     : location.pathname === '/private'
@@ -564,11 +575,17 @@ function LayoutContent({ children }: LayoutProps) {
           <div className="flex items-center justify-between h-full px-4 gap-3">
             {/* Left side - menu button and Lumatha branding */}
             <div className="flex items-center gap-2 min-w-0">
-              {isMobile && (
+              {isInSubsection() ? (
+                // Show back button when in subsection
+                <button onClick={handleBack} className="w-10 h-10 flex items-center justify-center rounded-xl transition-transform active:scale-90 hover:bg-white/5">
+                  <ArrowLeft className="w-6 h-6 text-blue-500" strokeWidth={2} />
+                </button>
+              ) : isMobile ? (
+                // Show menu button on mobile when not in subsection
                 <button onClick={() => setMobileSidebarOpen(true)} className="w-10 h-10 flex items-center justify-center rounded-xl transition-transform active:scale-90 hover:bg-white/5">
                   <Menu className="w-6 h-6 text-blue-500" strokeWidth={2} />
                 </button>
-              )}
+              ) : null}
               {/* Lumatha Navy text for desktop - no image */}
               <div className="hidden lg:flex items-center">
                 <p className="text-lg font-black tracking-wide text-blue-600">LUMATHA</p>
