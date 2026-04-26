@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Heart, MessageCircle, Share2, Bookmark, MapPin, MoreVertical, Edit3, Trash2, ShoppingBag, Briefcase, Home as HomeIcon, DollarSign } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -77,6 +79,7 @@ export function MarketplaceListingCard({
   const [imgIndex, setImgIndex] = useState(0);
   const isOwner = listing.user_id === currentUserId;
   const media = listing.media_urls || [];
+  const TypeIcon = typeIcons[listing.type] || ShoppingBag;
 
   return (
     <Card className={cn(
