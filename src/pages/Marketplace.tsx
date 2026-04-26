@@ -85,8 +85,26 @@ export default function Marketplace() {
 
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState<string | null>(null);
+  const [bannerVisible, setBannerVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   useRouteLoadTrace('Marketplace');
+
+  // Scroll-based banner hide/show
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setBannerVisible(false);
+      } else if (currentScrollY < lastScrollY) {
+        setBannerVisible(true);
+      }
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   const fetchListings = useCallback(async () => {
     setLoading(true);
@@ -365,7 +383,10 @@ export default function Marketplace() {
   return (
     <div className="min-h-screen pb-24 bg-background">
       {/* Premium Top Bar */}
-      <div className="sticky top-0 z-50 px-3 md:px-4 py-4 bg-background/80 backdrop-blur-xl border-b border-border/40">
+      <div className={cn(
+        "sticky top-0 z-50 px-3 md:px-4 py-4 bg-background/80 backdrop-blur-xl border-b border-border/40 transition-transform duration-300",
+        !bannerVisible && "-translate-y-full"
+      )}>
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(`/marketplace/profile/${user?.id}`)}
