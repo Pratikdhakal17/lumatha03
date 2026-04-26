@@ -270,6 +270,9 @@ export default function Marketplace() {
     const validation = await validateMarketplaceAccess(user?.id);
     if (!validation.allowed) {
       toast.error(validation.message || 'You cannot post right now');
+      if (validation.requiresSetup && validation.setupUrl) {
+        navigate(validation.setupUrl);
+      }
       return;
     }
     setEditListing(null);

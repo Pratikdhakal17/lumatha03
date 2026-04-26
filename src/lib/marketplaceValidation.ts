@@ -98,11 +98,10 @@ export const validateMarketplaceAccess = async (
     }
 
     // Check if profile is complete (minimum requirements)
-    const profileComplete = Boolean(
-      (mpProfile as any).username?.trim() &&
-      (mpProfile as any).phone?.trim() &&
-      (mpProfile as any).location?.trim()
-    );
+    const displayName = ((mpProfile as any).username || (mpProfile as any).display_name || '').trim();
+    const phone = ((mpProfile as any).phone || '').trim();
+    const location = ((mpProfile as any).location || '').trim();
+    const profileComplete = Boolean(displayName && phone && location);
 
     if (!profileComplete) {
       return {
