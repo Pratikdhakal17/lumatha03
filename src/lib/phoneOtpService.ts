@@ -105,7 +105,6 @@ export const markPhoneVerified = async (
       .from('marketplace_profiles')
       .update({
         is_phone_verified: true,
-        phone_verified_at: new Date().toISOString(),
       })
       .eq('user_id', userId)
       .eq('phone', phone);

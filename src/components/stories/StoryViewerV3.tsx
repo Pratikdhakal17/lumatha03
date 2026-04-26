@@ -42,6 +42,18 @@ interface StorySettings {
   duration: number; // hours
 }
 
+const isMissingStoryAuxTableError = (err: any): boolean => {
+  const message = String(err?.message || '').toLowerCase();
+  return (
+    err?.code === '42P01' ||
+    err?.code === 'PGRST205' ||
+    err?.status === 404 ||
+    message.includes('story_comments') ||
+    message.includes('story_reactions') ||
+    message.includes('could not find the table')
+  );
+};
+
 export function StoryViewerV3({ groups, startGroupIndex, onClose, onDeleteStory }: StoryViewerV3Props) {
   const { user, profile } = useAuth();
   const [currentGroupIndex, setCurrentGroupIndex] = useState(startGroupIndex);
@@ -57,6 +69,7 @@ export function StoryViewerV3({ groups, startGroupIndex, onClose, onDeleteStory 
   const [reactions, setReactions] = useState<Reaction[]>([]);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [likedStories, setLikedStories] = useState<Set<string>>(new Set());
+  const [storySocialUnavailable, setStorySocialUnavailable] = useState(false);
   const [viewers, setViewers] = useState<any[]>([]);
   const [floatingHearts, setFloatingHearts] = useState<{ id: number; x: number; emoji: string }[]>([]);
   const [storySettings, setStorySettings] = useState<StorySettings>({
@@ -98,15 +111,29 @@ export function StoryViewerV3({ groups, startGroupIndex, onClose, onDeleteStory 
   // Load comments and check like status when story changes
   useEffect(() => {
     if (!currentStory?.id) return;
+    if (storySocialUnavailable) {
+      setComments([]);
+      return;
+    }
     
     const loadComments = async () => {
-      const { data } = await supabase
-        .from('story_comments')
-        .select('*, profiles:user_id(name, avatar_url)')
-        .eq('story_id', currentStory.id)
-        .order('created_at', { ascending: true });
-      
-      setComments(data || []);
+      try {
+        const { data, error } = await supabase
+          .from('story_comments')
+          .select('*, profiles:user_id(name, avatar_url)')
+          .eq('story_id', currentStory.id)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        setComments(data || []);
+      } catch (err: any) {
+        if (isMissingStoryAuxTableError(err)) {
+          setStorySocialUnavailable(true);
+          setComments([]);
+          return;
+        }
+        console.error('Failed to load story comments:', err);
+      }
     };
 
     const loadViewers = async () => {
@@ -119,22 +146,32 @@ export function StoryViewerV3({ groups, startGroupIndex, onClose, onDeleteStory 
     };
 
     const checkLikeStatus = async () => {
-      const { data } = await supabase
-        .from('story_reactions')
-        .select('*')
-        .eq('story_id', currentStory.id)
-        .eq('user_id', user?.id)
-        .single();
-      
-      if (data) {
-        setLikedStories(prev => new Set([...prev, currentStory.id]));
+      try {
+        const { data, error } = await supabase
+          .from('story_reactions')
+          .select('*')
+          .eq('story_id', currentStory.id)
+          .eq('user_id', user?.id)
+          .single();
+
+        if (error && error.code !== 'PGRST116') throw error;
+
+        if (data) {
+          setLikedStories(prev => new Set([...prev, currentStory.id]));
+        }
+      } catch (err: any) {
+        if (isMissingStoryAuxTableError(err)) {
+          setStorySocialUnavailable(true);
+          return;
+        }
+        console.error('Failed to check story reaction status:', err);
       }
     };
 
     loadComments();
     if (isOwnStory) loadViewers();
     checkLikeStatus();
-  }, [currentStory?.id, isOwnStory, user?.id]);
+  }, [currentStory?.id, isOwnStory, storySocialUnavailable, user?.id]);
 
   const nextStory = useCallback(() => {
     if (currentStoryIndex < (currentGroup?.stories?.length || 0) - 1) {
@@ -162,6 +199,7 @@ export function StoryViewerV3({ groups, startGroupIndex, onClose, onDeleteStory 
 
   const handleLike = async () => {
     if (!currentStory?.id || !user) return;
+    if (storySocialUnavailable) return;
 
     const isLiked = likedStories.has(currentStory.id);
 
@@ -181,11 +219,20 @@ export function StoryViewerV3({ groups, startGroupIndex, onClose, onDeleteStory 
 
     if (isLiked) {
       // Unlike
-      await supabase
+      const { error } = await supabase
         .from('story_reactions')
         .delete()
         .eq('story_id', currentStory.id)
         .eq('user_id', user.id);
+
+      if (error) {
+        if (isMissingStoryAuxTableError(error)) {
+          setStorySocialUnavailable(true);
+          return;
+        }
+        toast.error('Failed to update reaction');
+        return;
+      }
       
       setLikedStories(prev => {
         const next = new Set(prev);
@@ -194,13 +241,22 @@ export function StoryViewerV3({ groups, startGroupIndex, onClose, onDeleteStory 
       });
     } else {
       // Like
-      await supabase
+      const { error } = await supabase
         .from('story_reactions')
         .insert({
           story_id: currentStory.id,
           user_id: user.id,
           emoji: '❤️'
         });
+
+      if (error) {
+        if (isMissingStoryAuxTableError(error)) {
+          setStorySocialUnavailable(true);
+          return;
+        }
+        toast.error('Failed to update reaction');
+        return;
+      }
       
       setLikedStories(prev => new Set([...prev, currentStory.id]));
     }
@@ -226,6 +282,10 @@ export function StoryViewerV3({ groups, startGroupIndex, onClose, onDeleteStory 
 
   const handleComment = async () => {
     if (!newComment.trim() || !currentStory?.id || !user) return;
+    if (storySocialUnavailable) {
+      toast.error('Story comments are unavailable right now.');
+      return;
+    }
 
     const { data, error } = await supabase
       .from('story_comments')
@@ -239,6 +299,11 @@ export function StoryViewerV3({ groups, startGroupIndex, onClose, onDeleteStory 
       .single();
 
     if (error) {
+      if (isMissingStoryAuxTableError(error)) {
+        setStorySocialUnavailable(true);
+        toast.error('Story comments are unavailable right now.');
+        return;
+      }
       toast.error('Failed to send message');
       return;
     }

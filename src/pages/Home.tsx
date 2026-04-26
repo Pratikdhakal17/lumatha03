@@ -194,7 +194,10 @@ export default function Home() {
     }, 400);
     
     try {
-      let query = supabase.from('posts').select('*, profiles(*)').eq('visibility', 'public');
+      let query = supabase
+        .from('posts')
+        .select('*, profiles(*)')
+        .or('visibility.eq.public,visibility.is.null');
 
       if (feedScope === 'ghost') {
         const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();

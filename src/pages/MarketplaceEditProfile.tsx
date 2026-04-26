@@ -44,7 +44,7 @@ export default function MarketplaceEditProfile() {
     if (mp) {
       setVerifiedPhone((mp as any).is_phone_verified ? ((mp as any).phone || '') : '');
       setData({
-        displayName: (mp as any).username || profile?.first_name || profile?.name || '',
+        displayName: (mp as any).username || (mp as any).display_name || profile?.first_name || profile?.name || '',
         sellerType: (mp as any).seller_type || 'individual',
         bio: mp.bio || '',
         qualification: mp.qualification || '',
@@ -177,12 +177,11 @@ export default function MarketplaceEditProfile() {
     if (!data.displayName.trim()) { toast.error('Display name is required'); return; }
     setSaving(true);
     try {
-      const payload: any = {
+      const basePayload: any = {
         user_id: user.id,
         bio: data.bio.slice(0, 180),
         qualification: data.qualification,
         location: data.location,
-        username: data.displayName,
         seller_type: data.sellerType,
         phone: data.phone,
         whatsapp: data.whatsapp,
@@ -196,14 +195,32 @@ export default function MarketplaceEditProfile() {
         allow_reviews: data.allowReviews,
         is_phone_verified: data.isPhoneVerified,
       };
-      if (mpProfile) {
-        await supabase.from('marketplace_profiles').update(payload).eq('user_id', user.id);
-      } else {
-        await supabase.from('marketplace_profiles').insert(payload);
+
+      const saveProfile = async (payload: any) => {
+        if (mpProfile) {
+          return supabase.from('marketplace_profiles').update(payload).eq('user_id', user.id);
+        }
+        return supabase.from('marketplace_profiles').insert(payload);
+      };
+
+      let result = await saveProfile({ ...basePayload, username: data.displayName });
+
+      if (result.error) {
+        const msg = String(result.error.message || '').toLowerCase();
+        if (msg.includes('username')) {
+          result = await saveProfile({ ...basePayload, display_name: data.displayName });
+        }
       }
+
+      if (result.error) {
+        throw result.error;
+      }
+
       toast.success('Seller profile saved! 🎉');
       navigate(-1);
-    } catch { toast.error('Save failed'); }
+    } catch (err: any) {
+      toast.error(err?.message || 'Save failed');
+    }
     setSaving(false);
   };
 

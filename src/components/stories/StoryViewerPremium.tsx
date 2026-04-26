@@ -20,6 +20,18 @@ interface StoryViewerPremiumProps {
   onDeleteStory?: (storyId: string) => void;
 }
 
+const isMissingStoryAuxTableError = (err: any): boolean => {
+  const message = String(err?.message || '').toLowerCase();
+  return (
+    err?.code === '42P01' ||
+    err?.code === 'PGRST205' ||
+    err?.status === 404 ||
+    message.includes('story_comments') ||
+    message.includes('story_reactions') ||
+    message.includes('could not find the table')
+  );
+};
+
 interface Comment {
   id: string;
   user_id: string;
@@ -58,6 +70,7 @@ export function StoryViewerPremium({ groups, startGroupIndex, onClose, onDeleteS
   const [likedStories, setLikedStories] = useState<Set<string>>(new Set());
   const [storyLikeCounts, setStoryLikeCounts] = useState<Record<string, number>>({});
   const [viewers, setViewers] = useState<any[]>([]);
+  const [storySocialUnavailable, setStorySocialUnavailable] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
@@ -267,55 +280,77 @@ export function StoryViewerPremium({ groups, startGroupIndex, onClose, onDeleteS
   useEffect(() => {
     if (!currentStory?.id) return;
     setIsLoading(true);
+
+    if (storySocialUnavailable) {
+      setComments([]);
+      setIsLoading(false);
+      return;
+    }
     
     const loadData = async () => {
-      // Load comments
-      const { data: commentsData } = await supabase
-        .from('story_comments')
-        .select('*, profiles:user_id(name, avatar_url)')
-        .eq('story_id', currentStory.id)
-        .order('created_at', { ascending: true });
-      
-      setComments(commentsData || []);
+      try {
+        // Load comments
+        const { data: commentsData, error: commentsError } = await supabase
+          .from('story_comments')
+          .select('*, profiles:user_id(name, avatar_url)')
+          .eq('story_id', currentStory.id)
+          .order('created_at', { ascending: true });
 
-      // Load viewers for own stories
-      if (isOwnStory) {
-        const { data: viewersData } = await supabase
-          .from('story_views')
-          .select('*, profiles:viewer_id(name, avatar_url)')
+        if (commentsError) throw commentsError;
+        setComments(commentsData || []);
+
+        // Load viewers for own stories
+        if (isOwnStory) {
+          const { data: viewersData } = await supabase
+            .from('story_views')
+            .select('*, profiles:viewer_id(name, avatar_url)')
+            .eq('story_id', currentStory.id);
+          setViewers(viewersData || []);
+        }
+
+        // Check if liked
+        const { data: likeData, error: likeStatusError } = await supabase
+          .from('story_reactions')
+          .select('*')
+          .eq('story_id', currentStory.id)
+          .eq('user_id', user?.id)
+          .single();
+
+        if (likeStatusError && likeStatusError.code !== 'PGRST116') {
+          throw likeStatusError;
+        }
+
+        const { count: reactionCount, error: reactionCountError } = await supabase
+          .from('story_reactions')
+          .select('*', { count: 'exact', head: true })
           .eq('story_id', currentStory.id);
-        setViewers(viewersData || []);
-      }
 
-      // Check if liked
-      const { data: likeData } = await supabase
-        .from('story_reactions')
-        .select('*')
-        .eq('story_id', currentStory.id)
-        .eq('user_id', user?.id)
-        .single();
-
-      const { count: reactionCount } = await supabase
-        .from('story_reactions')
-        .select('*', { count: 'exact', head: true })
-        .eq('story_id', currentStory.id);
+        if (reactionCountError) throw reactionCountError;
       
-      if (likeData) {
-        setLikedStories(prev => new Set([...prev, currentStory.id]));
-      }
+        if (likeData) {
+          setLikedStories(prev => new Set([...prev, currentStory.id]));
+        }
 
-      setStoryLikeCounts((prev) => ({
-        ...prev,
-        [currentStory.id]: typeof reactionCount === 'number' ? reactionCount : (prev[currentStory.id] || 0),
-      }));
+        setStoryLikeCounts((prev) => ({
+          ...prev,
+          [currentStory.id]: typeof reactionCount === 'number' ? reactionCount : (prev[currentStory.id] || 0),
+        }));
 
-      // Record view
-      if (!isOwnStory && user) {
-        await supabase.from('story_views').upsert({
-          story_id: currentStory.id,
-          viewer_id: user.id,
-          viewed_at: new Date().toISOString()
-        }, { onConflict: 'story_id,viewer_id' });
+        // Record view
+        if (!isOwnStory && user) {
+          await supabase.from('story_views').upsert({
+            story_id: currentStory.id,
+            viewer_id: user.id,
+            viewed_at: new Date().toISOString()
+          }, { onConflict: 'story_id,viewer_id' });
+        }
+      } catch (err: any) {
+        if (isMissingStoryAuxTableError(err)) {
+          setStorySocialUnavailable(true);
+          setComments([]);
+        } else {
+          console.error('Failed to load story social data:', err);
+        }
       }
 
       setIsLoading(false);
@@ -323,7 +358,7 @@ export function StoryViewerPremium({ groups, startGroupIndex, onClose, onDeleteS
 
     loadData();
     setProgress(0);
-  }, [currentStory?.id, isOwnStory, user]);
+  }, [currentStory?.id, isOwnStory, storySocialUnavailable, user]);
 
   const handleNext = useCallback(() => {
     if (currentStoryIndex < totalStories - 1) {
@@ -498,6 +533,7 @@ export function StoryViewerPremium({ groups, startGroupIndex, onClose, onDeleteS
 
   const handleLike = useCallback(async ({ withAnimation = true }: { withAnimation?: boolean } = {}) => {
     if (!currentStory?.id || !user) return;
+    if (storySocialUnavailable) return;
 
     const isLiked = likedStories.has(currentStory.id);
 
@@ -506,11 +542,20 @@ export function StoryViewerPremium({ groups, startGroupIndex, onClose, onDeleteS
     }
 
     if (isLiked) {
-      await supabase
+      const { error } = await supabase
         .from('story_reactions')
         .delete()
         .eq('story_id', currentStory.id)
         .eq('user_id', user.id);
+
+      if (error) {
+        if (isMissingStoryAuxTableError(error)) {
+          setStorySocialUnavailable(true);
+          return;
+        }
+        toast.error('Failed to update reaction');
+        return;
+      }
       
       setLikedStories(prev => {
         const next = new Set(prev);
@@ -523,13 +568,22 @@ export function StoryViewerPremium({ groups, startGroupIndex, onClose, onDeleteS
         [currentStory.id]: Math.max((prev[currentStory.id] || 1) - 1, 0),
       }));
     } else {
-      await supabase
+      const { error } = await supabase
         .from('story_reactions')
         .insert({
           story_id: currentStory.id,
           user_id: user.id,
           emoji: '❤️'
         });
+
+      if (error) {
+        if (isMissingStoryAuxTableError(error)) {
+          setStorySocialUnavailable(true);
+          return;
+        }
+        toast.error('Failed to update reaction');
+        return;
+      }
       
       setLikedStories(prev => new Set([...prev, currentStory.id]));
 
@@ -538,12 +592,16 @@ export function StoryViewerPremium({ groups, startGroupIndex, onClose, onDeleteS
         [currentStory.id]: (prev[currentStory.id] || 0) + 1,
       }));
     }
-  }, [currentStory?.id, likedStories, spawnHeartBurst, user]);
+  }, [currentStory?.id, likedStories, spawnHeartBurst, storySocialUnavailable, user]);
 
   const handleComment = async () => {
     if (!newComment.trim() || !currentStory?.id || !user) return;
+    if (storySocialUnavailable) {
+      toast.error('Story comments are unavailable right now.');
+      return;
+    }
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('story_comments')
       .insert({
         story_id: currentStory.id,
@@ -553,6 +611,16 @@ export function StoryViewerPremium({ groups, startGroupIndex, onClose, onDeleteS
       })
       .select('*, profiles:user_id(name, avatar_url)')
       .single();
+
+    if (error) {
+      if (isMissingStoryAuxTableError(error)) {
+        setStorySocialUnavailable(true);
+        toast.error('Story comments are unavailable right now.');
+        return;
+      }
+      toast.error('Failed to send message');
+      return;
+    }
 
     if (data) {
       setComments(prev => [...prev, data]);

@@ -21,7 +21,8 @@ interface StoryViewerV2Props {
 interface Comment {
   id: string;
   user_id: string;
-  profile: any;
+  profile?: any;
+  profiles?: any;
   content: string;
   created_at: string;
   is_private: boolean;
@@ -31,6 +32,18 @@ interface Reaction {
   user_id: string;
   emoji: string;
 }
+
+const isMissingStoryAuxTableError = (err: any): boolean => {
+  const message = String(err?.message || '').toLowerCase();
+  return (
+    err?.code === '42P01' ||
+    err?.code === 'PGRST205' ||
+    err?.status === 404 ||
+    message.includes('story_comments') ||
+    message.includes('story_reactions') ||
+    message.includes('could not find the table')
+  );
+};
 
 export function StoryViewerV2({ groups, startGroupIndex, onClose }: StoryViewerV2Props) {
   const { user, profile } = useAuth();
@@ -44,9 +57,10 @@ export function StoryViewerV2({ groups, startGroupIndex, onClose }: StoryViewerV
   const [isMuted, setIsMuted] = useState(true);
   const [showOptions, setShowOptions] = useState(false);
   const [reactions, setReactions] = useState<Reaction[]>([]);
+  const [storySocialUnavailable, setStorySocialUnavailable] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [viewers, setViewers] = useState<any[]>([]);
-  const progressRef = useRef<NodeJS.Timeout | null>(null);
+  const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const currentGroup = groups[currentGroupIndex];
@@ -73,17 +87,31 @@ export function StoryViewerV2({ groups, startGroupIndex, onClose }: StoryViewerV
   // Load comments when story changes
   useEffect(() => {
     if (!currentStory?.id) return;
+    if (storySocialUnavailable) {
+      setComments([]);
+      return;
+    }
     
     const loadComments = async () => {
-      // For own stories - show all comments
-      // For others' stories - only show if public comments enabled
-      const { data } = await supabase
-        .from('story_comments')
-        .select('*, profiles:user_id(name, avatar_url)')
-        .eq('story_id', currentStory.id)
-        .order('created_at', { ascending: true });
-      
-      setComments(data || []);
+      try {
+        // For own stories - show all comments
+        // For others' stories - only show if public comments enabled
+        const { data, error } = await (supabase as any)
+          .from('story_comments')
+          .select('*, profiles:user_id(name, avatar_url)')
+          .eq('story_id', currentStory.id)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        setComments((data as any[]) || []);
+      } catch (err: any) {
+        if (isMissingStoryAuxTableError(err)) {
+          setStorySocialUnavailable(true);
+          setComments([]);
+          return;
+        }
+        console.error('Failed to load story comments:', err);
+      }
     };
 
     const loadViewers = async () => {
@@ -97,7 +125,7 @@ export function StoryViewerV2({ groups, startGroupIndex, onClose }: StoryViewerV
 
     loadComments();
     if (isOwnStory) loadViewers();
-  }, [currentStory?.id, isOwnStory]);
+  }, [currentStory?.id, isOwnStory, storySocialUnavailable]);
 
   // Mark story as viewed
   useEffect(() => {
@@ -153,23 +181,37 @@ export function StoryViewerV2({ groups, startGroupIndex, onClose }: StoryViewerV
 
   const handleLike = async () => {
     if (!currentStory?.id || !user) return;
+    if (storySocialUnavailable) return;
 
     // Show heart animation
     setShowHeartAnimation(true);
     setTimeout(() => setShowHeartAnimation(false), 1000);
 
     // Add reaction
-    await supabase.from('story_reactions').insert({
+    const { error } = await (supabase as any).from('story_reactions').insert({
       story_id: currentStory.id,
       user_id: user.id,
       emoji: '❤️',
     });
+
+    if (error) {
+      if (isMissingStoryAuxTableError(error)) {
+        setStorySocialUnavailable(true);
+        return;
+      }
+      toast.error('Failed to react to story');
+      return;
+    }
   };
 
   const handleComment = async () => {
     if (!newComment.trim() || !currentStory?.id || !user) return;
+    if (storySocialUnavailable) {
+      toast.error('Story comments are unavailable right now.');
+      return;
+    }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('story_comments')
       .insert({
         story_id: currentStory.id,
@@ -180,8 +222,18 @@ export function StoryViewerV2({ groups, startGroupIndex, onClose }: StoryViewerV
       .select('*, profiles:user_id(name, avatar_url)')
       .single();
 
-    if (!error && data) {
-      setComments((prev) => [...prev, data]);
+    if (error) {
+      if (isMissingStoryAuxTableError(error)) {
+        setStorySocialUnavailable(true);
+        toast.error('Story comments are unavailable right now.');
+        return;
+      }
+      toast.error('Failed to send message');
+      return;
+    }
+
+    if (data) {
+      setComments((prev) => [...prev, data as any]);
       setNewComment('');
       toast.success(isOwnStory ? 'Comment added' : 'Message sent');
     }
@@ -190,7 +242,7 @@ export function StoryViewerV2({ groups, startGroupIndex, onClose }: StoryViewerV
   const handleReport = async () => {
     if (!currentStory?.id) return;
     
-    await supabase.from('story_reports').insert({
+    await (supabase as any).from('story_reports').insert({
       story_id: currentStory.id,
       reporter_id: user?.id,
       reason: 'inappropriate',

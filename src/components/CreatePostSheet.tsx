@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { MarketplaceCreateDialog } from '@/components/marketplace/MarketplaceCreateDialog';
 
 export type QuickCreateType = 'post' | 'story' | 'diary' | 'reel' | 'thought' | 'drawing' | 'marketplace';
 
@@ -78,11 +79,13 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
   const [storyCreatorMode, setStoryCreatorMode] = useState<'media' | 'text' | 'voice' | 'dang'>('media');
   const [storyCreatorStream, setStoryCreatorStream] = useState<MediaStream | undefined>(undefined);
   const [storyCreatorFile, setStoryCreatorFile] = useState<File | null>(null);
+  const [marketplaceOpen, setMarketplaceOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setStoryCreatorOpen(false);
     setStoryHubOpen(false);
+    setMarketplaceOpen(false);
   }, [open]);
 
   const handleSelectType = (type: QuickCreateType) => {
@@ -99,7 +102,7 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
     }
 
     if (type === 'marketplace') {
-      navigate('/marketplace?create=true');
+      setMarketplaceOpen(true);
       return;
     }
 
@@ -237,6 +240,14 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
           setStoryCreatorOpen(false);
           setStoryCreatorStream(undefined);
           setStoryCreatorFile(null);
+        }}
+      />
+
+      <MarketplaceCreateDialog
+        open={marketplaceOpen}
+        onOpenChange={setMarketplaceOpen}
+        onSuccess={() => {
+          setMarketplaceOpen(false);
         }}
       />
     </>

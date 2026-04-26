@@ -314,9 +314,9 @@ export default function Create() {
       else toast.success('Posted! 🎉');
 
       navigate('/');
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error('Failed to publish post');
+      toast.error(e?.message || 'Failed to publish post');
     } finally {
       setSharing(false);
     }

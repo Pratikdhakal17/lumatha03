@@ -95,8 +95,7 @@ export default function Marketplace() {
         .from('marketplace_listings')
         .select(`
           *,
-          profiles:user_id (name, avatar_url, username),
-          mp_profile:user_id (username, phone, whatsapp, is_phone_verified, show_phone_to)
+          profiles:user_id (name, avatar_url, username)
         `)
         .order('created_at', { ascending: false });
 
@@ -116,7 +115,7 @@ export default function Marketplace() {
       if (user) {
         const [likesRes, savesRes] = await Promise.all([
           supabase.from('marketplace_likes').select('listing_id').eq('user_id', user.id),
-          supabase.from('marketplace_saves').select('listing_id').eq('user_id', user.id)
+          supabase.from('marketplace_saved').select('listing_id').eq('user_id', user.id)
         ]);
         
         if (likesRes.data) setLikedSet(new Set(likesRes.data.map(l => l.listing_id)));
@@ -166,6 +165,9 @@ export default function Marketplace() {
     if (!user) return navigate('/auth');
     
     const isLiked = likedSet.has(id);
+    const previousLikes = new Set(likedSet);
+    const previousCount = likeCounts[id] || 0;
+
     setLikedSet(prev => {
       const next = new Set(prev);
       if (isLiked) next.delete(id);
@@ -178,10 +180,25 @@ export default function Marketplace() {
       [id]: (prev[id] || 0) + (isLiked ? -1 : 1)
     }));
 
-    if (isLiked) {
-      await supabase.from('marketplace_likes').delete().eq('user_id', user.id).eq('listing_id', id);
-    } else {
-      await supabase.from('marketplace_likes').insert({ user_id: user.id, listing_id: id });
+    try {
+      if (isLiked) {
+        const { error } = await supabase
+          .from('marketplace_likes')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('listing_id', id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('marketplace_likes').insert({ user_id: user.id, listing_id: id });
+        if (error) throw error;
+      }
+    } catch (error: any) {
+      setLikedSet(previousLikes);
+      setLikeCounts(prev => ({
+        ...prev,
+        [id]: previousCount,
+      }));
+      toast.error(error?.message || 'Could not update like right now');
     }
   };
 
@@ -189,6 +206,8 @@ export default function Marketplace() {
     if (!user) return navigate('/auth');
     
     const isSaved = savedSet.has(id);
+    const previousSaved = new Set(savedSet);
+
     setSavedSet(prev => {
       const next = new Set(prev);
       if (isSaved) next.delete(id);
@@ -196,12 +215,23 @@ export default function Marketplace() {
       return next;
     });
 
-    if (isSaved) {
-      await supabase.from('marketplace_saves').delete().eq('user_id', user.id).eq('listing_id', id);
-      toast.success('Removed from saved');
-    } else {
-      await supabase.from('marketplace_saves').insert({ user_id: user.id, listing_id: id });
-      toast.success('Saved to collection');
+    try {
+      if (isSaved) {
+        const { error } = await supabase
+          .from('marketplace_saved')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('listing_id', id);
+        if (error) throw error;
+        toast.success('Removed from saved');
+      } else {
+        const { error } = await supabase.from('marketplace_saved').insert({ user_id: user.id, listing_id: id });
+        if (error) throw error;
+        toast.success('Saved to collection');
+      }
+    } catch (error: any) {
+      setSavedSet(previousSaved);
+      toast.error(error?.message || 'Could not update saved items right now');
     }
   };
 

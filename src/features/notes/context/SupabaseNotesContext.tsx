@@ -22,6 +22,17 @@ const SupabaseNotesContext = createContext<SupabaseNotesContextType | undefined>
 // Fallback to localStorage key
 const LOCAL_STORAGE_KEY = 'lumatha_notes_backup_v3';
 
+const isKeepNotesMissingTableError = (err: any): boolean => {
+  const message = String(err?.message || '').toLowerCase();
+  return (
+    err?.code === '42P01' ||
+    err?.code === 'PGRST205' ||
+    err?.status === 404 ||
+    message.includes('keep_notes') ||
+    message.includes('could not find the table')
+  );
+};
+
 // Convert Supabase row to LumaNote
 const rowToNote = (row: any): LumaNote => ({
   id: row.id,
@@ -77,8 +88,10 @@ export const SupabaseNotesProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [notesTableMissing, setNotesTableMissing] = useState(false);
   
   const pendingUpdates = useRef<Map<string, Partial<LumaNote>>>(new Map());
+  const missingTableNotified = useRef(false);
 
   // Load user and notes
   useEffect(() => {
@@ -111,6 +124,19 @@ export const SupabaseNotesProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
 
+    if (notesTableMissing) {
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (saved) {
+        try {
+          setNotes(JSON.parse(saved));
+        } catch {
+          setNotes([]);
+        }
+      }
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -133,7 +159,17 @@ export const SupabaseNotesProvider: React.FC<{ children: React.ReactNode }> = ({
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(loadedNotes));
     } catch (err: any) {
       console.error('Failed to fetch notes:', err);
-      setError(err.message);
+
+      if (isKeepNotesMissingTableError(err)) {
+        setNotesTableMissing(true);
+        setError('Notes table missing. Using local notes only.');
+        if (!missingTableNotified.current) {
+          toast.warning('Cloud notes table is unavailable. Using local notes only.');
+          missingTableNotified.current = true;
+        }
+      } else {
+        setError(err.message);
+      }
 
       // Fallback to localStorage
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -149,16 +185,20 @@ export const SupabaseNotesProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [notesTableMissing, userId]);
 
   // Initial fetch
   useEffect(() => {
     fetchNotes();
   }, [fetchNotes]);
 
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(notes));
+  }, [notes]);
+
   // Subscribe to realtime changes
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || notesTableMissing) return;
 
     const channel = supabase
       .channel('keep_notes_changes')
@@ -187,7 +227,7 @@ export const SupabaseNotesProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId]);
+  }, [notesTableMissing, userId]);
 
   // Add a new note
   const addNote = useCallback(async (): Promise<LumaNote> => {
@@ -209,6 +249,11 @@ export const SupabaseNotesProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Optimistic update
     setNotes((prev) => [newNote, ...prev]);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([newNote, ...notes]));
+
+    if (notesTableMissing) {
+      return newNote;
+    }
 
     try {
       const { error: insertError } = await supabase
@@ -227,7 +272,7 @@ export const SupabaseNotesProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     return newNote;
-  }, [userId]);
+  }, [notes, notesTableMissing, userId]);
 
   // Update a note
   const updateNote = useCallback(async (id: string, updates: Partial<LumaNote>): Promise<void> => {
@@ -241,6 +286,10 @@ export const SupabaseNotesProvider: React.FC<{ children: React.ReactNode }> = ({
           : n
       )
     );
+
+    if (notesTableMissing) {
+      return;
+    }
 
     // Queue for sync
     const pending = pendingUpdates.current.get(id) || {};
@@ -267,7 +316,7 @@ export const SupabaseNotesProvider: React.FC<{ children: React.ReactNode }> = ({
         pendingUpdates.current.set(id, pendingUpdate);
       }
     }, 500);
-  }, [userId]);
+  }, [notesTableMissing, userId]);
 
   // Delete a note
   const deleteNote = useCallback(async (id: string): Promise<void> => {
@@ -275,6 +324,11 @@ export const SupabaseNotesProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Optimistic update
     setNotes((prev) => prev.filter((n) => n.id !== id));
+
+    if (notesTableMissing) {
+      toast.success('Note deleted');
+      return;
+    }
 
     try {
       const { error: deleteError } = await supabase
@@ -293,7 +347,7 @@ export const SupabaseNotesProvider: React.FC<{ children: React.ReactNode }> = ({
       // Restore from backup
       fetchNotes();
     }
-  }, [userId, fetchNotes]);
+  }, [notesTableMissing, userId, fetchNotes]);
 
   // Get a single note
   const getNote = useCallback(
