@@ -332,7 +332,10 @@ export function StoriesBar({ followingOnly = false }: StoriesBarProps) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'stories' }, fetchStories)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'story_views' }, fetchStories)
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      channel.unsubscribe();
+      void supabase.removeChannel(channel);
+    };
   }, [user, fetchStories]);
 
   const openViewer = (index: number) => {

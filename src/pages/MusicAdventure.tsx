@@ -23,6 +23,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ADVENTURE_PLACES } from '@/data/adventurePlaces';
 
 const FALLBACK_PLACE_IMAGE = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=800';
+const ADVENTURE_REMOTE_ENABLED = import.meta.env.VITE_ENABLE_ADVENTURE_REMOTE === 'true';
 
 const EXPLORE_SEARCH_FILTERS = [
   { id: 'all', label: 'All Places' },
@@ -137,6 +138,11 @@ export default function MusicAdventure() {
 
   const fetchPlaces = async () => {
     setLoading(true);
+    if (!ADVENTURE_REMOTE_ENABLED) {
+      setPlaces(ADVENTURE_PLACES.filter(p => p && p.id));
+      setLoading(false);
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from('adventure_places' as any)
@@ -159,6 +165,11 @@ export default function MusicAdventure() {
 
   const fetchTravelStories = async () => {
     setStoriesLoading(true);
+    if (!ADVENTURE_REMOTE_ENABLED) {
+      setTravelStories([]);
+      setStoriesLoading(false);
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from('travel_stories' as any)
@@ -534,6 +545,10 @@ export default function MusicAdventure() {
         }}
         onPublish={async (story) => {
           if (!user?.id) { toast.error('Sign in to publish stories'); return; }
+          if (!ADVENTURE_REMOTE_ENABLED) {
+            toast.info('Story publishing is disabled in this environment.');
+            return;
+          }
           try {
             const { error } = await supabase.from('travel_stories' as any).insert({
               user_id: user.id,

@@ -416,7 +416,10 @@ function LayoutContent({ children }: LayoutProps) {
       const { data: sender } = await supabase.from('profiles').select('name, avatar_url').eq('id', payload.new.sender_id).maybeSingle();
       showMessagePushNotification(sender?.name || 'New Message', payload.new.content || '📎 Attachment', payload.new.sender_id, sender?.avatar_url || undefined);
     }).subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      channel.unsubscribe();
+      void supabase.removeChannel(channel);
+    };
   }, [user]);
 
   // All sections including chat should show the header consistently
@@ -425,6 +428,10 @@ function LayoutContent({ children }: LayoutProps) {
   const isChatSection = false; // Always show header for consistency
 
   const handleScroll = useCallback(() => {
+    if (isMobile) {
+      setHeaderVisible(true);
+      return;
+    }
     if (ticking.current) return;
     ticking.current = true;
     window.requestAnimationFrame(() => {
@@ -451,10 +458,10 @@ function LayoutContent({ children }: LayoutProps) {
   }, [location.pathname, isMobile]);
 
   useEffect(() => {
-    // Always show header in all sections for consistent UX
+    // Always show header when switching sections.
     setHeaderVisible(true);
     lastScrollY.current = 0;
-  }, []);
+  }, [location.pathname]);
 
   useEffect(() => {
     const el = feedCenterRef.current;

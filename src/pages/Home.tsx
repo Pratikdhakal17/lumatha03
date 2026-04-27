@@ -104,6 +104,7 @@ export default function Home() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const isHomeRoute = location.pathname === '/';
 
   useRouteLoadTrace('Home', 250);
 
@@ -306,20 +307,24 @@ export default function Home() {
 
   return (
     <div className="pb-20 overflow-x-hidden">
-      <div className={cn("w-full pt-1 md:max-w-[640px] md:mx-auto transition-all duration-300", showTopElements ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0")}>
-        <StoriesBar />
-      </div>
-
-      <div className={cn("md:hidden px-0 py-1 mb-2 transition-all duration-300", showTopElements ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0")}>
-        <div className="mobile-feed-chips flex items-center gap-2 overflow-x-auto no-scrollbar">
-          {mobileFeedChips.map((chip) => {
-            const active = subFilter === chip.id;
-            return (
-              <button key={chip.id} onClick={() => setSubFilter(chip.id)} className="shrink-0 rounded-full border px-4 py-2 text-xs font-bold transition-all" style={{ borderColor: active ? 'transparent' : 'rgba(148, 163, 184, 0.1)', background: active ? chip.gradient : 'rgba(30, 41, 59, 0.5)', color: active ? '#ffffff' : '#94A3B8' }}>{chip.label}</button>
-            );
-          })}
+      {isHomeRoute && (
+        <div className={cn("w-full pt-1 md:max-w-[640px] md:mx-auto transition-all duration-300", showTopElements ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0")}>
+          <StoriesBar />
         </div>
-      </div>
+      )}
+
+      {isHomeRoute && (
+        <div className={cn("md:hidden px-0 py-1 mb-2 transition-all duration-300", showTopElements ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0")}>
+          <div className="mobile-feed-chips flex items-center gap-2 overflow-x-auto no-scrollbar">
+            {mobileFeedChips.map((chip) => {
+              const active = subFilter === chip.id;
+              return (
+                <button key={chip.id} onClick={() => setSubFilter(chip.id)} className="shrink-0 rounded-full border px-4 py-2 text-xs font-bold transition-all" style={{ borderColor: active ? 'transparent' : 'rgba(148, 163, 184, 0.1)', background: active ? chip.gradient : 'rgba(30, 41, 59, 0.5)', color: active ? '#ffffff' : '#94A3B8' }}>{chip.label}</button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="w-full md:max-w-[640px] md:mx-auto space-y-0 px-0 md:px-0">
         <FeedFilterTabs contentFilter={contentFilter} onContentFilterChange={setContentFilter} subFilter={subFilter} onSubFilterChange={(filter) => setSubFilter(filter as MobileFeedChipId)} />

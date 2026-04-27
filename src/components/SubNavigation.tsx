@@ -220,7 +220,8 @@ export function SubNavigation({ visible = true }: { visible?: boolean }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, () => fetchUnreadCount())
       .subscribe();
     return () => {
-      supabase.removeChannel(channel);
+      channel.unsubscribe();
+      void supabase.removeChannel(channel);
     };
   }, [user]);
 
