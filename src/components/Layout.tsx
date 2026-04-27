@@ -610,35 +610,30 @@ function LayoutContent({ children }: LayoutProps) {
                 <p className="text-[15px] font-black tracking-wide text-blue-600">LUMATHA</p>
               </div>
             </div>
-            {/* Center - Home AI badge or section label */}
-            <div className="flex items-center justify-center min-w-0 px-2">
-              {isFeedPage ? (
-                <button
-                  onClick={() => setAssistantOpen(true)}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 shadow-lg shadow-black/10 transition-all active:scale-95 hover:bg-white/10"
-                  aria-label="Open Lumatha AI"
-                  title="Lumatha AI"
-                >
-                  <Sparkles className="w-4 h-4 text-cyan-300" />
-                </button>
-              ) : (
-                <span className="text-[11px] md:text-[12px] uppercase tracking-[0.16em] font-black text-slate-400 text-center whitespace-nowrap">{sectionLabel}</span>
-              )}
-            </div>
-            {/* Right side - Clean Action Icons only */}
+            {/* Center - Empty (clean) */}
+            <div className="flex items-center justify-center min-w-0 px-2" />
+            {/* Right side - AI + Create + Globe only on Home */}
             <div className="flex items-center gap-2 justify-end min-w-0 justify-self-end">
               {isFeedPage ? (
                 <>
                   <button
+                    onClick={() => setAssistantOpen(true)}
+                    className="h-10 w-10 flex items-center justify-center rounded-xl transition-all active:scale-90 hover:bg-white/10"
+                    aria-label="Open Lumatha AI"
+                    title="Lumatha AI"
+                  >
+                    <Sparkles className="w-4 h-4 text-cyan-300" />
+                  </button>
+                  <button
                     onClick={() => setCreateSheetOpen(true)}
-                    className="h-11 w-11 flex items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 transition-all active:scale-90"
+                    className="h-10 w-10 flex items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 transition-all active:scale-90"
                     aria-label="Create"
                   >
                     <Plus className="w-5 h-5" strokeWidth={2.5} />
                   </button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="h-11 w-11 flex items-center justify-center rounded-2xl text-white/70 hover:text-white hover:bg-white/5 transition-all active:scale-90 border-0 outline-none focus:outline-none focus-visible:ring-0" aria-label="Feed categories">
+                      <button className="h-10 w-10 flex items-center justify-center rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-all active:scale-90 border-0 outline-none focus:outline-none focus-visible:ring-0" aria-label="Feed categories">
                         <Globe className="w-5 h-5" strokeWidth={2.5} />
                       </button>
                     </DropdownMenuTrigger>
@@ -655,9 +650,7 @@ function LayoutContent({ children }: LayoutProps) {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </>
-              ) : (
-                <span className="text-[11px] uppercase tracking-[0.14em] font-bold text-slate-400 text-right">{sectionLabel}</span>
-              )}
+              ) : null}
             </div>
           </div>
         </header>

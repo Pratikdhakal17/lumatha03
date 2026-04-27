@@ -113,10 +113,14 @@ Keep answers practical, concise, and helpful. Do not provide political, historic
     }]);
   }, [open]);
 
-  // Save to localStorage on message change
+  // Save ONLY assistant responses to localStorage (ephemeral, per-session)
+  // User questions are NOT persisted
   useEffect(() => {
     if (messages.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-50)));
+      const responsesOnly = messages.filter(m => m.role === 'assistant').slice(-20);
+      if (responsesOnly.length > 0) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(responsesOnly));
+      }
     }
   }, [messages]);
 
@@ -134,11 +138,14 @@ Keep answers practical, concise, and helpful. Do not provide political, historic
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;
+    // Show user message temporarily in UI
     const userMsg: ChatMessage = { id: Date.now(), role: 'user', content: text.trim(), time: new Date() };
     const allMessages = [...messages, userMsg];
     setMessages(allMessages);
     setInput('');
     setLoading(true);
+    // Auto-delete user message after response comes back (ephemeral)
+    // Only persist assistant responses
 
     try {
       const history = [
@@ -151,15 +158,20 @@ Keep answers practical, concise, and helpful. Do not provide political, historic
 
       if (error) throw error;
       const reply = data?.reply || 'Sorry sathi, something went wrong. Try again? 🙏';
-      setMessages(prev => [...prev, { id: Date.now() + 1, role: 'assistant', content: reply, time: new Date() }]);
+      const assistantMsg: ChatMessage = { id: Date.now() + 1, role: 'assistant', content: reply, time: new Date() };
+      
+      // Remove user question, keep only assistant response (ephemeral questions)
+      setMessages(prev => prev.filter(m => m.role === 'assistant').concat(assistantMsg));
     } catch (e) {
       console.error('Assistant error:', e);
-      setMessages(prev => [...prev, {
+      const errorMsg: ChatMessage = {
         id: Date.now() + 1,
         role: 'assistant',
         content: `Mero sathi, I am having a little trouble connecting right now. 😔\n\nCould you try sending that again or check your internet? I'm always here to help once we're back online! 🙏`,
         time: new Date(),
-      }]);
+      };
+      // Remove user question on error too
+      setMessages(prev => prev.filter(m => m.role === 'assistant').concat(errorMsg));
     } finally {
       setLoading(false);
     }
@@ -196,64 +208,41 @@ Keep answers practical, concise, and helpful. Do not provide political, historic
           borderRadius: 0,
         }}
       >
-        {/* Drag handle */}
-        <div className="flex justify-center pt-3 pb-1">
-          <div className="rounded-full" style={{ width: 40, height: 4, background: '#374151', borderRadius: 100 }} />
+        {/* Drag handle - minimal */}
+        <div className="flex justify-center pt-2 pb-0.5">
+          <div className="rounded-full" style={{ width: 30, height: 3, background: '#374151', borderRadius: 100 }} />
         </div>
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 pb-3">
-          <div className="flex items-center gap-3">
-            {/* AI Avatar */}
+        {/* Header - Minimal */}
+        <div className="flex items-center justify-between px-4 pb-2">
+          <div className="flex items-center gap-2">
+            {/* AI Avatar - minimal */}
             <div
               className="relative flex items-center justify-center rounded-full shrink-0"
               style={{
-                width: 40,
-                height: 40,
+                width: 32,
+                height: 32,
                 background: 'linear-gradient(135deg, hsl(var(--accent)), #6366F1)',
-                animation: 'lumathaAIGlow 4s ease-in-out infinite',
               }}
             >
-              <Sparkles className="w-5 h-5 text-white" />
+              <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <div>
-              <span className="text-base font-bold text-foreground block" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                Lumatha AI
-              </span>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs" style={{ color: 'hsl(var(--accent))' }}>Always here for you 💜</span>
-              </div>
-              <div className="flex items-center gap-1 mt-0.5">
-                <div className="rounded-full" style={{ width: 8, height: 8, background: '#10B981' }} />
-                <span className="text-[11px]" style={{ color: '#10B981', fontFamily: "'Inter'" }}>Online</span>
-              </div>
-              <p className="text-[11px] mt-1" style={{ color: '#94A3B8' }}>Updated for current app context</p>
-            </div>
+            <span className="text-sm font-bold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              Lumatha AI
+            </span>
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={clearChat}
-              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted/30 transition-colors"
-              title="Clear chat"
-            >
-              <Trash2 className="w-[18px] h-[18px]" style={{ color: '#94A3B8' }} />
-            </button>
-            <button
-              onClick={onClose}
-              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted/30 transition-colors"
-            >
-              <X className="w-5 h-5" style={{ color: '#94A3B8' }} />
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted/30 transition-colors"
+          >
+            <X className="w-4 h-4" style={{ color: '#94A3B8' }} />
+          </button>
         </div>
 
         {/* Chat area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 pb-4 space-y-3" style={{ scrollbarWidth: 'none' }}>
           {/* Suggestion chips — always visible at top */}
           <div className="pb-2">
-            <p className="text-[13px] mb-2" style={{ color: '#94A3B8', fontFamily: "'Inter'" }}>
-              Ask me anything 👇
-            </p>
             <div className="flex flex-wrap gap-2">
               {visibleChips.map((chip) => (
                 <button
@@ -331,12 +320,13 @@ Keep answers practical, concise, and helpful. Do not provide political, historic
                 >
                   {msg.content}
                 </div>
-                <p
-                  className={msg.role === 'user' ? 'text-right' : ''}
-                  style={{ fontSize: 10, color: '#4B5563', marginTop: 4, fontFamily: "'Inter'" }}
-                >
-                  {formatTime(msg.time)}
-                </p>
+                {msg.role === 'assistant' && (
+                  <p
+                    style={{ fontSize: 10, color: '#4B5563', marginTop: 4, fontFamily: "'Inter'" }}
+                  >
+                    {formatTime(msg.time)}
+                  </p>
+                )}
               </div>
             </div>
           ))}
