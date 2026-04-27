@@ -284,6 +284,7 @@ function LayoutContent({ children }: LayoutProps) {
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
   const feedCenterRef = useRef<HTMLDivElement>(null);
+  const previousPathRef = useRef(location.pathname);
   
   // Layout mode state for zone-based navigation
   const [layoutMode, setLayoutMode] = useState<number>(() => {
@@ -472,6 +473,39 @@ function LayoutContent({ children }: LayoutProps) {
     el.addEventListener('scroll', handleScroll, { passive: true });
     return () => el.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
+
+  useEffect(() => {
+    const prevPath = previousPathRef.current;
+    const currPath = location.pathname;
+    const leftChatSection = prevPath.startsWith('/chat') && !currPath.startsWith('/chat');
+
+    if (leftChatSection) {
+      setHeaderVisible(true);
+      lastScrollY.current = 0;
+      requestAnimationFrame(() => {
+        if (feedCenterRef.current) {
+          feedCenterRef.current.scrollTop = 0;
+        }
+      });
+    }
+
+    previousPathRef.current = currPath;
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const handleForceHeaderShow = () => {
+      setHeaderVisible(true);
+      lastScrollY.current = 0;
+      requestAnimationFrame(() => {
+        if (feedCenterRef.current) {
+          feedCenterRef.current.scrollTop = 0;
+        }
+      });
+    };
+
+    window.addEventListener('lumatha_force_header_show', handleForceHeaderShow as EventListener);
+    return () => window.removeEventListener('lumatha_force_header_show', handleForceHeaderShow as EventListener);
+  }, []);
 
   const isHomeSection = ['/', '/search', '/private', '/notifications'].includes(location.pathname) || location.pathname.startsWith('/profile/');
   const isMobileRootSection = ['/', '/search', '/private', '/notifications'].includes(location.pathname);
