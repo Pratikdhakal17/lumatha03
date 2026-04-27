@@ -589,13 +589,13 @@ function LayoutContent({ children }: LayoutProps) {
       }} unreadMessages={unreadMessages} items={currentMenuItems} hidden={false} />}
       <main ref={feedCenterRef} className="feed-center relative flex flex-col min-w-0 flex-1 h-screen overflow-y-auto scrollbar-hide">
         {/* Keep header in normal sticky flow to avoid route-switch jumps */}
-        <header className={cn("sticky top-0 z-50 w-full h-16 bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 transition-transform duration-300", headerVisible ? "translate-y-0" : "-translate-y-full")}>
-          <div className="flex items-center justify-between h-full px-4 gap-3 flex-1">
+        <header className={cn("sticky top-0 z-50 w-full h-[72px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 transition-transform duration-300", headerVisible ? "translate-y-0" : "-translate-y-full")}>
+          <div className="grid h-full grid-cols-[auto_1fr_auto] items-center gap-3 px-3 md:px-5">
             {/* Left side - menu button and Lumatha branding */}
-            <div className="flex items-center gap-1 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
               {/* Mobile: Always show hamburger menu for consistent navigation */}
               {isMobile && (
-                <button onClick={handleMobileLeadingAction} className="w-10 h-10 flex items-center justify-center rounded-xl transition-transform active:scale-90 hover:bg-white/5 -ml-2">
+                <button onClick={handleMobileLeadingAction} className="w-11 h-11 flex items-center justify-center rounded-2xl transition-transform active:scale-90 hover:bg-white/5 -ml-1">
                   <Menu className="w-6 h-6 text-blue-500" strokeWidth={2} />
                 </button>
               )}
@@ -604,24 +604,35 @@ function LayoutContent({ children }: LayoutProps) {
                 <p className="text-lg font-black tracking-wide text-blue-600">LUMATHA</p>
               </div>
               {/* Lumatha Navy text for mobile - shifted to proper left corner */}
-              <div className="flex lg:hidden items-center -ml-2">
-                <p className="text-base font-black tracking-wide text-blue-600">LUMATHA</p>
+              <div className="flex lg:hidden items-center -ml-1">
+                <p className="text-[15px] font-black tracking-wide text-blue-600">LUMATHA</p>
               </div>
             </div>
+            {/* Center - Home AI badge or section label */}
+            <div className="flex items-center justify-center min-w-0 px-2">
+              {isFeedPage ? (
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 shadow-lg shadow-black/10">
+                  <Sparkles className="w-4 h-4 text-cyan-300" />
+                  <span className="text-[11px] md:text-[12px] font-black uppercase tracking-[0.2em] text-white/90 whitespace-nowrap">Lumatha AI</span>
+                </div>
+              ) : (
+                <span className="text-[11px] md:text-[12px] uppercase tracking-[0.16em] font-black text-slate-400 text-center whitespace-nowrap">{sectionLabel}</span>
+              )}
+            </div>
             {/* Right side - Clean Action Icons only */}
-            <div className="flex items-center gap-2 justify-end min-w-0 ml-auto">
+            <div className="flex items-center gap-2 justify-end min-w-0 justify-self-end">
               {isFeedPage ? (
                 <>
                   <button
                     onClick={() => setCreateSheetOpen(true)}
-                    className="h-10 w-10 flex items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 transition-all active:scale-90"
+                    className="h-11 w-11 flex items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 transition-all active:scale-90"
                     aria-label="Create"
                   >
                     <Plus className="w-5 h-5" strokeWidth={2.5} />
                   </button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="w-10 h-10 flex items-center justify-center rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-all active:scale-90 border-0 outline-none focus:outline-none focus-visible:ring-0" aria-label="Feed categories">
+                      <button className="h-11 w-11 flex items-center justify-center rounded-2xl text-white/70 hover:text-white hover:bg-white/5 transition-all active:scale-90 border-0 outline-none focus:outline-none focus-visible:ring-0" aria-label="Feed categories">
                         <Globe className="w-5 h-5" strokeWidth={2.5} />
                       </button>
                     </DropdownMenuTrigger>
@@ -655,8 +666,8 @@ function LayoutContent({ children }: LayoutProps) {
           {children}
         </div>
         
-        {/* Bottom navigation - always visible on mobile for stability */}
-        {isMobile && <SubNavigation visible={true} />}
+        {/* Bottom navigation - Home only so other sections stay clean */}
+        {isMobile && location.pathname === '/' && <SubNavigation visible={true} />}
       </main>
       <CreatePostSheet open={createSheetOpen} onOpenChange={setCreateSheetOpen} />
     </div>
