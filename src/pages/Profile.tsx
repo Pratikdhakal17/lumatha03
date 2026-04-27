@@ -430,7 +430,8 @@ export default function Profile() {
     { id: 'info', label: 'Info' },
     { id: 'marketplace', label: 'Marketplace' },
   ], []);
-  const visibleTabs = useVisibleTabContent(activeTab, profileTabs.map((tab) => tab.id));
+  const profileTabIds = useMemo(() => profileTabs.map((tab) => tab.id), [profileTabs]);
+  const visibleTabs = useVisibleTabContent(activeTab, profileTabIds);
 
   if (showSkeleton || loading || !userId) return <ProfileSkeleton />;
   if (!profile) {
