@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
-  Trophy, Target, MapPin, Plane, ChevronUp, ChevronDown,
+  Target, MapPin, Plane, ChevronUp, ChevronDown,
   Search, Globe, Heart, MessageCircle, Bookmark, Plus,
   UserCircle2, Compass, Map as MapIcon, Share2, MoreVertical,
   Flag, Filter, X, Edit3, Trash2, Lock, Sparkles, Users,
@@ -15,7 +15,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { AdventureRanks } from '@/components/adventure/AdventureRanks';
 import { PlaceDetailSheet } from '@/components/adventure/PlaceDetailSheet';
 import { StoryCreationSheet } from '@/components/adventure/StoryCreationSheet';
 import { StoryReader } from '@/components/adventure/StoryReader';
@@ -110,7 +109,7 @@ interface CustomQuest {
 
 export default function MusicAdventureFixed() {
   const { user, profile } = useAuth();
-  const [activeTab, setActiveTab] = useState<'quests' | 'explore' | 'stories' | 'ranking'>('quests');
+  const [activeTab, setActiveTab] = useState<'quests' | 'explore' | 'stories'>('quests');
   const [expandedFilter, setExpandedFilter] = useState<'difficulty' | 'category' | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   
@@ -515,7 +514,6 @@ export default function MusicAdventureFixed() {
       { id: 'quests', icon: Target, label: 'Quests', color: 'text-primary' },
       { id: 'explore', icon: Compass, label: 'Explore', color: 'text-sky-400' },
       { id: 'stories', icon: MapIcon, label: 'Stories', color: 'text-violet-400' },
-      { id: 'ranking', icon: Trophy, label: 'Ranking', color: 'text-yellow-400' },
     ];
     return tabs.find(t => t.id === activeTab) || tabs[0];
   };
@@ -536,7 +534,6 @@ export default function MusicAdventureFixed() {
           { id: 'quests', icon: Target, label: 'Quests' },
           { id: 'explore', icon: Compass, label: 'Explore' },
           { id: 'stories', icon: MapIcon, label: 'Stories' },
-          { id: 'ranking', icon: Trophy, label: 'Ranking' },
         ].map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -1403,19 +1400,6 @@ export default function MusicAdventureFixed() {
               {activeTab === 'explore' && <ExploreSection />}
 
               {activeTab === 'stories' && <StoriesSection />}
-
-              {activeTab === 'ranking' && (
-                <div className="w-full px-0 md:px-3 pt-3">
-                  <ErrorBoundary fallback={<div className="p-8 text-center text-slate-400">Failed to load ranks. Please refresh.</div>}>
-                    <AdventureRanks
-                      userPoints={userPoints}
-                      challengeCount={totalChallengesDone}
-                      placesCount={visitedPlaceIds.size}
-                      storiesCount={travelStories.filter(s => s?.user_id === user?.id).length}
-                    />
-                  </ErrorBoundary>
-                </div>
-              )}
             </motion.div>
           </AnimatePresence>
         </div>

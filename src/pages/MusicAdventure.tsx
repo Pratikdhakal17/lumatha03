@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
-  Trophy, Target, MapPin, Plane,
+  Target, MapPin, Plane,
   Search, Globe, Heart, MessageCircle, Bookmark, Plus,
   UserCircle2, Compass, Map as MapIcon, Share2,
   Flag,
@@ -14,7 +14,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { AdventureRanks } from '@/components/adventure/AdventureRanks';
 import { AdventureQuests } from '@/components/adventure/AdventureQuests';
 import { PlaceDetailSheet } from '@/components/adventure/PlaceDetailSheet';
 import { StoryCreationSheet } from '@/components/adventure/StoryCreationSheet';
@@ -52,7 +51,7 @@ function saveLocalInt(key: string, n: number) {
 
 export default function MusicAdventure() {
   const { user, profile } = useAuth();
-  const [activeTab, setActiveTab] = useState<'quests' | 'explore' | 'stories' | 'ranking'>('quests');
+  const [activeTab, setActiveTab] = useState<'quests' | 'explore' | 'stories'>('quests');
   const [isPending, startTabTransition] = useTransition();
 
   const [places, setPlaces] = useState<any[]>([]);
@@ -281,12 +280,7 @@ export default function MusicAdventure() {
     <div className="min-h-screen bg-[#0a0f1e] text-slate-200">
       <div className="sticky top-0 z-30 w-full bg-[#0a0f1e]/80 backdrop-blur-xl border-b border-white/5">
         <div className="flex items-center justify-around h-14 max-w-md mx-auto">
-          {[
-            { id: 'quests', icon: Target, label: 'Quests' },
-            { id: 'explore', icon: Compass, label: 'Explore' },
-            { id: 'stories', icon: MapIcon, label: 'Stories' },
-            { id: 'ranking', icon: Trophy, label: 'Ranking' },
-          ].map(tab => (
+          {[            { id: 'quests', icon: Target, label: 'Quests' },            { id: 'explore', icon: Compass, label: 'Explore' },            { id: 'stories', icon: MapIcon, label: 'Stories' },          ].map(tab => (
             <button
               key={tab.id}
               onClick={() => startTabTransition(() => setActiveTab(tab.id as any))}
@@ -503,18 +497,6 @@ export default function MusicAdventure() {
           </div>
         )}
 
-        {activeTab === 'ranking' && (
-          <div className="w-full">
-            <ErrorBoundary fallback={<div className="p-8 text-center text-slate-400">Failed to load ranks. Please refresh.</div>}>
-              <AdventureRanks
-                userPoints={userPoints}
-                challengeCount={totalChallengesDone}
-                placesCount={visitedPlaceIds.size}
-                storiesCount={travelStories.filter(s => s?.user_id === user?.id).length}
-              />
-            </ErrorBoundary>
-          </div>
-        )}
 
           </motion.div>
         </AnimatePresence>
