@@ -161,22 +161,30 @@ export default function Home() {
     localStorage.setItem('lumatha_mobile_feed_chip', subFilter);
   }, [subFilter]);
 
-  // Scroll handler - hide/show stories and chips
+  // Scroll handler - hide/show stories and chips based on app scroll container
   useEffect(() => {
+    const scroller = document.querySelector('.feed-center') as HTMLElement | null;
+    if (!scroller) return;
+
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
+      const currentScrollY = scroller.scrollTop;
       if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
-        // Scrolling down - hide
         setShowTopElements(false);
       } else {
-        // Scrolling up - show
         setShowTopElements(true);
       }
       lastScrollY.current = currentScrollY;
     };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    scroller.addEventListener('scroll', handleScroll, { passive: true });
+    return () => scroller.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Route switch stability: always reset top strip when entering Home again.
+  useEffect(() => {
+    setShowTopElements(true);
+    lastScrollY.current = 0;
+  }, [location.pathname]);
 
   useEffect(() => {
     localStorage.setItem('lumatha_feed_category', feedCategory);

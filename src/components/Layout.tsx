@@ -581,11 +581,8 @@ function LayoutContent({ children }: LayoutProps) {
         navigate(url);
       }} unreadMessages={unreadMessages} items={currentMenuItems} hidden={false} />}
       <main ref={feedCenterRef} className="feed-center relative flex flex-col min-w-0 flex-1 h-screen overflow-y-auto scrollbar-hide">
-        {/* Mobile-optimized fixed header to prevent layout shifts */}
-        <header className={cn("fixed top-0 left-0 right-0 z-50 w-full h-16 bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 transition-transform duration-300 lg:sticky", 
-          isMobile && "flex items-center",
-          headerVisible ? "translate-y-0" : (isMobile ? "translate-y-0" : "-translate-y-full")
-        )}>
+        {/* Keep header in normal sticky flow to avoid route-switch jumps */}
+        <header className={cn("sticky top-0 z-50 w-full h-16 bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 transition-transform duration-300", headerVisible ? "translate-y-0" : "-translate-y-full")}>
           <div className="flex items-center justify-between h-full px-4 gap-3 flex-1">
             {/* Left side - menu button and Lumatha branding */}
             <div className="flex items-center gap-1 min-w-0">
@@ -641,17 +638,17 @@ function LayoutContent({ children }: LayoutProps) {
           </div>
         </header>
         
-        {/* Content area with proper spacing for fixed header on mobile */}
+        {/* Content area */}
         <div className={cn(
           "flex-1 transition-all duration-500",
-          isMobile ? "px-0 py-0 mt-16" : "p-4 mt-0",
+          isMobile ? "px-0 py-0" : "p-4",
           isMobile && isHomeSection && "pb-24",
           !isMobile && isAdventureGrid && "max-w-7xl mx-auto w-full"
         )}>
           {children}
         </div>
         
-        {/* Bottom navigation - always visible on mobile for stability, positioned fixed */}
+        {/* Bottom navigation - always visible on mobile for stability */}
         {isMobile && <SubNavigation visible={true} />}
       </main>
       <CreatePostSheet open={createSheetOpen} onOpenChange={setCreateSheetOpen} />
