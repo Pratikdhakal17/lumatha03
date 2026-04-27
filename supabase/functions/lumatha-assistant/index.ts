@@ -40,15 +40,10 @@ LUMATHA VALUES:
 
 WHAT YOU CAN HELP WITH:
 1. Explain any Lumatha feature in detail
-2. Help write bios, stories, posts
-3. Motivate and encourage users
-4. Study help and advice
-5. Mental health support (with care and warmth)
-6. Career and life guidance
-7. Fun facts about Nepal
-8. Challenge suggestions
-9. Travel story ideas
-10. General life questions
+2. Help with Lumatha posts, stories, messages, notes, docs, marketplace, adventure, and privacy
+3. Explain points, XP, streaks, and app usage
+4. Help write bios or captions for Lumatha if the user asks
+5. Suggest Lumatha challenges, features, and safe app usage
 
 RULES:
 - Never share personal data
@@ -56,36 +51,82 @@ RULES:
 - Keep responses SHORT (3-5 sentences) unless detail is specifically needed
 - Always end with something helpful or encouraging
 - Never be negative or dismissive
-- If asked about other apps: be neutral, don't trash them`;
+- If asked about other apps or unrelated topics: politely refuse and redirect to Lumatha
+- If asked who founded or built Lumatha, answer exactly: Pratik Dhakal`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const { messages, username, location } = await req.json();
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    if (!GEMINI_API_KEY && !LOVABLE_API_KEY) throw new Error("GEMINI_API_KEY or LOVABLE_API_KEY is not configured");
+
+    const latestUserMessage = [...(messages || [])].reverse().find((message: any) => message?.role === 'user')?.content || '';
+    const normalized = String(latestUserMessage).toLowerCase();
+    const founderQuery = /(founder|ceo|built by|built|created by|who made|who created)/i.test(latestUserMessage);
+    const lumathaKeywords = [
+      'lumatha', 'home', 'feed', 'stories', 'message', 'messages', 'random connect', 'private', 'privacy shield',
+      'adventure', 'learn', 'notes', 'docs', 'marketplace', 'funpun', 'profile', 'settings', 'xp', 'points', 'streak', 'story'
+    ];
+    const isLumathaTopic = founderQuery || lumathaKeywords.some((keyword) => normalized.includes(keyword));
+
+    if (!isLumathaTopic) {
+      return new Response(JSON.stringify({ reply: 'I can only help with Lumatha features and app usage right now. Ask me about Home, Messages, Notes, Adventure, Marketplace, Privacy, or points.' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (founderQuery) {
+      return new Response(JSON.stringify({ reply: 'Pratik Dhakal' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     let personalizedPrompt = SYSTEM_PROMPT;
     if (username) personalizedPrompt += `\n\nCurrent user name: ${username}`;
     if (location) personalizedPrompt += `\nCurrent user location: ${location}`;
+    personalizedPrompt += `\n\nImportant: stay strictly within Lumatha topics only.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: personalizedPrompt },
-          ...messages.map((m: any) => ({ role: m.role, content: m.content })),
-        ],
-        max_tokens: 500,
-        temperature: 0.8,
-      }),
-    });
+    let response: Response | null = null;
+
+    if (GEMINI_API_KEY) {
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: personalizedPrompt }] },
+          contents: messages.map((m: any) => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: String(m.content || '') }],
+          })),
+          generationConfig: {
+            maxOutputTokens: 500,
+            temperature: 0.6,
+          },
+        }),
+      });
+    } else if (LOVABLE_API_KEY) {
+      response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: personalizedPrompt },
+            ...messages.map((m: any) => ({ role: m.role, content: m.content })),
+          ],
+          max_tokens: 500,
+          temperature: 0.6,
+        }),
+      });
+    }
+
+    if (!response) throw new Error("Unable to initialize Gemini request");
 
     if (!response.ok) {
       if (response.status === 429) {
@@ -104,7 +145,9 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content || "I'm not sure how to answer that, sathi. Try asking differently? 🙏";
+    const reply = GEMINI_API_KEY
+      ? (data.candidates?.[0]?.content?.parts || []).map((part: any) => part?.text || '').join('').trim() || "I'm not sure how to answer that, sathi. Try asking differently? 🙏"
+      : data.choices?.[0]?.message?.content || "I'm not sure how to answer that, sathi. Try asking differently? 🙏";
 
     return new Response(JSON.stringify({ reply }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

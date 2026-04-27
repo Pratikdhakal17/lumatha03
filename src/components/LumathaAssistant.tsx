@@ -11,21 +11,18 @@ interface ChatMessage {
 }
 
 const ALL_CHIPS = [
-  'How do I use Random Connect? 🤝',
-  'What is Privacy Shield? 🛡️',
-  'Help me write a bio ✍️',
-  'Motivate me today 💪',
-  'How do I earn more points? 🏆',
   'What can I do on Lumatha? 🌟',
-  'Help me start a travel story ✈️',
-  'How do I stay safe online? 🔒',
-  'Suggest a challenge for me 🎯',
+  'How do I use Messages? 💬',
+  'How do I post in Home? 🏠',
+  'How do I use Notes? 📝',
+  'How do I use Adventure? 🧭',
+  'How do I use Marketplace? 🛍️',
+  'How do I use Random Connect? 🤝',
+  'How do I earn points? 🏆',
+  'How do I change privacy settings? 🔒',
   'What is view once message? 👁️',
+  'How do I create a story? ✨',
   'How do I find friends? 👥',
-  'Tell me something interesting 🧠',
-  'I am feeling sad today 💙',
-  'Help me with my studies 📚',
-  'What is Anonymous mode? 👻',
 ];
 
 const STORAGE_KEY = 'lumatha_ai_chat_history';
@@ -87,7 +84,15 @@ export function LumathaAssistant({ open, onClose }: { open: boolean; onClose: ()
   const username = profile?.name || profile?.first_name || 'Friend';
   const location = profile?.country || profile?.detected_city || '';
   const currentDate = new Date().toISOString().slice(0, 10);
-  const assistantSystemPrompt = `You are Lumatha AI for the date ${currentDate}. Use the most current information available from the app context and clearly state when live news or rapidly changing facts cannot be verified. Keep answers practical, concise, and helpful.`;
+  const assistantSystemPrompt = `You are Lumatha AI for the date ${currentDate}.
+
+You must ONLY answer questions about Lumatha and how to use it. Allowed topics include Home, Stories, Messages, Random Connect, Private, Privacy Shield, Adventure, Learn, Notes, Docs, Marketplace, FunPun, Profile, Settings, XP, points, and app features.
+
+If the user asks about anything outside Lumatha, refuse politely and say you can only help with Lumatha features and usage.
+
+If the user asks who founded or built Lumatha, answer exactly: "Pratik Dhakal".
+
+Keep answers practical, concise, and helpful. Do not provide political, historical, or general current-events answers.`;
 
   // Randomised chip order, stable per mount
   const shuffledChips = useMemo(() => shuffleArray(ALL_CHIPS), []);
@@ -110,7 +115,7 @@ export function LumathaAssistant({ open, onClose }: { open: boolean; onClose: ()
     setMessages([{
       id: Date.now(),
       role: 'assistant',
-      content: `Namaste ${username}! 🙏\n\nI am your Lumatha AI companion. I am ready to help with app features, writing, motivation, study help, and other practical questions. If something depends on fresh news or rapidly changing facts, I will say so clearly.\n\nWhat would you like to know?`,
+      content: `Namaste ${username}! 🙏\n\nI am your Lumatha AI companion. I can only help with Lumatha features and app usage, and I can answer Lumatha founder questions too. If you ask something outside Lumatha, I’ll gently redirect you back here.\n\nWhat do you want to explore in Lumatha?`,
       time: new Date(),
     }]);
   }, [open]);

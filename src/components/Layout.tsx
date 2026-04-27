@@ -18,6 +18,7 @@ import { SidebarProvider, useSidebar } from '@/components/ui/sidebar';
 import { SubNavigation } from '@/components/SubNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
+import { LumathaAssistant } from '@/components/LumathaAssistant';
 const lumathaLogo = '/lumatha-logo-new.png';
 import { type LucideIcon, LayoutGrid } from 'lucide-react';
 import { requestPushPermission, showMessagePushNotification, showPushNotification } from '@/lib/pushNotifications';
@@ -278,6 +279,7 @@ function LayoutContent({ children }: LayoutProps) {
   const isMobile = useIsMobile();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [managedSectionOrder, setManagedSectionOrder] = useState<ManagedSectionKey[]>([...MANAGED_SECTIONS]);
   const [headerVisible, setHeaderVisible] = useState(true);
@@ -611,10 +613,14 @@ function LayoutContent({ children }: LayoutProps) {
             {/* Center - Home AI badge or section label */}
             <div className="flex items-center justify-center min-w-0 px-2">
               {isFeedPage ? (
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 shadow-lg shadow-black/10">
+                <button
+                  onClick={() => setAssistantOpen(true)}
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 shadow-lg shadow-black/10 transition-all active:scale-95 hover:bg-white/10"
+                  aria-label="Open Lumatha AI"
+                  title="Lumatha AI"
+                >
                   <Sparkles className="w-4 h-4 text-cyan-300" />
-                  <span className="text-[11px] md:text-[12px] font-black uppercase tracking-[0.2em] text-white/90 whitespace-nowrap">Lumatha AI</span>
-                </div>
+                </button>
               ) : (
                 <span className="text-[11px] md:text-[12px] uppercase tracking-[0.16em] font-black text-slate-400 text-center whitespace-nowrap">{sectionLabel}</span>
               )}
@@ -670,6 +676,7 @@ function LayoutContent({ children }: LayoutProps) {
         {isMobile && location.pathname === '/' && <SubNavigation visible={true} />}
       </main>
       <CreatePostSheet open={createSheetOpen} onOpenChange={setCreateSheetOpen} />
+      <LumathaAssistant open={assistantOpen} onClose={() => setAssistantOpen(false)} />
     </div>
   );
 }
