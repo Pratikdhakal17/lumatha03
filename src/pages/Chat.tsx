@@ -306,6 +306,7 @@ export default function Chat() {
   const messageMenuOpenedAtRef = useRef<number>(0);
   const conversationMenuOpenedAtRef = useRef<number>(0);
   const suppressConversationRowClickUntilRef = useRef<number>(0);
+  const wasInActiveChatRef = useRef(false);
 
   const currentTheme = React.useMemo(() => THEME_MAP[chatTheme] || THEME_MAP.default, [chatTheme]);
 
@@ -723,10 +724,20 @@ export default function Chat() {
 
   useEffect(() => {
     if (currentChatUser || !conversationsContainerRef.current) return;
+
+    const exitedActiveChat = wasInActiveChatRef.current;
+    wasInActiveChatRef.current = false;
+
     setTimeout(() => {
-      conversationsContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      conversationsContainerRef.current?.scrollIntoView({ behavior: exitedActiveChat ? 'auto' : 'smooth', block: 'start' });
     }, 100);
   }, [currentChatUser, chatTab]);
+
+  useEffect(() => {
+    if (currentChatUser) {
+      wasInActiveChatRef.current = true;
+    }
+  }, [currentChatUser]);
 
   useEffect(() => {
     if (currentChatUser) return;
@@ -1279,7 +1290,14 @@ export default function Chat() {
     setEditingMsg(null);
     setViewOnceMode(false);
     navigate('/chat', { replace: true });
-    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+    requestAnimationFrame(() => {
+      const appScrollContainer = document.querySelector('.feed-center');
+      if (appScrollContainer instanceof HTMLElement) {
+        appScrollContainer.scrollTo({ top: 0, behavior: 'auto' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      }
+    });
   };
 
   // View Once: mark as viewed

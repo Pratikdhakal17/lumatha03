@@ -474,6 +474,7 @@ function LayoutContent({ children }: LayoutProps) {
   }, [handleScroll]);
 
   const isHomeSection = ['/', '/search', '/private', '/notifications'].includes(location.pathname) || location.pathname.startsWith('/profile/');
+  const isMobileRootSection = ['/', '/search', '/private', '/notifications'].includes(location.pathname);
   const isAdventureGrid = location.pathname === '/music-adventure';
   const isFeedPage = location.pathname === '/';
   const educationTab = new URLSearchParams(location.search).get('tab')?.toLowerCase();
@@ -491,6 +492,14 @@ function LayoutContent({ children }: LayoutProps) {
       return;
     }
     navigate('/');
+  };
+
+  const handleMobileLeadingAction = () => {
+    if (isMobileRootSection) {
+      setMobileSidebarOpen(true);
+      return;
+    }
+    handleBack();
   };
   const sectionLabel = location.pathname === '/search'
     ? 'Search'
@@ -585,10 +594,14 @@ function LayoutContent({ children }: LayoutProps) {
                   <ArrowLeft className="w-6 h-6 text-blue-500" strokeWidth={2} />
                 </button>
               )}
-              {/* Mobile: Sidebar menu button in all sections */}
+              {/* Mobile: Menu on root sections, back on subsections */}
               {isMobile && (
-                <button onClick={() => setMobileSidebarOpen(true)} className="w-10 h-10 flex items-center justify-center rounded-xl transition-transform active:scale-90 hover:bg-white/5 -ml-2">
-                  <Menu className="w-6 h-6 text-blue-500" strokeWidth={2} />
+                <button onClick={handleMobileLeadingAction} className="w-10 h-10 flex items-center justify-center rounded-xl transition-transform active:scale-90 hover:bg-white/5 -ml-2">
+                  {isMobileRootSection ? (
+                    <Menu className="w-6 h-6 text-blue-500" strokeWidth={2} />
+                  ) : (
+                    <ArrowLeft className="w-6 h-6 text-blue-500" strokeWidth={2} />
+                  )}
                 </button>
               )}
               {/* Lumatha Navy text for desktop - shifted left */}
