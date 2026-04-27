@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { CheckSquare, StickyNote, GraduationCap, BarChart3 } from 'lucide-react';
 import { TodoModule } from '@/components/productivity/TodoModule';
 import { NotesModule } from '@/components/productivity/NotesModule';
@@ -19,6 +20,7 @@ const TABS = [
 
 export default function Education() {
   const { user } = useAuth();
+  const location = useLocation();
   const tabStorageKey = user?.id ? `${STORAGE_KEY}:${user.id}` : STORAGE_KEY;
 
   const safeParse = <T,>(raw: string | null, fallback: T): T => {
@@ -30,7 +32,18 @@ export default function Education() {
     }
   };
 
+  const getModuleFromQuery = (search: string): string | null => {
+    const queryTab = new URLSearchParams(search).get('tab')?.toLowerCase();
+    if (queryTab === 'todo' || queryTab === 'todos') return 'todos';
+    if (queryTab === 'notes') return 'notes';
+    if (queryTab === 'docs' || queryTab === 'education') return 'education';
+    if (queryTab === 'stats' || queryTab === 'analytics') return 'analytics';
+    return null;
+  };
+
   const [activeModule, setActiveModule] = useState(() => {
+    const fromQuery = getModuleFromQuery(location.search);
+    if (fromQuery) return fromQuery;
     const saved = localStorage.getItem(tabStorageKey) || localStorage.getItem(STORAGE_KEY);
     return saved && ['todos', 'notes', 'education', 'analytics'].includes(saved) ? saved : 'todos';
   });
@@ -45,6 +58,15 @@ export default function Education() {
   useEffect(() => {
     localStorage.setItem(tabStorageKey, activeModule);
   }, [activeModule, tabStorageKey]);
+
+  useEffect(() => {
+    const fromQuery = getModuleFromQuery(location.search);
+    if (fromQuery) {
+      setActiveModule(fromQuery);
+      return;
+    }
+    setActiveModule('todos');
+  }, [location.pathname, location.search]);
 
   // Calculate learn stats from localStorage data
   useEffect(() => {

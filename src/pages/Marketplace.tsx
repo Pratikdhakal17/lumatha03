@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Search, MapPin, ChevronRight, MessageCircle, X, ArrowLeft,
   ShoppingBag, Briefcase, Home as HomeIcon, Loader2, Sparkles, 
   Share2, Bookmark, Heart, Phone, ChevronLeft, AlertTriangle, Star, ImagePlus, Check, MoreVertical, Edit3, Trash2, Clock, ChevronDown, SearchX } from 'lucide-react';
@@ -85,35 +85,7 @@ export default function Marketplace() {
 
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState<string | null>(null);
-  const [headerVisible, setHeaderVisible] = useState(true);
-  const lastScrollYRef = useRef(0);
-
   useRouteLoadTrace('Marketplace');
-
-  // Scroll-based header hide/show - entire header (profile search + categories) hides together.
-  // Listen on the app's feed scroll container rather than window to avoid sticky/header desync.
-  useEffect(() => {
-    const scrollContainer = document.querySelector('.feed-center') as HTMLElement | null;
-    const target: HTMLElement | Window = scrollContainer || window;
-
-    const handleScroll = () => {
-      const currentScrollY = scrollContainer ? scrollContainer.scrollTop : window.scrollY;
-      const previousScrollY = lastScrollYRef.current;
-
-      if (currentScrollY > previousScrollY && currentScrollY > 80) {
-        // Scrolling down - hide entire header
-        setHeaderVisible(false);
-      } else if (currentScrollY < previousScrollY || currentScrollY <= 24) {
-        // Scrolling up - show entire header
-        setHeaderVisible(true);
-      }
-
-      lastScrollYRef.current = currentScrollY;
-    };
-
-    target.addEventListener('scroll', handleScroll, { passive: true });
-    return () => target.removeEventListener('scroll', handleScroll as EventListener);
-  }, []);
 
   const fetchListings = useCallback(async () => {
     setLoading(true);
@@ -392,10 +364,7 @@ export default function Marketplace() {
   return (
     <div className="min-h-screen pb-24 bg-background">
       {/* Premium Top Bar */}
-      <div className={cn(
-        "sticky top-0 z-50 px-3 md:px-4 py-4 bg-background/80 backdrop-blur-xl border-b border-border/40 transition-transform duration-300",
-        !headerVisible && "-translate-y-full"
-      )}>
+      <div className="px-3 md:px-4 py-4 bg-background/80 backdrop-blur-xl border-b border-border/40">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(`/marketplace/profile/${user?.id}`)}

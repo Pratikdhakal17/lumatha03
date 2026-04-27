@@ -2,17 +2,28 @@ import { useEffect, useState } from 'react';
 import logo from '@/assets/lumatha-logo.png';
 
 export function SplashScreen() {
-  const [show, setShow] = useState(true);
+  const [show, setShow] = useState(() => {
+    try {
+      return sessionStorage.getItem('lumatha_splash_seen') !== '1';
+    } catch {
+      return true;
+    }
+  });
   const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
-    const fadeTimer = setTimeout(() => setFadeOut(true), 1300);
-    const hideTimer = setTimeout(() => setShow(false), 1750);
+    if (!show) return;
+    try {
+      sessionStorage.setItem('lumatha_splash_seen', '1');
+    } catch {}
+
+    const fadeTimer = setTimeout(() => setFadeOut(true), 700);
+    const hideTimer = setTimeout(() => setShow(false), 1000);
     return () => {
       clearTimeout(fadeTimer);
       clearTimeout(hideTimer);
     };
-  }, []);
+  }, [show]);
 
   if (!show) return null;
 

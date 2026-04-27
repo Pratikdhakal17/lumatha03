@@ -492,33 +492,11 @@ function LayoutContent({ children }: LayoutProps) {
     previousPathRef.current = currPath;
   }, [location.pathname]);
 
-  useEffect(() => {
-    const handleForceHeaderShow = () => {
-      setHeaderVisible(true);
-      lastScrollY.current = 0;
-      requestAnimationFrame(() => {
-        if (feedCenterRef.current) {
-          feedCenterRef.current.scrollTop = 0;
-        }
-      });
-    };
-
-    window.addEventListener('lumatha_force_header_show', handleForceHeaderShow as EventListener);
-    return () => window.removeEventListener('lumatha_force_header_show', handleForceHeaderShow as EventListener);
-  }, []);
-
   const isHomeSection = ['/', '/search', '/private', '/notifications'].includes(location.pathname) || location.pathname.startsWith('/profile/');
   const isMobileRootSection = ['/', '/search', '/private', '/notifications'].includes(location.pathname);
   const isAdventureGrid = location.pathname === '/music-adventure';
   const isFeedPage = location.pathname === '/';
   const educationTab = new URLSearchParams(location.search).get('tab')?.toLowerCase();
-
-  // Check if we're in a subsection that needs a back button (desktop)
-  const isInSubsection = () => {
-    const path = location.pathname;
-    const subsectionPaths = ['/profile', '/notifications', '/settings', '/chat', '/search', '/private', '/create', '/diary', '/saved', '/liked', '/marketplace', '/education', '/music-adventure', '/random-connect', '/funpun'];
-    return subsectionPaths.some(subPath => path.startsWith(subPath)) && path !== '/';
-  };
 
   const handleBack = () => {
     if (window.history.length > 1) {
@@ -617,17 +595,12 @@ function LayoutContent({ children }: LayoutProps) {
         navigate(url);
       }} unreadMessages={unreadMessages} items={currentMenuItems} hidden={false} />}
       <main ref={feedCenterRef} className="feed-center relative flex flex-col min-w-0 flex-1 h-screen overflow-y-auto scrollbar-hide">
-        {!isInActiveChat && (
+        {!isChatSection && (
         <header className={cn("sticky top-0 z-50 w-full h-16 bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 transition-transform duration-300", headerVisible ? "translate-y-0" : "-translate-y-full")}>
           <div className="flex items-center justify-between h-full px-4 gap-3">
             {/* Left side - menu button and Lumatha branding */}
             <div className="flex items-center gap-1 min-w-0">
-              {/* Desktop: Back button in subsections, nothing on home */}
-              {!isMobile && isInSubsection() && (
-                <button onClick={handleBack} className="w-10 h-10 flex items-center justify-center rounded-xl transition-transform active:scale-90 hover:bg-white/5">
-                  <ArrowLeft className="w-6 h-6 text-blue-500" strokeWidth={2} />
-                </button>
-              )}
+              {/* Desktop: no leading button, sidebar remains persistent */}
               {/* Mobile: Menu on root sections, back on subsections */}
               {isMobile && (
                 <button onClick={handleMobileLeadingAction} className="w-10 h-10 flex items-center justify-center rounded-xl transition-transform active:scale-90 hover:bg-white/5 -ml-2">

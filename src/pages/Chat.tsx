@@ -1290,7 +1290,6 @@ export default function Chat() {
     setEditingMsg(null);
     setViewOnceMode(false);
     navigate('/chat', { replace: true });
-    window.dispatchEvent(new CustomEvent('lumatha_force_header_show'));
     requestAnimationFrame(() => {
       const appScrollContainer = document.querySelector('.feed-center');
       if (appScrollContainer instanceof HTMLElement) {

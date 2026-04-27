@@ -206,7 +206,7 @@ export default function Profile() {
       // CRITICAL PATH: Load only essential data first for fast initial render
       const [profileResult, postsResult, friendsCountResult, followersResult, followingResult] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).single(),
-        supabase.from('posts').select('*, profiles(*)').eq('user_id', userId).eq('visibility', 'public').neq('category', 'ghost').order('created_at', { ascending: false }).limit(20),
+        supabase.from('posts').select('*, profiles(*)').eq('user_id', userId).eq('visibility', 'public').neq('category', 'ghost').order('created_at', { ascending: false }).limit(12),
         supabase.from('friend_requests').select('*', { count: 'exact', head: true }).or(`sender_id.eq.${userId},receiver_id.eq.${userId}`).eq('status', 'accepted'),
         supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', userId),
         supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', userId),
