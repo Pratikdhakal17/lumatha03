@@ -187,6 +187,10 @@ Keep answers practical, concise, and helpful. Do not provide political, historic
     }]);
   };
 
+  const handleClear = () => {
+    clearChat();
+  };
+
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
@@ -213,7 +217,7 @@ Keep answers practical, concise, and helpful. Do not provide political, historic
           <div className="rounded-full" style={{ width: 30, height: 3, background: '#374151', borderRadius: 100 }} />
         </div>
 
-        {/* Header - Minimal */}
+        {/* Header - Minimal with Clear button */}
         <div className="flex items-center justify-between px-4 pb-2">
           <div className="flex items-center gap-2">
             {/* AI Avatar - minimal */}
@@ -231,12 +235,21 @@ Keep answers practical, concise, and helpful. Do not provide political, historic
               Lumatha AI
             </span>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted/30 transition-colors"
-          >
-            <X className="w-4 h-4" style={{ color: '#94A3B8' }} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleClear}
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted/30 transition-colors"
+              title="Clear conversation"
+            >
+              <Trash2 className="w-4 h-4" style={{ color: '#94A3B8' }} />
+            </button>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted/30 transition-colors"
+            >
+              <X className="w-4 h-4" style={{ color: '#94A3B8' }} />
+            </button>
+          </div>
         </div>
 
         {/* Chat area */}

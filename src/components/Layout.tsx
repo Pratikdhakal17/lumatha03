@@ -207,10 +207,10 @@ function MobileSidebarDrawer({ open, onClose, onNavigate, isActive, unreadMessag
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent side="left" className="w-[75vw] max-w-[240px] min-w-[220px] p-0 border-r border-white/5 bg-[#0B0D1F] flex flex-col shadow-[20px_0_60px_-15px_rgba(0,0,0,0.5)]">
-        {/* Header - LUMATHA text in Navy */}
-        <div className="p-4 border-b border-white/5 flex flex-col items-center justify-center bg-[#0B0D1F] min-h-[70px]">
-          <p className="text-xl font-black tracking-wide text-blue-600">LUMATHA</p>
-          <p className="text-[10px] text-blue-400/70 uppercase tracking-[0.16em] font-bold">Social Universe</p>
+        {/* Header - LUMATHA text aligned left */}
+        <div className="p-4 border-b border-white/5 flex flex-col items-start justify-start bg-[#0B0D1F] min-h-[70px]">
+          <p className="text-lg font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
+          <p className="text-[9px] text-blue-400/70 uppercase tracking-[0.16em] font-bold whitespace-nowrap">Social Universe</p>
         </div>
         {/* Navigation items - shifted up with less padding */}
         <div className="flex-1 overflow-y-auto py-2 px-3 space-y-1 bg-[#0B0D1F]">
@@ -241,9 +241,9 @@ function MobileSidebarDrawer({ open, onClose, onNavigate, isActive, unreadMessag
 function DesktopSidebar({ isActive, onNavigate, unreadMessages, items, hidden = false }: { isActive: (p: string) => boolean; onNavigate: (url: string) => void; unreadMessages: number; items: MenuItemConfig[]; hidden?: boolean }) {
   return (
     <div className={cn("hidden lg:flex flex-col w-[280px] h-screen sticky top-0 border-r border-white/10 bg-[#0B0D1F] transition-all duration-500", hidden ? "-ml-[280px] opacity-0 pointer-events-none" : "ml-0 opacity-100")}>
-      <div className="flex flex-col items-center justify-center h-20 px-4 border-b border-white/10 shrink-0">
-        <p className="text-lg font-black tracking-wide text-blue-600">LUMATHA</p>
-        <p className="text-[9px] text-blue-400/70 uppercase tracking-[0.14em] font-bold">Social Universe</p>
+      <div className="flex flex-col items-start justify-start h-auto px-4 py-3 border-b border-white/10 shrink-0">
+        <p className="text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
+        <p className="text-[8px] text-blue-400/70 uppercase tracking-[0.14em] font-bold whitespace-nowrap">Social Universe</p>
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto pr-2 no-scrollbar">
         {items.map((item) => {
@@ -427,9 +427,15 @@ function LayoutContent({ children }: LayoutProps) {
   // All sections including chat should show the header consistently
   const isChatListView = location.pathname === '/chat';
   const isInActiveChat = location.pathname.startsWith('/chat/') && location.pathname.length > 6;
-  const isChatSection = false; // Always show header for consistency
 
   const handleScroll = useCallback(() => {
+    // Header hide only on feed, always visible everywhere else
+    const isFeed = location.pathname === '/';
+    if (!isFeed) {
+      setHeaderVisible(true);
+      return;
+    }
+    
     if (isMobile) {
       setHeaderVisible(true);
       return;
@@ -440,8 +446,7 @@ function LayoutContent({ children }: LayoutProps) {
       const st = feedCenterRef.current?.scrollTop || 0;
       const lastY = lastScrollY.current;
       
-      // Only apply scroll hide on feed page, not on other sections
-      const isFeed = location.pathname === '/';
+      // Only apply scroll hide on feed page
       if (isFeed) {
         // Hide when scrolling down, show when scrolling up
         if (st > lastY && st > 50) {
@@ -449,9 +454,6 @@ function LayoutContent({ children }: LayoutProps) {
         } else if (st < lastY || st <= 50) {
           setHeaderVisible(true);
         }
-      } else {
-        // Always visible in all sections including chat
-        setHeaderVisible(true);
       }
       
       lastScrollY.current = st <= 0 ? 0 : st;
@@ -466,11 +468,13 @@ function LayoutContent({ children }: LayoutProps) {
   }, [location.pathname]);
 
   useEffect(() => {
+    // Only attach scroll listener on feed page
     const el = feedCenterRef.current;
-    if (!el) return;
+    const isFeed = location.pathname === '/';
+    if (!el || !isFeed) return;
     el.addEventListener('scroll', handleScroll, { passive: true });
     return () => el.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
+  }, [handleScroll, location.pathname]);
 
   useEffect(() => {
     const prevPath = previousPathRef.current;
@@ -594,56 +598,50 @@ function LayoutContent({ children }: LayoutProps) {
         <header className={cn("sticky top-0 z-50 w-full h-[72px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 transition-transform duration-300", headerVisible ? "translate-y-0" : "-translate-y-full")}>
           <div className="grid h-full grid-cols-[auto_1fr_auto] items-center gap-3 px-3 md:px-5">
             {/* Left side - menu button and Lumatha branding */}
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-1 min-w-0">
               {/* Mobile: Always show hamburger menu for consistent navigation */}
               {isMobile && (
-                <button onClick={handleMobileLeadingAction} className="w-11 h-11 flex items-center justify-center rounded-2xl transition-transform active:scale-90 hover:bg-white/5 -ml-1">
-                  <Menu className="w-6 h-6 text-blue-500" strokeWidth={2} />
+                <button onClick={handleMobileLeadingAction} className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5">
+                  <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
                 </button>
               )}
-              {/* Lumatha Navy text for desktop - shifted left */}
-              <div className="hidden lg:flex items-center -ml-1">
-                <p className="text-lg font-black tracking-wide text-blue-600">LUMATHA</p>
-              </div>
-              {/* Lumatha Navy text for mobile - shifted to proper left corner */}
-              <div className="flex lg:hidden items-center -ml-1">
-                <p className="text-[15px] font-black tracking-wide text-blue-600">LUMATHA</p>
-              </div>
+              {/* Lumatha text for both desktop and mobile */}
+              <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
             </div>
             {/* Center - Empty (clean) */}
             <div className="flex items-center justify-center min-w-0 px-2" />
-            {/* Right side - AI + Create + Globe only on Home */}
-            <div className="flex items-center gap-2 justify-end min-w-0 justify-self-end">
+            {/* Right side - Create + AI + Globe only on Home (proper order) */}
+            <div className="flex items-center gap-1.5 justify-end min-w-0 justify-self-end">
               {isFeedPage ? (
                 <>
                   <button
-                    onClick={() => setAssistantOpen(true)}
-                    className="h-10 w-10 flex items-center justify-center rounded-xl transition-all active:scale-90 hover:bg-white/10"
-                    aria-label="Open Lumatha AI"
-                    title="Lumatha AI"
-                  >
-                    <Sparkles className="w-4 h-4 text-cyan-300" />
-                  </button>
-                  <button
                     onClick={() => setCreateSheetOpen(true)}
-                    className="h-10 w-10 flex items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 transition-all active:scale-90"
+                    className="h-10 w-10 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-all active:scale-90 border-0 outline-none focus:outline-none focus-visible:ring-0"
                     aria-label="Create"
                   >
                     <Plus className="w-5 h-5" strokeWidth={2.5} />
                   </button>
+                  <button
+                    onClick={() => setAssistantOpen(true)}
+                    className="h-10 w-10 flex items-center justify-center rounded-lg transition-all active:scale-90 hover:bg-white/5"
+                    aria-label="Open Lumatha AI"
+                    title="Lumatha AI"
+                  >
+                    <Sparkles className="w-5 h-5 text-cyan-300" />
+                  </button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="h-10 w-10 flex items-center justify-center rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-all active:scale-90 border-0 outline-none focus:outline-none focus-visible:ring-0" aria-label="Feed categories">
+                      <button className="h-10 w-10 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-all active:scale-90 border-0 outline-none focus:outline-none focus-visible:ring-0" aria-label="Feed categories">
                         <Globe className="w-5 h-5" strokeWidth={2.5} />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-[#0d1117] border-[#23324a] rounded-2xl p-2 w-64 shadow-none">
+                    <DropdownMenuContent align="end" className="bg-[#0d1117] border-[#23324a] rounded-xl p-2 w-56 shadow-none">
                       {feedScopes.map((scope) => (
-                        <DropdownMenuItem key={scope.id} onClick={() => setFeedScope(scope.id)} className="rounded-xl py-2.5 gap-3">
+                        <DropdownMenuItem key={scope.id} onClick={() => setFeedScope(scope.id)} className="rounded-lg py-2 gap-2">
                           <scope.icon className={cn("w-4 h-4", activeFeedScope === scope.id ? "text-primary" : "text-muted-foreground")} />
                           <div className="min-w-0">
-                            <p className={cn("font-bold text-[11px] uppercase tracking-wider", activeFeedScope === scope.id ? "text-white" : "text-slate-300")}>{scope.label}</p>
-                            <p className="text-[10px] text-slate-500 truncate">{scope.desc}</p>
+                            <p className={cn("font-bold text-[10px] uppercase tracking-wider", activeFeedScope === scope.id ? "text-white" : "text-slate-400")}>{scope.label}</p>
+                            <p className="text-[9px] text-slate-600 truncate">{scope.desc}</p>
                           </div>
                         </DropdownMenuItem>
                       ))}
