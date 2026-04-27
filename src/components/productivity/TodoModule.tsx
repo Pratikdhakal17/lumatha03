@@ -95,12 +95,26 @@ export function TodoModule() {
 
   const reminders = getReminders();
 
-  useEffect(() => { loadTodos(); loadCustomFolders(); loadStreak(); loadStats(); loadHistory(); checkAndAutoReset(); }, [user?.id]);
+  // Load all data first
+  useEffect(() => { 
+    loadTodos(); 
+    loadCustomFolders(); 
+    loadStreak(); 
+    loadStats(); 
+    loadHistory();
+  }, [user?.id]);
 
   // Auto-save stats whenever todos change
   useEffect(() => { saveStats(); }, [todos]);
 
-  // Check and auto-reset daily/weekly/monthly todos
+  // Check and auto-reset daily/weekly/monthly todos AFTER todos are loaded
+  useEffect(() => {
+    if (Object.values(todos).some(arr => arr.length > 0)) {
+      checkAndAutoReset();
+    }
+  }, []);
+
+  // Check and auto-reset daily/weekly/monthly todos - AUTO RESET TO 0 EVERYDAY
   const checkAndAutoReset = () => {
     const lastReset = localStorage.getItem(lastResetStorageKey);
     const today = new Date().toISOString().split('T')[0];
@@ -111,41 +125,56 @@ export function TodoModule() {
     }
     
     if (lastReset !== today) {
-      // It's a new day - auto reset daily todos and archive completed ones
+      // It's a new day - auto reset ALL todos to 0 (clear completed count)
       const lastResetDate = new Date(lastReset);
       const currentDate = new Date(today);
       const daysDiff = Math.floor((currentDate.getTime() - lastResetDate.getTime()) / (1000 * 60 * 60 * 24));
       
-      if (daysDiff >= 1) {
-        archiveCompletedTodos('daily');
-        // Reset daily todos
-        const updated = { ...todos };
-        updated.daily = updated.daily.filter(t => !t.completed).map(t => ({ ...t, completed: false }));
-        setTodos(updated);
-        localStorage.setItem(todosStorageKey, JSON.stringify(updated));
-      }
+      // Archive completed todos before resetting
+      archiveCompletedTodos('daily');
+      archiveCompletedTodos('weekly');
+      archiveCompletedTodos('monthly');
       
-      // Check weekly (reset on Monday)
+      // Reset ALL todos to incomplete (completed = false) - clears to 0
+      const updated = { ...todos };
+      
+      // Reset daily todos - mark ALL as incomplete (clears the 5 done today to 0 tomorrow)
+      updated.daily = updated.daily.map(t => ({ ...t, completed: false, completed_at: undefined }));
+      
+      // Reset weekly on Monday
       const currentDay = currentDate.getDay();
-      if (currentDay === 1 && daysDiff >= 1) { // Monday
-        archiveCompletedTodos('weekly');
-        const updated = { ...todos };
-        updated.weekly = updated.weekly.filter(t => !t.completed).map(t => ({ ...t, completed: false }));
-        setTodos(updated);
-        localStorage.setItem(todosStorageKey, JSON.stringify(updated));
+      if (currentDay === 1 && daysDiff >= 1) {
+        updated.weekly = updated.weekly.map(t => ({ ...t, completed: false, completed_at: undefined }));
       }
       
-      // Check monthly (reset on 1st of month)
+      // Reset monthly on 1st of month
       if (currentDate.getDate() === 1 && daysDiff >= 1) {
-        archiveCompletedTodos('monthly');
-        const updated = { ...todos };
-        updated.monthly = updated.monthly.filter(t => !t.completed).map(t => ({ ...t, completed: false }));
-        setTodos(updated);
-        localStorage.setItem(todosStorageKey, JSON.stringify(updated));
+        updated.monthly = updated.monthly.map(t => ({ ...t, completed: false, completed_at: undefined }));
       }
+      
+      setTodos(updated);
+      localStorage.setItem(todosStorageKey, JSON.stringify(updated));
+      
+      // Reset stats to 0 for today
+      const resetStats: TodoStats = {
+        totalCompleted: 0,
+        totalCreated: updated.daily.length + updated.weekly.length + updated.monthly.length + updated.yearly.length + updated.lifetime.length + updated.custom.length,
+        streakDays: streak,
+        lastActiveDate: today,
+        categoryStats: {
+          daily: { completed: 0, total: updated.daily.length },
+          weekly: { completed: 0, total: updated.weekly.length },
+          monthly: { completed: 0, total: updated.monthly.length },
+          yearly: { completed: 0, total: updated.yearly.length },
+          lifetime: { completed: 0, total: updated.lifetime.length },
+          custom: { completed: 0, total: updated.custom.length },
+        }
+      };
+      setStats(resetStats);
+      localStorage.setItem(statsStorageKey, JSON.stringify(resetStats));
       
       localStorage.setItem(lastResetStorageKey, today);
-      toast.success('Auto-reset completed! Yesterday\'s tasks archived.');
+      toast.success('Daily reset complete! All todos cleared to 0.');
     }
   };
 

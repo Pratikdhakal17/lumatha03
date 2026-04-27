@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { Heart, MessageCircle, Share2, Bookmark, MapPin, MoreVertical, Edit3, Trash2, ShoppingBag, Briefcase, Home as HomeIcon, Phone, ChevronDown, X } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Bookmark, MapPin, MoreVertical, Edit3, Trash2, ShoppingBag, Briefcase, Home as HomeIcon, Phone, ChevronDown, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { FullScreenMediaViewer } from '@/components/FullScreenMediaViewer';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Listing {
   id: string;
@@ -42,7 +43,7 @@ interface Props {
   onSave: (id: string) => void;
   onComment: (id: string) => void;
   onShare: (id: string) => void;
-  onChat: (userId: string, listingId: string) => void;
+  onChat: (userId: string, listingId: string, title?: string) => void;
   onDelete?: (id: string) => void;
   onEdit?: (listing: Listing) => void;
   onViewProfile: (userId: string) => void;
@@ -78,11 +79,14 @@ export function MarketplaceListingCard({
   onDelete, onEdit, onViewProfile
 }: Props) {
   const [imgIndex, setImgIndex] = useState(0);
-  const [showFullDesc, setShowFullDesc] = useState(false);
-  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const isOwner = listing.user_id === currentUserId;
   const media = listing.media_urls || [];
+  const mediaTypes = (listing.media_types && listing.media_types.length > 0
+    ? listing.media_types
+    : media.map(() => 'image')) as string[];
   const TypeIcon = typeIcons[listing.type] || ShoppingBag;
+  const isMobile = useIsMobile();
 
   return (
     <>
@@ -90,9 +94,9 @@ export function MarketplaceListingCard({
         "border-0 overflow-hidden animate-fade-in backdrop-blur-sm",
         "bg-gradient-to-br", typeGradients[listing.type] || 'from-card/80 to-card/40'
       )}>
-        {/* Top Row: Profile pic, username, time, three dots */}
+        {/* Header: Profile pic, username, NPR, time, three dots */}
         <div className="flex items-center justify-between p-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             <button onClick={() => onViewProfile(listing.user_id)}>
               <Avatar className="w-10 h-10 ring-1 ring-border/50">
                 <AvatarImage src={listing.profiles?.avatar_url || undefined} />
@@ -101,20 +105,36 @@ export function MarketplaceListingCard({
                 </AvatarFallback>
               </Avatar>
             </button>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <button onClick={() => onViewProfile(listing.user_id)} className="font-semibold text-sm truncate block hover:text-white transition-colors">
                 {listing.profiles?.name || 'User'}
               </button>
-              <div className="text-[10px] text-muted-foreground">
-                {formatDistanceToNow(new Date(listing.created_at), { addSuffix: true })}
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                <span>{formatDistanceToNow(new Date(listing.created_at), { addSuffix: true })}</span>
+                {listing.location && (
+                  <>
+                    <span>•</span>
+                    <span className="flex items-center gap-0.5">
+                      <MapPin className="w-3 h-3" />
+                      {listing.location}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </div>
           
+          {/* NPR Price in green */}
+          {listing.price != null && (
+            <div className="font-bold text-base text-emerald-500 mr-2 shrink-0">
+              NPR {listing.price.toLocaleString()}
+            </div>
+          )}
+          
           {/* More options */}
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="w-4 h-4" /></Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><MoreVertical className="w-4 h-4" /></Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="z-[100] bg-popover shadow-xl">
               {isOwner && (
@@ -134,78 +154,38 @@ export function MarketplaceListingCard({
           <h3 className="font-bold text-base">{listing.title}</h3>
         </div>
 
-        {/* Price (left) and Location (right) */}
-        <div className="flex items-center justify-between px-3 pb-3">
-          {listing.price != null && (
-            <div className="font-bold text-lg text-white">
-              {listing.currency || 'NPR'} {listing.price.toLocaleString()}
-            </div>
-          )}
-          {listing.location && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <MapPin className="w-3 h-3" />
-              {listing.location}
-            </div>
-          )}
-        </div>
-
-        {/* Mobile: full-width swipeable media */}
-        {media.length > 0 && (
-          <div className="md:hidden px-3 pb-3">
-            <div
-              className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory rounded-lg"
-              onScroll={(e) => {
-                const container = e.currentTarget;
-                if (!container.clientWidth) return;
-                const nextIndex = Math.round(container.scrollLeft / container.clientWidth);
-                if (nextIndex !== imgIndex) setImgIndex(nextIndex);
-              }}
-            >
-              {media.map((url, i) => (
-                <button
-                  key={`${url}-${i}`}
-                  type="button"
-                  className="w-full shrink-0 snap-center"
-                  onClick={() => {
-                    setImgIndex(i);
-                    setImageDialogOpen(true);
-                  }}
-                >
-                  <img
-                    src={url}
-                    alt={`${listing.title} ${i + 1}`}
-                    className="w-full aspect-square object-cover"
-                    loading="lazy"
-                  />
-                </button>
-              ))}
-            </div>
-            {media.length > 1 && (
-              <div className="mt-2 flex justify-center gap-1">
-                {media.map((_, i) => (
-                  <button
-                    key={`dot-${i}`}
-                    type="button"
-                    onClick={() => setImgIndex(i)}
-                    className={cn('h-1.5 rounded-full transition-all', i === imgIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/45')}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Desktop: 50/50 image and description */}
-        <div className="hidden md:flex gap-3 px-3 pb-3">
-          {media.length > 0 && (
-            <div className="w-1/2 flex-shrink-0">
-              <div className="relative cursor-pointer" onClick={() => setImageDialogOpen(true)}>
+        {/* Main Content: Picture left to middle, Description middle to right */}
+        <div className="flex gap-3 px-3 pb-3">
+          {/* Picture section - takes up left to middle (about 45%) */}
+          {media.length > 0 ? (
+            <div className="w-[45%] shrink-0">
+              <div className="relative cursor-pointer rounded-lg overflow-hidden" onClick={() => setImageViewerOpen(true)}>
                 <img
                   src={media[imgIndex]}
                   alt={listing.title}
-                  className="w-full aspect-square object-cover rounded-lg"
+                  className="w-full aspect-square object-cover"
                   loading="lazy"
                 />
+                
+                {/* Desktop navigation arrows inside image */}
+                {!isMobile && media.length > 1 && (
+                  <>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setImgIndex((prev) => (prev - 1 + media.length) % media.length); }}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setImgIndex((prev) => (prev + 1) % media.length); }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </>
+                )}
+                
+                {/* Image dots indicator */}
                 {media.length > 1 && (
                   <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
                     {media.map((_, i) => (
@@ -219,47 +199,33 @@ export function MarketplaceListingCard({
                 )}
               </div>
             </div>
+          ) : (
+            <div className="w-[45%] shrink-0 aspect-square bg-muted/50 rounded-lg flex items-center justify-center">
+              <ShoppingBag className="w-12 h-12 text-muted-foreground/30" />
+            </div>
           )}
 
-          <div className="w-1/2 flex flex-col">
-            {listing.description && (
-              <>
-                <p className={cn('text-sm text-muted-foreground', !showFullDesc && 'line-clamp-4')}>
+          {/* Description section - takes up middle to right (about 55%) */}
+          <div className="flex-1 flex flex-col min-w-0">
+            {/* Description - full text without truncation */}
+            {listing.description ? (
+              <div className="flex-1 overflow-y-auto max-h-[300px] scrollbar-hide">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   {listing.description}
                 </p>
-                {listing.description.length > 150 && (
-                  <button onClick={() => setShowFullDesc(!showFullDesc)} className="text-xs text-white mt-1 hover:underline">
-                    {showFullDesc ? 'See less' : 'See more'}
-                  </button>
-                )}
-              </>
+              </div>
+            ) : (
+              <div className="flex-1 text-sm text-muted-foreground italic">
+                No description provided
+              </div>
             )}
-            <div className="flex items-center gap-2 mt-auto flex-wrap">
+            
+            {/* Badges at bottom */}
+            <div className="flex items-center gap-2 mt-3 flex-wrap">
               {listing.category && <Badge variant="secondary" className="text-xs">{listing.category}</Badge>}
               {listing.qualification && <Badge variant="secondary" className="text-xs">{listing.qualification}</Badge>}
               {listing.salary_range && <Badge variant="outline" className="text-xs border-gray-600/50 text-white">{listing.salary_range}</Badge>}
             </div>
-          </div>
-        </div>
-
-        {/* Mobile description and badges below media */}
-        <div className="md:hidden px-3 pb-3">
-          {listing.description && (
-            <>
-              <p className={cn('text-sm text-muted-foreground', !showFullDesc && 'line-clamp-4')}>
-                {listing.description}
-              </p>
-              {listing.description.length > 150 && (
-                <button onClick={() => setShowFullDesc(!showFullDesc)} className="text-xs text-white mt-1 hover:underline">
-                  {showFullDesc ? 'See less' : 'See more'}
-                </button>
-              )}
-            </>
-          )}
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            {listing.category && <Badge variant="secondary" className="text-xs">{listing.category}</Badge>}
-            {listing.qualification && <Badge variant="secondary" className="text-xs">{listing.qualification}</Badge>}
-            {listing.salary_range && <Badge variant="outline" className="text-xs border-gray-600/50 text-white">{listing.salary_range}</Badge>}
           </div>
         </div>
 
@@ -285,22 +251,22 @@ export function MarketplaceListingCard({
           </Button>
         </div>
 
-        {/* Bottom: Message and Call buttons */}
+        {/* Bottom: Message (blue) and Call (green) buttons */}
         {!isOwner && (
           <div className="flex gap-2 p-3 pt-2 border-t border-border/50">
             <Button 
               variant="outline" 
               size="lg" 
-              className="flex-1 h-12 border-gray-600/50 text-white hover:bg-gray-700/20"
-              onClick={() => onChat(listing.user_id, listing.id)}
+              className="flex-1 h-12 bg-blue-600 hover:bg-blue-500 text-white border-0"
+              onClick={() => onChat(listing.user_id, listing.id, listing.title)}
             >
               <MessageCircle className="w-5 h-5 mr-2" />
               Message
             </Button>
             <Button 
               size="lg" 
-              className="flex-1 h-12 bg-white hover:bg-gray-200 text-black"
-              onClick={() => onChat(listing.user_id, listing.id)}
+              className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-500 text-white border-0"
+              onClick={() => onChat(listing.user_id, listing.id, listing.title)}
             >
               <Phone className="w-5 h-5 mr-2" />
               Call
@@ -309,41 +275,16 @@ export function MarketplaceListingCard({
         )}
       </Card>
 
-      {/* Full Image View Dialog */}
-      <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
-        <DialogContent className="max-w-4xl bg-black/95 border-gray-800 p-0">
-          <button 
-            onClick={() => setImageDialogOpen(false)}
-            className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white"
-          >
-            <X className="w-6 h-6" />
-          </button>
-          <div className="relative w-full aspect-square max-h-[80vh]">
-            <img
-              src={media[imgIndex]}
-              alt={listing.title}
-              className="w-full h-full object-contain"
-            />
-            {media.length > 1 && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                <button
-                  onClick={() => setImgIndex((imgIndex - 1 + media.length) % media.length)}
-                  className="p-2 rounded-full bg-black/50 hover:bg-black/70 text-white"
-                >
-                  <ChevronDown className="w-6 h-6 rotate-90" />
-                </button>
-                <span className="text-white text-sm self-center">{imgIndex + 1} / {media.length}</span>
-                <button
-                  onClick={() => setImgIndex((imgIndex + 1) % media.length)}
-                  className="p-2 rounded-full bg-black/50 hover:bg-black/70 text-white"
-                >
-                  <ChevronDown className="w-6 h-6 -rotate-90" />
-                </button>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Full Image View */}
+      <FullScreenMediaViewer
+        open={imageViewerOpen}
+        onOpenChange={setImageViewerOpen}
+        mediaUrls={media}
+        mediaTypes={mediaTypes}
+        initialIndex={imgIndex}
+        title={listing.title}
+        minimal
+      />
     </>
   );
 }

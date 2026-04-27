@@ -6,7 +6,7 @@ import {
   Archive, Ghost, Trash2, Mic, Music,
   Image, Users, UserSearch, MessageCircle, Star, Video as VideoIcon,
   Palette, Eye, Pin, Forward, Copy,
-  Bell, BellOff, CornerUpLeft, Pencil, Lock, Plus, Camera, ArrowLeft,
+  Bell, BellOff, CornerUpLeft, Pencil, Lock, Plus, Camera,
   MessageSquare, ShoppingCart, Menu, Heart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -1300,6 +1300,10 @@ export default function Chat() {
     });
   };
 
+  function openMobileSidebar() {
+    window.dispatchEvent(new CustomEvent('lumatha_mobile_sidebar_toggle'));
+  }
+
   // View Once: mark as viewed
   const markViewOnce = (msgId: string) => {
     const updated = new Set(viewedOnceMessages);
@@ -1865,20 +1869,15 @@ export default function Chat() {
     return (
       <div
         className={cn(
-          "fixed inset-0 flex flex-col chat-protected overflow-hidden bg-[#0a0f1e] z-40",
-          "h-full min-h-0"
+          "flex flex-col chat-protected overflow-hidden bg-[#0a0f1e]",
+          "h-full min-h-0 flex-1"
         )}
-        style={{ paddingTop: isAndroid ? 'calc(env(safe-area-inset-top, 0px) + 1px)' : 'env(safe-area-inset-top, 0px)' }}
       >
         <WatermarkOverlay username={username} enabled={false} />
         {isBlurred && <BlurOverlay />}
 
-        {/* Header — Responsive Mobile/Desktop */}
-        <div className="flex items-center gap-1 md:gap-3 shrink-0 px-2 md:px-4" style={{ background: '#000', borderBottom: '1px solid #1f2937', height: 52 }}>
-          <button onClick={handleBackToChats} className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-full shrink-0 hover:bg-white/5 transition-colors active:scale-95 touch-target-44">
-            <ArrowLeft className="h-[18px] w-[18px] text-white" />
-          </button>
-          
+        {/* Chat Header - Uses main Layout header, this is just the chat-specific bar */}
+        <div className="flex items-center gap-1 md:gap-3 shrink-0 px-2 md:px-4 py-2" style={{ background: '#000', borderBottom: '1px solid #1f2937' }}>
           <div className="relative shrink-0 cursor-pointer" onClick={() => navigate(`/profile/${currentChatUser}`)}>
             <Avatar className="w-9 h-9 md:w-10 md:h-10">
               <AvatarImage src={selectedConversation?.user_avatar || undefined} />
@@ -1892,7 +1891,14 @@ export default function Chat() {
             <h3 className="text-sm md:text-base font-semibold text-white truncate leading-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{displayName}</h3>
           </div>
           
-          <div className="shrink-0 self-center pl-0.5 md:pl-1">
+          <div className="shrink-0 self-center pl-0.5 md:pl-1 flex items-center gap-1">
+            <button
+              className="w-9 h-9 md:hidden rounded-full flex items-center justify-center hover:bg-white/5 transition-colors touch-target-44"
+              title="Back to chats"
+              onClick={handleBackToChats}
+            >
+              <MessageSquare className="w-4 h-4 text-slate-300" />
+            </button>
             <button
               className="w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center hover:bg-white/5 transition-colors touch-target-44"
               title="Chat settings"
@@ -2613,38 +2619,22 @@ export default function Chat() {
     });
   };
 
-  const openMobileSidebar = () => {
-    window.dispatchEvent(new CustomEvent('lumatha_mobile_sidebar_toggle'));
-  };
-
-  // Top banner component - shows "Messages" label with sidebar
+  // Top banner component - shows "Messages" label only (no Lumatha branding - main Layout header handles it)
   const TopBanner = () => (
-    <div className="bg-[#0a0f1e]/95 backdrop-blur-xl border-b border-white/5 px-4 py-2 min-h-16">
+    <div className="bg-[#0a0f1e]/95 backdrop-blur-xl border-b border-white/5 px-4 py-2 min-h-12">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 min-w-0">
-          {isMobile && (
-            <button
-              onClick={openMobileSidebar}
-              className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-white/5 active:scale-95 transition-all"
-              aria-label="Open sidebar"
-            >
-              <Menu className="w-5 h-5 text-blue-500" />
-            </button>
-          )}
-          <span className="text-base md:text-sm font-black uppercase tracking-wide text-blue-600">Lumatha</span>
-        </div>
-        <span className="text-[11px] uppercase tracking-[0.12em] text-slate-500 font-semibold">{sectionLabelByTab[chatTab]}</span>
-      </div>
-      <div className="mt-1.5 flex items-center justify-between">
         <span className="text-lg md:text-base font-black text-white tracking-wide">Messages</span>
-        <button
-          onClick={toggleMainSearch}
-          className="w-9 h-9 rounded-full flex items-center justify-center transition-colors hover:bg-white/5"
-          aria-label="Search messages"
-          title="Search"
-        >
-          <Search className="w-4 h-4" style={{ color: chatTab === 'main' ? '#94A3B8' : '#475569' }} />
-        </button>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] uppercase tracking-[0.12em] text-slate-500 font-semibold mr-2">{sectionLabelByTab[chatTab]}</span>
+          <button
+            onClick={toggleMainSearch}
+            className="w-9 h-9 rounded-full flex items-center justify-center transition-colors hover:bg-white/5"
+            aria-label="Search messages"
+            title="Search"
+          >
+            <Search className="w-4 h-4" style={{ color: chatTab === 'main' ? '#94A3B8' : '#475569' }} />
+          </button>
+        </div>
       </div>
     </div>
   );

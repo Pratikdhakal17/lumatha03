@@ -4,8 +4,8 @@ import { toast } from "sonner";
 const BUCKET_NAME = 'note-media';
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'];
-const ALLOWED_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES];
+// Media is now images ONLY - no videos as requested
+const ALLOWED_TYPES = [...ALLOWED_IMAGE_TYPES];
 
 export interface UploadProgress {
   status: 'idle' | 'checking' | 'uploading' | 'processing' | 'complete' | 'error';
@@ -16,31 +16,30 @@ export interface UploadProgress {
 export interface UploadResult {
   url: string;
   path: string;
-  type: 'image' | 'video';
+  type: 'image'; // Images only
   size: number;
 }
 
 /**
- * Validates file before upload
+ * Validates file before upload - IMAGES ONLY
  */
-const validateFile = (file: File): { valid: boolean; error?: string; type?: 'image' | 'video' } => {
+const validateFile = (file: File): { valid: boolean; error?: string; type?: 'image' } => {
   // Check file size
   if (file.size > MAX_FILE_SIZE) {
     return { valid: false, error: `File too large. Maximum size is 50MB. Your file is ${(file.size / 1024 / 1024).toFixed(1)}MB.` };
   }
 
-  // Check file type
+  // Check file type - IMAGES ONLY
   const isImage = ALLOWED_IMAGE_TYPES.includes(file.type);
-  const isVideo = ALLOWED_VIDEO_TYPES.includes(file.type);
   
-  if (!isImage && !isVideo) {
+  if (!isImage) {
     return { 
       valid: false, 
-      error: `File type "${file.type}" not allowed. Please use: JPG, PNG, GIF, WebP, MP4, or MOV.` 
+      error: `Only images are allowed. Please use: JPG, PNG, GIF, or WebP. Videos are not supported.` 
     };
   }
 
-  return { valid: true, type: isImage ? 'image' : 'video' };
+  return { valid: true, type: 'image' };
 };
 
 /**

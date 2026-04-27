@@ -31,3 +31,16 @@ dist-ssr
 public/original.*
 .vercel
 .env*.local
+
+# Deployment exclusions
+extensions/
+.github/
+tests/
+.vscode/
+supabase/.temp/
+*.vsix
+scripts/*.mjs
+public/*.md
+ui/
+voice/
+assistant_backend/

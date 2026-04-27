@@ -419,10 +419,10 @@ function LayoutContent({ children }: LayoutProps) {
     return () => { supabase.removeChannel(channel); };
   }, [user]);
 
-  // Check if we're in chat list view (not inside a specific chat)
+  // All sections including chat should show the header consistently
   const isChatListView = location.pathname === '/chat';
   const isInActiveChat = location.pathname.startsWith('/chat/') && location.pathname.length > 6;
-  const isChatSection = isChatListView || isInActiveChat;
+  const isChatSection = false; // Always show header for consistency
 
   const handleScroll = useCallback(() => {
     if (ticking.current) return;
@@ -430,14 +430,6 @@ function LayoutContent({ children }: LayoutProps) {
     window.requestAnimationFrame(() => {
       const st = feedCenterRef.current?.scrollTop || 0;
       const lastY = lastScrollY.current;
-      
-      // On mobile chat sections: always hide the main header
-      if (isChatSection) {
-        setHeaderVisible(false);
-        lastScrollY.current = st <= 0 ? 0 : st;
-        ticking.current = false;
-        return;
-      }
       
       // Only apply scroll hide on feed page, not on other sections
       const isFeed = location.pathname === '/';
@@ -449,23 +441,20 @@ function LayoutContent({ children }: LayoutProps) {
           setHeaderVisible(true);
         }
       } else {
-        // Always visible in non-chat sections
+        // Always visible in all sections including chat
         setHeaderVisible(true);
       }
       
       lastScrollY.current = st <= 0 ? 0 : st;
       ticking.current = false;
     });
-  }, [location.pathname, isMobile, isChatSection]);
+  }, [location.pathname, isMobile]);
 
   useEffect(() => {
-    if (isChatSection) {
-      setHeaderVisible(false);
-    } else {
-      setHeaderVisible(true);
-      lastScrollY.current = 0;
-    }
-  }, [isChatSection]);
+    // Always show header in all sections for consistent UX
+    setHeaderVisible(true);
+    lastScrollY.current = 0;
+  }, []);
 
   useEffect(() => {
     const el = feedCenterRef.current;
@@ -507,11 +496,8 @@ function LayoutContent({ children }: LayoutProps) {
   };
 
   const handleMobileLeadingAction = () => {
-    if (isMobileRootSection) {
-      setMobileSidebarOpen(true);
-      return;
-    }
-    handleBack();
+    // Always show hamburger sidebar in all sections for consistent navigation
+    setMobileSidebarOpen(true);
   };
   const sectionLabel = location.pathname === '/search'
     ? 'Search'
@@ -595,20 +581,18 @@ function LayoutContent({ children }: LayoutProps) {
         navigate(url);
       }} unreadMessages={unreadMessages} items={currentMenuItems} hidden={false} />}
       <main ref={feedCenterRef} className="feed-center relative flex flex-col min-w-0 flex-1 h-screen overflow-y-auto scrollbar-hide">
-        {!isChatSection && (
-        <header className={cn("sticky top-0 z-50 w-full h-16 bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 transition-transform duration-300", headerVisible ? "translate-y-0" : "-translate-y-full")}>
-          <div className="flex items-center justify-between h-full px-4 gap-3">
+        {/* Mobile-optimized fixed header to prevent layout shifts */}
+        <header className={cn("fixed top-0 left-0 right-0 z-50 w-full h-16 bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 transition-transform duration-300 lg:sticky", 
+          isMobile && "flex items-center",
+          headerVisible ? "translate-y-0" : (isMobile ? "translate-y-0" : "-translate-y-full")
+        )}>
+          <div className="flex items-center justify-between h-full px-4 gap-3 flex-1">
             {/* Left side - menu button and Lumatha branding */}
             <div className="flex items-center gap-1 min-w-0">
-              {/* Desktop: no leading button, sidebar remains persistent */}
-              {/* Mobile: Menu on root sections, back on subsections */}
+              {/* Mobile: Always show hamburger menu for consistent navigation */}
               {isMobile && (
                 <button onClick={handleMobileLeadingAction} className="w-10 h-10 flex items-center justify-center rounded-xl transition-transform active:scale-90 hover:bg-white/5 -ml-2">
-                  {isMobileRootSection ? (
-                    <Menu className="w-6 h-6 text-blue-500" strokeWidth={2} />
-                  ) : (
-                    <ArrowLeft className="w-6 h-6 text-blue-500" strokeWidth={2} />
-                  )}
+                  <Menu className="w-6 h-6 text-blue-500" strokeWidth={2} />
                 </button>
               )}
               {/* Lumatha Navy text for desktop - shifted left */}
@@ -656,11 +640,19 @@ function LayoutContent({ children }: LayoutProps) {
             </div>
           </div>
         </header>
-        )}
-        <div className={cn("flex-1 transition-all duration-500", isMobile ? "px-0 py-0" : "p-4", isMobile && isHomeSection && "pb-24", !isMobile && isAdventureGrid && "max-w-7xl mx-auto w-full")}>
+        
+        {/* Content area with proper spacing for fixed header on mobile */}
+        <div className={cn(
+          "flex-1 transition-all duration-500",
+          isMobile ? "px-0 py-0 mt-16" : "p-4 mt-0",
+          isMobile && isHomeSection && "pb-24",
+          !isMobile && isAdventureGrid && "max-w-7xl mx-auto w-full"
+        )}>
           {children}
         </div>
-        {isMobile && isHomeSection && <SubNavigation visible={headerVisible} />}
+        
+        {/* Bottom navigation - always visible on mobile for stability, positioned fixed */}
+        {isMobile && <SubNavigation visible={true} />}
       </main>
       <CreatePostSheet open={createSheetOpen} onOpenChange={setCreateSheetOpen} />
     </div>

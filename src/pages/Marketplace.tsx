@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Search, MapPin, ChevronRight, MessageCircle, X, ArrowLeft,
   ShoppingBag, Briefcase, Home as HomeIcon, Loader2, Sparkles, 
-  Share2, Bookmark, Heart, Phone, ChevronLeft, AlertTriangle, Star, ImagePlus, Check, MoreVertical, Edit3, Trash2, Clock, ChevronDown, SearchX } from 'lucide-react';
+  Share2, Bookmark, Heart, Phone, ChevronLeft, AlertTriangle, Star, ImagePlus, Check, MoreVertical, Edit3, Trash2, Clock, ChevronDown, SearchX, Menu } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -86,6 +86,10 @@ export default function Marketplace() {
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState<string | null>(null);
   useRouteLoadTrace('Marketplace');
+
+  const openMobileSidebar = () => {
+    window.dispatchEvent(new CustomEvent('lumatha_mobile_sidebar_toggle'));
+  };
 
   const fetchListings = useCallback(async () => {
     setLoading(true);
@@ -363,7 +367,7 @@ export default function Marketplace() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      {/* Premium Top Bar */}
+      {/* Premium Top Bar - Clean: Profile + Search + Create only */}
       <div className="px-3 md:px-4 py-4 bg-background/80 backdrop-blur-xl border-b border-border/40">
         <div className="flex items-center gap-3">
           <button

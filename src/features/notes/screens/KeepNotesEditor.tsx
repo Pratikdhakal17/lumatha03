@@ -433,7 +433,7 @@ export const KeepNotesEditor: React.FC<KeepNotesEditorProps> = ({ noteId, onClos
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Title . . . . . ."
+          placeholder="What's on your mind?"
           className="w-full bg-transparent text-2xl font-bold outline-none mb-4"
           style={{ 
             color: textColor || defaultTextColor,
@@ -470,7 +470,7 @@ export const KeepNotesEditor: React.FC<KeepNotesEditorProps> = ({ noteId, onClos
           ref={textareaRef}
           value={body}
           onChange={handleBodyChange}
-          placeholder="Description . . ."
+          placeholder="Say something..."
           className="w-full min-h-[40vh] bg-transparent outline-none resize-none text-base leading-relaxed"
           style={{ 
             color: textColor || defaultTextColor,

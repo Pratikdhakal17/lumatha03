@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { X, Heart, MessageCircle, Send, Pause, Play, Volume2, VolumeX, Bookmark } from 'lucide-react';
+import { X, Heart, MessageCircle, Send, Pause, Play, Volume2, VolumeX, Bookmark, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useKeyboardGallery } from '@/hooks/useKeyboardGallery';
 import { useVideoSound } from '@/contexts/VideoSoundContext';
@@ -604,6 +604,33 @@ export function FullScreenMediaViewer({
               }
             }}
           >
+            {isDesktop && hasMultiple && (
+              <>
+                <button
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-40 rounded-full p-2.5"
+                  style={{ background: 'rgba(255,255,255,0.18)', color: '#fff' }}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    goTo((currentIndex - 1 + mediaUrls.length) % mediaUrls.length);
+                  }}
+                  aria-label="Previous media"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-40 rounded-full p-2.5"
+                  style={{ background: 'rgba(255,255,255,0.18)', color: '#fff' }}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    goTo((currentIndex + 1) % mediaUrls.length);
+                  }}
+                  aria-label="Next media"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </>
+            )}
+
             <div
               className="flex h-full w-full items-center"
               style={{

@@ -384,7 +384,7 @@ export const NoteEditorScreenAI: React.FC<NoteEditorScreenAIProps> = ({ noteId, 
             type="text"
             value={note?.title || ''}
             onChange={(e) => setNote(note ? { ...note, title: e.target.value } : null)}
-            placeholder="Untitled Note"
+            placeholder="What's on your mind?"
             className="w-full bg-transparent text-center text-lg font-semibold text-white placeholder:text-white/30 outline-none"
           />
         </div>

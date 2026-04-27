@@ -2,12 +2,13 @@
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { 
   Plus, Search, MoreVertical, Pin, Bell, Archive, Trash2, 
-  Type, Image as ImageIcon, Video, Pencil, 
+  Type, Image as ImageIcon, Pencil, Edit3,
   Palette, MoreHorizontal, ChevronLeft, Share2, 
   Copy, X, Bold, Italic, Underline, 
   Heading1, Heading2, CaseSensitive, ChevronRight,
-  Clock, Calendar, Trash, Star, Save, ArrowLeft, ArrowRight,
-  Smile, MinusCircle, ChevronUp, ChevronDown, Edit3, GraduationCap, Zap
+  Clock, Calendar, Star, Save, ArrowLeft, ArrowRight,
+  Smile, MinusCircle, ChevronUp, ChevronDown, GraduationCap, Zap,
+  Eraser, Brush, Square, AlertCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -49,8 +50,16 @@ interface Sticker {
 
 interface MediaItem {
   id: string;
-  type: 'image' | 'video' | 'drawing';
+  type: 'image';
   url: string;
+}
+
+interface DrawingStroke {
+  id: string;
+  points: Array<{ x: number; y: number }>;
+  color: string;
+  width: number;
+  mode: 'draw' | 'erase';
 }
 
 interface Note {
@@ -59,8 +68,9 @@ interface Note {
   body: string;
   media: MediaItem[];
   stickers: Sticker[];
+  strokes: DrawingStroke[];
+  drawingMode: 'free' | 'paper' | 'none';
   mood?: string;
-  location?: string;
   pinned: boolean;
   saved: boolean;
   theme: string;
@@ -105,8 +115,9 @@ export function NotesSection() {
       body: '',
       media: [],
       stickers: [],
+      strokes: [],
+      drawingMode: 'none',
       mood: '✨',
-      location: 'Last Marketplace Location', // Placeholder for auto-detection
       pinned: false,
       saved: false,
       theme: 'dark',
@@ -125,7 +136,7 @@ export function NotesSection() {
   const deleteNote = (id: string) => {
     setNotes(prev => prev.filter(n => n.id !== id));
     setSelectedId(null);
-    toast.success('Note moved to Archive');
+    toast.success('Note deleted');
   };
 
   if (showCover && activeNote) {
@@ -148,6 +159,516 @@ export function NotesSection() {
         {!selectedId ? (
           <NotesListView 
             notes={notes}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            onSelect={setSelectedId}
+            onCreate={handleCreate}
+          />
+        ) : (
+          <EditorView 
+            note={activeNote!}
+            isSaving={isSaving}
+            onClose={() => setSelectedId(null)}
+            onUpdate={(u: Partial<Note>) => updateNote(selectedId, u)}
+            onDelete={() => deleteNote(selectedId)}
+            onDone={() => setShowCover(true)}
+            onNext={() => {
+              const idx = notes.findIndex(n => n.id === selectedId);
+              if (idx < notes.length - 1) setSelectedId(notes[idx + 1].id);
+            }}
+            onPrev={() => {
+              const idx = notes.findIndex(n => n.id === selectedId);
+              if (idx > 0) setSelectedId(notes[idx - 1].id);
+            }}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// --- 🧩 LIST VIEW ---
+function NotesListView({ notes, activeTab, setActiveTab, searchQuery, setSearchQuery, onSelect, onCreate }: any) {
+  const filtered = notes.filter((n: Note) => {
+    const matchesSearch = (n.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || (n.body || '').toLowerCase().includes(searchQuery.toLowerCase());
+    if (activeTab === 'Pinned') return n.pinned && matchesSearch;
+    if (activeTab === 'Saved') return n.saved && matchesSearch;
+    return matchesSearch;
+  });
+
+  const sections = useMemo(() => {
+    const now = Date.now();
+    const day = 86400000;
+    return [
+      { label: 'TODAY', items: filtered.filter((n: Note) => now - n.updatedAt < day) },
+      { label: 'THIS WEEK', items: filtered.filter((n: Note) => now - n.updatedAt >= day && now - n.updatedAt < day * 7) },
+      { label: 'EARLIER', items: filtered.filter((n: Note) => now - n.updatedAt >= day * 7) },
+    ].filter(s => s.items.length > 0);
+  }, [filtered]);
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full flex flex-col p-5">
+      <div className="mb-8 mt-4">
+        <div className="relative group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8A90A2] group-focus-within:text-[#7B61FF] transition-colors" />
+          <input 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search notes..."
+            className="w-full bg-[#0F1629] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#7B61FF]/20 transition-all shadow-lg"
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-8 mb-6 border-b border-white/5 px-2">
+        {['All', 'Pinned', 'Saved'].map(tab => (
+          <button 
+            key={tab}
+            onClick={() => setActiveTab(tab as any)}
+            className={`pb-3 text-xs font-bold tracking-widest uppercase transition-all relative ${activeTab === tab ? 'text-[#E6E9F2]' : 'text-[#8A90A2]'}`}
+          >
+            {tab}
+            {activeTab === tab && <motion.div layoutId="tab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#7B61FF]" />}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-1 overflow-y-auto no-scrollbar space-y-10 pb-32">
+        {sections.map(s => (
+          <div key={s.label}>
+            <h3 className="text-[10px] font-bold tracking-[0.2em] text-[#8A90A2] mb-4 opacity-50 uppercase">{s.label}</h3>
+            <div className="grid gap-3">
+              {s.items.map((n: Note) => (
+                <NoteCard key={n.id} note={n} onClick={() => onSelect(n.id)} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <button onClick={onCreate} className="fixed bottom-10 right-8 w-16 h-16 bg-[#7B61FF] rounded-2xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform z-50">
+        <Plus className="w-8 h-8 text-white" />
+      </button>
+    </motion.div>
+  );
+}
+
+function NoteCard({ note, onClick }: { note: Note, onClick: () => void }) {
+  return (
+    <motion.div 
+      onClick={onClick}
+      whileTap={{ scale: 0.98 }}
+      className="bg-[#0F1629] p-5 rounded-[22px] border border-white/5 relative group cursor-pointer shadow-xl hover:bg-[#151D35] transition-colors"
+    >
+      <div className="flex justify-between items-start mb-1">
+        <h4 className="font-bold text-base truncate pr-6 text-[#E6E9F2]">{note.title || 'Untitled Note'}</h4>
+        <div className="flex gap-2">
+          {note.mood && <span className="text-xs">{note.mood}</span>}
+          {note.pinned && <Pin className="w-3.5 h-3.5 text-[#7B61FF] fill-[#7B61FF]" />}
+        </div>
+      </div>
+      <p className="text-sm text-[#8A90A2] line-clamp-2 leading-relaxed mb-4">{note.body || 'No content yet...'}</p>
+      <div className="flex justify-between items-center text-[9px] font-black tracking-widest text-[#8A90A2]/40 uppercase">
+        <div className="flex items-center gap-2">
+          <Clock className="w-3 h-3" />
+          <span>{new Date(note.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+        {note.media.length > 0 && <span>📷 {note.media.length}</span>}
+      </div>
+    </motion.div>
+  );
+}
+
+// --- 📝 EDITOR VIEW ---
+function EditorView({ note, isSaving, onClose, onUpdate, onDelete, onNext, onPrev, onDone }: any) {
+  const [activePanel, setActivePanel] = useState<'add' | 'color' | 'typo' | 'menu' | 'stickers' | 'mood' | 'drawing' | null>(null);
+  const [drawMode, setDrawMode] = useState<'draw' | 'erase'>('draw');
+  const [drawColor, setDrawColor] = useState('#E6E9F2');
+  const [brushSize, setBrushSize] = useState(3);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const theme = THEMES.find(t => t.id === note.theme) || THEMES[0];
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-expand textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+    }
+  }, [note.body]);
+
+  const addSticker = (emoji: string) => {
+    onUpdate({ stickers: [...(note.stickers || []), { id: Date.now().toString(), emoji, x: 50, y: 50 }] });
+    setActivePanel(null);
+  };
+
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (note.drawingMode === 'none') return;
+    setIsDrawing(true);
+  };
+
+  const stopDrawing = () => setIsDrawing(false);
+
+  return (
+    <motion.div 
+      initial={{ y: '100%' }}
+      animate={{ y: 0 }}
+      exit={{ y: '100%' }}
+      transition={{ type: 'spring', ...TOKENS.animation }}
+      className="fixed inset-0 z-50 flex flex-col overflow-hidden"
+      style={{ backgroundColor: theme.bg, color: theme.text }}
+      ref={containerRef}
+    >
+      {/* Top Bar */}
+      <div className="flex items-center justify-between px-5 h-16 border-b border-white/5 flex-shrink-0 backdrop-blur-xl bg-black/10">
+        <button onClick={onClose} className="p-2 -ml-2 hover:bg-white/5 rounded-full"><ChevronLeft className="w-6 h-6" /></button>
+        
+        <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/5">
+          <button onClick={onPrev} className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider hover:bg-white/10 rounded-full transition-all">Prev</button>
+          <div className="w-[1px] h-3 bg-white/10 mx-1" />
+          <button onClick={onNext} className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider hover:bg-white/10 rounded-full transition-all">Next</button>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={onDone}
+            className="px-5 py-1.5 bg-[#7B61FF] text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg active:scale-95 transition-all"
+          >
+            Done
+          </button>
+          <button onClick={() => setActivePanel('menu')} className="p-2 -mr-2 hover:bg-white/5 rounded-full opacity-60"><MoreHorizontal className="w-6 h-6" /></button>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="flex-1 overflow-y-auto px-6 py-8 no-scrollbar relative">
+        <input 
+          value={note.title}
+          onChange={(e) => onUpdate({ title: e.target.value })}
+          placeholder="Note title"
+          className="w-full bg-transparent border-none text-2xl font-black placeholder:opacity-20 mb-2 focus:outline-none"
+        />
+        
+        <div className="flex items-center gap-2 mb-8 opacity-40 text-[10px] font-bold tracking-widest uppercase">
+          <button onClick={() => setActivePanel('mood')} className="hover:text-[#7B61FF] transition-colors">{note.mood || 'Add Mood'}</button>
+        </div>
+
+        {/* Media Row - Images Only */}
+        {note.media.length > 0 && (
+          <div className="flex gap-4 overflow-x-auto no-scrollbar mb-8 pb-4">
+            <LayoutGroup>
+              {note.media.map((m: MediaItem) => (
+                <motion.div 
+                  layout
+                  key={m.id} 
+                  className="min-w-[160px] h-40 rounded-[22px] bg-white/5 border border-white/5 overflow-hidden flex-shrink-0 relative group shadow-2xl"
+                >
+                  <img src={m.url} className="w-full h-full object-cover" alt="" />
+                  <button 
+                    onClick={() => onUpdate({ media: note.media.filter((item: MediaItem) => item.id !== m.id) })}
+                    className="absolute top-3 right-3 p-2 bg-black/60 backdrop-blur-md rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-3 h-3 text-white" />
+                  </button>
+                </motion.div>
+              ))}
+            </LayoutGroup>
+          </div>
+        )}
+
+        <div className="relative">
+          <textarea 
+            ref={textareaRef}
+            value={note.body}
+            onChange={(e) => onUpdate({ body: e.target.value })}
+            placeholder="Start your note..."
+            style={{ fontSize: note.fontSize, color: note.textColor }}
+            className="w-full bg-transparent border-none resize-none focus:outline-none placeholder:opacity-20 leading-relaxed min-h-[50vh]"
+          />
+
+          {/* Stickers Layer */}
+          <AnimatePresence>
+            {note.stickers?.map((s: Sticker) => (
+              <motion.div
+                key={s.id}
+                drag
+                dragConstraints={containerRef}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="absolute z-[40] cursor-grab active:cursor-grabbing p-4 text-4xl"
+                style={{ left: `${s.x}%`, top: `${s.y}%` }}
+              >
+                {s.emoji}
+                <button 
+                  onClick={() => onUpdate({ stickers: note.stickers.filter((item: Sticker) => item.id !== s.id) })}
+                  className="absolute -top-1 -right-1 bg-red-500 rounded-full w-5 h-5 flex items-center justify-center text-[10px] text-white opacity-0 hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Floating Toolbar - IMPROVED LAYOUT */}
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 z-[60]">
+        {/* Layered Typography Panel (Docks Above) */}
+        <AnimatePresence>
+          {activePanel === 'typo' && (
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 20, opacity: 0 }}
+              className="bg-[#0F1629]/95 backdrop-blur-2xl border border-white/10 rounded-3xl px-6 py-4 flex items-center gap-8 shadow-2xl"
+            >
+              <button onClick={() => onUpdate({ fontSize: Math.max(12, note.fontSize - 2) })} className="p-2 opacity-60 hover:opacity-100"><MinusCircle className="w-5 h-5" /></button>
+              <div className="w-[1px] h-4 bg-white/10" />
+              <button onClick={() => onUpdate({ fontSize: 24 })} className="text-xl font-black">H1</button>
+              <button onClick={() => onUpdate({ fontSize: 20 })} className="text-lg font-black">H2</button>
+              <button onClick={() => onUpdate({ fontSize: 16 })} className="text-sm font-black">Aa</button>
+              <div className="w-[1px] h-4 bg-white/10" />
+              <button className="p-2 opacity-60"><Bold className="w-5 h-5" /></button>
+              <button className="p-2 opacity-60"><Underline className="w-5 h-5" /></button>
+              <div className="w-[1px] h-4 bg-white/10" />
+              <button onClick={() => setActivePanel(null)} className="p-1"><X className="w-5 h-5 text-[#F2565A]" /></button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* IMPROVED BOTTOM TOOLBAR - Better icon management */}
+        <div className="bg-white/5 backdrop-blur-3xl rounded-[32px] px-8 py-5 flex items-center gap-10 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+          {/* Add Media (Images Only) */}
+          <button 
+            onClick={() => setActivePanel(activePanel === 'add' ? null : 'add')} 
+            className={`transition-all ${activePanel === 'add' ? 'text-[#7B61FF] scale-110' : 'opacity-40 hover:opacity-100'}`}
+            title="Add image"
+          >
+            <ImageIcon className="w-7 h-7" />
+          </button>
+
+          {/* Drawing Tools */}
+          <button 
+            onClick={() => setActivePanel(activePanel === 'drawing' ? null : 'drawing')} 
+            className={`transition-all ${activePanel === 'drawing' ? 'text-[#7B61FF] scale-110' : 'opacity-40 hover:opacity-100'}`}
+            title="Drawing"
+          >
+            <Brush className="w-7 h-7" />
+          </button>
+
+          {/* Eraser */}
+          <button 
+            onClick={() => {
+              if (note.drawingMode !== 'none') {
+                onUpdate({ drawingMode: 'none' });
+                toast.success('Drawing mode disabled');
+              } else {
+                onUpdate({ drawingMode: 'free' });
+                setActivePanel(null);
+                toast.success('Free drawing enabled');
+              }
+            }}
+            className={`transition-all ${note.drawingMode !== 'none' ? 'text-[#7B61FF] scale-110' : 'opacity-40 hover:opacity-100'}`}
+            title="Eraser/Clear drawing"
+          >
+            <Eraser className="w-7 h-7" />
+          </button>
+
+          {/* Stickers */}
+          <button 
+            onClick={() => setActivePanel(activePanel === 'stickers' ? null : 'stickers')} 
+            className={`transition-all ${activePanel === 'stickers' ? 'text-[#7B61FF] scale-110' : 'opacity-40 hover:opacity-100'}`}
+            title="Add stickers"
+          >
+            <Smile className="w-7 h-7" />
+          </button>
+
+          {/* Colors */}
+          <button 
+            onClick={() => setActivePanel(activePanel === 'color' ? null : 'color')} 
+            className={`transition-all ${activePanel === 'color' ? 'text-[#7B61FF] scale-110' : 'opacity-40 hover:opacity-100'}`}
+            title="Colors & themes"
+          >
+            <Palette className="w-7 h-7" />
+          </button>
+
+          {/* Typography */}
+          <button 
+            onClick={() => setActivePanel(activePanel === 'typo' ? null : 'typo')} 
+            className={`transition-all ${activePanel === 'typo' ? 'text-[#7B61FF] scale-110' : 'opacity-40 hover:opacity-100'}`}
+            title="Typography"
+          >
+            <Type className="w-7 h-7" />
+          </button>
+
+          <div className="flex gap-6 px-8 border-x border-white/10">
+            <button onClick={onPrev} className="opacity-40 hover:opacity-100 active:scale-90 transition-all"><ArrowLeft className="w-6 h-6" /></button>
+            <button onClick={onNext} className="opacity-40 hover:opacity-100 active:scale-90 transition-all"><ArrowRight className="w-6 h-6" /></button>
+          </div>
+
+          {/* Delete */}
+          <button 
+            onClick={() => setActivePanel('menu')} 
+            className="opacity-40 hover:opacity-100 hover:text-red-500 transition-all"
+            title="More options"
+          >
+            <MoreVertical className="w-7 h-7" />
+          </button>
+        </div>
+      </div>
+
+      {/* Panels (Slide Up) */}
+      <AnimatePresence>
+        {activePanel === 'add' && (
+          <SlidePanel onClose={() => setActivePanel(null)}>
+            <div className="grid grid-cols-2 gap-8 p-8">
+              <PanelItem icon={ImageIcon} label="Add Image" onClick={() => {
+                // Open file picker for images
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e: any) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (evt: any) => {
+                      onUpdate({ media: [...note.media, { id: Date.now().toString(), type: 'image', url: evt.target.result }] });
+                      setActivePanel(null);
+                      toast.success('Image added');
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                };
+                input.click();
+              }} />
+              <PanelItem icon={Brush} label="Free Draw" onClick={() => {
+                onUpdate({ drawingMode: 'free' });
+                setActivePanel(null);
+                toast.success('Free drawing mode');
+              }} />
+              <PanelItem icon={Square} label="Paper Draw" onClick={() => {
+                onUpdate({ drawingMode: 'paper' });
+                setActivePanel(null);
+                toast.success('Paper drawing mode');
+              }} />
+            </div>
+          </SlidePanel>
+        )}
+        {activePanel === 'drawing' && (
+          <SlidePanel onClose={() => setActivePanel(null)}>
+            <div className="p-8 space-y-6">
+              <div>
+                <h4 className="text-[10px] font-black tracking-[0.3em] opacity-40 uppercase mb-4">Drawing Mode</h4>
+                <div className="flex gap-4">
+                  <button 
+                    onClick={() => { onUpdate({ drawingMode: 'free', strokes: [] }); toast.success('Free draw mode'); setActivePanel(null); }}
+                    className={`flex-1 py-3 rounded-xl font-bold text-[12px] transition-all ${note.drawingMode === 'free' ? 'bg-[#7B61FF] text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                  >
+                    Free Draw
+                  </button>
+                  <button 
+                    onClick={() => { onUpdate({ drawingMode: 'paper', strokes: [] }); toast.success('Paper mode'); setActivePanel(null); }}
+                    className={`flex-1 py-3 rounded-xl font-bold text-[12px] transition-all ${note.drawingMode === 'paper' ? 'bg-[#7B61FF] text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                  >
+                    Paper
+                  </button>
+                </div>
+              </div>
+              <div>
+                <h4 className="text-[10px] font-black tracking-[0.3em] opacity-40 uppercase mb-4">Brush Size</h4>
+                <input 
+                  type="range" 
+                  min="1" 
+                  max="20" 
+                  value={brushSize}
+                  onChange={(e) => setBrushSize(Number(e.target.value))}
+                  className="w-full"
+                />
+                <p className="text-xs opacity-60 mt-2">Size: {brushSize}px</p>
+              </div>
+            </div>
+          </SlidePanel>
+        )}
+        {activePanel === 'stickers' && (
+          <SlidePanel onClose={() => setActivePanel(null)}>
+            <div className="p-8 grid grid-cols-5 gap-6 max-h-[40vh] overflow-y-auto no-scrollbar">
+              {['✨', '🔥', '💖', '🍀', '🌈', '🎨', '🚀', '⭐', '🎈', '🍕', '🍣', '🎸', '🎮', '🛸', '🌊'].map(s => (
+                <button key={s} onClick={() => addSticker(s)} className="text-4xl hover:scale-125 transition-transform">{s}</button>
+              ))}
+            </div>
+          </SlidePanel>
+        )}
+        {activePanel === 'mood' && (
+          <SlidePanel onClose={() => setActivePanel(null)}>
+            <div className="p-8 grid grid-cols-5 gap-6">
+              {['😊', '😇', '🤔', '😴', '😎', '🥳', '😭', '🤯', '🤠', '👻'].map(m => (
+                <button key={m} onClick={() => { onUpdate({ mood: m }); setActivePanel(null); }} className="text-4xl hover:scale-125 transition-transform">{m}</button>
+              ))}
+            </div>
+          </SlidePanel>
+        )}
+        {activePanel === 'color' && (
+          <SlidePanel onClose={() => setActivePanel(null)}>
+            <div className="p-8 space-y-10">
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-black tracking-[0.3em] opacity-40 uppercase">Themes</h4>
+                <div className="grid grid-cols-3 gap-4">
+                  {THEMES.map(t => (
+                    <button 
+                      key={t.id}
+                      onClick={() => { onUpdate({ theme: t.id }); setActivePanel(null); }}
+                      className={`p-5 rounded-[22px] border-2 transition-all text-[11px] font-black uppercase tracking-widest ${note.theme === t.id ? 'border-[#7B61FF] shadow-lg scale-105' : 'border-white/5'}`}
+                      style={{ backgroundColor: t.bg, color: t.text }}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-black tracking-[0.3em] opacity-40 uppercase">Text Color</h4>
+                <div className="flex gap-5 overflow-x-auto no-scrollbar pb-2">
+                  {['#E6E9F2', '#7B61FF', '#4ADE80', '#FBBF24', '#F2565A', '#C084FC', '#000000', '#FFFFFF'].map(c => (
+                    <button 
+                      key={c}
+                      onClick={() => { onUpdate({ textColor: c }); setActivePanel(null); }}
+                      className={`min-w-[50px] h-12 rounded-full border-2 transition-all ${note.textColor === c ? 'border-white scale-110 shadow-xl' : 'border-white/10'}`}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </SlidePanel>
+        )}
+        {activePanel === 'menu' && (
+          <SlidePanel onClose={() => setActivePanel(null)}>
+            <div className="p-6 space-y-3">
+              <MenuItem icon={Star} label={note.pinned ? "Unpin" : "Pin to Top"} onClick={() => { onUpdate({ pinned: !note.pinned }); setActivePanel(null); }} />
+              <MenuItem icon={Save} label={note.saved ? "Unsave" : "Save"} onClick={() => { onUpdate({ saved: !note.saved }); setActivePanel(null); }} />
+              <MenuItem icon={Share2} label="Share" onClick={() => { toast.info('Share feature coming soon'); setActivePanel(null); }} />
+              <div className="pt-6 mt-3 border-t border-white/5">
+                <MenuItem icon={Trash2} label="Delete" color="#F2565A" onClick={() => {
+                  if (confirm('Delete this note permanently?')) {
+                    onDelete();
+                    onClose();
+                  }
+                }} />
+              </div>
+              <div className="text-[9px] text-center pt-8 opacity-20 font-black uppercase tracking-[0.3em]">
+                Last Edit: {new Date(note.updatedAt).toLocaleString()}
+              </div>
+            </div>
+          </SlidePanel>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             searchQuery={searchQuery}

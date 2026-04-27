@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Share2, MapPin, ShieldCheck, AlertCircle, X, ChevronLeft, ChevronRight, Bookmark, Flag, Edit3, Trash2, MoreVertical } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MapPin, ShieldCheck, AlertCircle, X, ChevronLeft, ChevronRight, Bookmark, Flag, Edit3, Trash2, MoreVertical, Phone } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ListingDetailProps {
   listing: any;
@@ -75,6 +76,7 @@ export function ListingDetail({
   const [imgIndex, setImgIndex] = useState(0);
   const isOwner = listing.user_id === currentUserId;
   const media = listing.media_urls || [];
+  const isMobile = useIsMobile();
   
   const badgeKey = TYPE_TO_BADGE[listing.type] || 'sell';
   const badgeStyle = BADGE_STYLES[badgeKey];
@@ -141,7 +143,7 @@ export function ListingDetail({
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto pb-32">
-            {/* Image Gallery */}
+            {/* Image Gallery - Desktop arrows inside, mobile just swipe/scroll */}
             {media.length > 0 ? (
               <div className="relative">
                 <img
@@ -150,30 +152,34 @@ export function ListingDetail({
                   className="w-full aspect-square object-cover"
                   loading="lazy"
                 />
-                {media.length > 1 && (
+                {/* Desktop only: navigation arrows inside image */}
+                {!isMobile && media.length > 1 && (
                   <>
                     <button
                       onClick={prevImage}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-2 text-white hover:bg-black/60 transition-colors"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2.5 text-white hover:bg-black/70 transition-colors"
                     >
-                      <ChevronLeft className="w-5 h-5" />
+                      <ChevronLeft className="w-6 h-6" />
                     </button>
                     <button
                       onClick={nextImage}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-2 text-white hover:bg-black/60 transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2.5 text-white hover:bg-black/70 transition-colors"
                     >
-                      <ChevronRight className="w-5 h-5" />
+                      <ChevronRight className="w-6 h-6" />
                     </button>
-                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
-                      {media.map((_, i) => (
-                        <button
-                          key={i}
-                          onClick={() => setImgIndex(i)}
-                          className={cn('w-2 h-2 rounded-full transition-all', i === imgIndex ? 'bg-white w-4' : 'bg-white/50')}
-                        />
-                      ))}
-                    </div>
                   </>
+                )}
+                {/* Image dots indicator */}
+                {media.length > 1 && (
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+                    {media.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setImgIndex(i)}
+                        className={cn('w-2 h-2 rounded-full transition-all', i === imgIndex ? 'bg-white w-4' : 'bg-white/50')}
+                      />
+                    ))}
+                  </div>
                 )}
               </div>
             ) : (
@@ -184,7 +190,7 @@ export function ListingDetail({
 
             {/* Details Section */}
             <div className="p-5 space-y-5">
-              {/* Badge & Price */}
+              {/* Badge & NPR Price in green */}
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <span
@@ -197,7 +203,7 @@ export function ListingDetail({
                   </span>
                 </div>
                 {hasPrice && (
-                  <span className={cn('text-2xl font-bold', badgeStyle.priceClass)}>
+                  <span className="text-2xl font-bold text-emerald-500">
                     NPR {listing.price!.toLocaleString()}
                   </span>
                 )}
@@ -318,17 +324,29 @@ export function ListingDetail({
               </Button>
             </div>
 
-            {/* Primary Actions */}
+            {/* Primary Actions: Message (blue) and Call (green) */}
             {!isOwner && (
               <>
                 <Button
                   onClick={onChat}
                   size="lg"
-                  className="w-full gap-2 bg-blue-600 hover:bg-blue-700"
+                  className="w-full gap-2 bg-blue-600 hover:bg-blue-500 text-white border-0"
                 >
-                  <MessageCircle className="w-4 h-4" />
+                  <MessageCircle className="w-5 h-5" />
                   Message Seller
                 </Button>
+                {listing.seller?.phone && (
+                  <Button
+                    asChild
+                    size="lg"
+                    className="w-full gap-2 bg-emerald-600 hover:bg-emerald-500 text-white border-0"
+                  >
+                    <a href={`tel:${listing.seller.phone}`}>
+                      <Phone className="w-5 h-5" />
+                      Call Seller
+                    </a>
+                  </Button>
+                )}
                 {listing.seller?.phone && (
                   <div className="text-xs text-center text-muted-foreground">
                     Phone: {listing.seller.phone} (Shared with interested buyers)
