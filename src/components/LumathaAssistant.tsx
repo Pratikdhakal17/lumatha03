@@ -11,18 +11,11 @@ interface ChatMessage {
 }
 
 const ALL_CHIPS = [
-  'What can I do on Lumatha? 🌟',
+  'How do I use Home? 🏠',
   'How do I use Messages? 💬',
-  'How do I post in Home? 🏠',
   'How do I use Notes? 📝',
   'How do I use Adventure? 🧭',
   'How do I use Marketplace? 🛍️',
-  'How do I use Random Connect? 🤝',
-  'How do I earn points? 🏆',
-  'How do I change privacy settings? 🔒',
-  'What is view once message? 👁️',
-  'How do I create a story? ✨',
-  'How do I find friends? 👥',
 ];
 
 const STORAGE_KEY = 'lumatha_ai_chat_history';
@@ -115,7 +108,7 @@ Keep answers practical, concise, and helpful. Do not provide political, historic
     setMessages([{
       id: Date.now(),
       role: 'assistant',
-      content: `Namaste ${username}! 🙏\n\nI am your Lumatha AI companion. I can only help with Lumatha features and app usage, and I can answer Lumatha founder questions too. If you ask something outside Lumatha, I’ll gently redirect you back here.\n\nWhat do you want to explore in Lumatha?`,
+      content: `Namaste ${username}! 🙏\n\nI am your Lumatha AI companion. I can only help with Lumatha features and app usage, and I can answer Lumatha founder questions too. If you ask something outside Lumatha, I’ll gently redirect you back here.\n\nWhat do you want to explore in Lumatha today?`,
       time: new Date(),
     }]);
   }, [open]);
