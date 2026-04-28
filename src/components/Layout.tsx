@@ -455,13 +455,8 @@ function LayoutContent({ children }: LayoutProps) {
     // 2. All other sections (feed, home subsections, adventures, etc): Hide on scroll down, show on scroll up
     // 3. Mobile: Same behavior as desktop (no exception)
     
-    const isMessages = location.pathname.startsWith('/chat');
-    
-    // Messages section: ALWAYS sticky - never hide regardless of platform or scroll
-    if (isMessages) {
-      setHeaderVisible(true);
-      return;
-    }
+    // No special-case for Messages here: all sections follow the same
+    // hide-on-scroll-down / show-on-scroll-up formula.
     
     // For all other sections: Apply scroll-based hide/show behavior
     if (ticking.current) return;
@@ -620,7 +615,7 @@ function LayoutContent({ children }: LayoutProps) {
         {/* Keep header in normal sticky flow to avoid route-switch jumps */}
         <header className={cn(
           "sticky top-0 z-50 w-full h-[72px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 transition-transform duration-300",
-          (headerVisible || location.pathname.startsWith('/chat')) ? "translate-y-0" : "-translate-y-full"
+          headerVisible ? "translate-y-0" : "-translate-y-full"
         )}>
           <div className="grid h-full grid-cols-[auto_1fr_auto] items-center gap-3 px-3 md:px-5">
             {/* Left side - menu/back button and Lumatha branding OR sidebar icon for non-home sections */}
@@ -723,8 +718,8 @@ function LayoutContent({ children }: LayoutProps) {
           {children}
         </div>
         
-        {/* Bottom navigation - Home only so other sections stay clean */}
-        {isMobile && location.pathname === '/' && <SubNavigation visible={true} />}
+        {/* Bottom navigation - Home only; visibility follows header (hide on scroll down) */}
+        {isMobile && location.pathname === '/' && headerVisible && <SubNavigation visible={true} />}
       </main>
       <CreatePostSheet open={createSheetOpen} onOpenChange={setCreateSheetOpen} />
       <LumathaAssistant open={assistantOpen} onClose={() => setAssistantOpen(false)} />
