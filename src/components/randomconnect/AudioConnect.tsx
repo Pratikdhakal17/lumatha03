@@ -213,76 +213,11 @@ export const AudioConnect: React.FC<AudioConnectProps> = ({
         </div>
       )}
 
-      {/* Car Interior UI */}
-      <div className="relative w-full max-w-md aspect-[4/3] rounded-3xl overflow-hidden shadow-xl">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-card">
-          <div className="absolute top-0 left-0 right-0 h-1/4 bg-gradient-to-b from-primary/10 to-transparent" />
-          <div className="absolute top-8 left-1/2 -translate-x-1/2 flex flex-col gap-6 opacity-30"
-            style={{ transform: `translateX(-50%) translateY(${roadPosition}px)` }}>
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="w-1 h-8 bg-muted-foreground/50 rounded-full" />
-            ))}
-          </div>
-        </div>
-
-        <div className="absolute bottom-0 left-0 right-0 h-3/4 bg-gradient-to-t from-card via-card/95 to-transparent rounded-t-[2rem]">
-            <div className="flex justify-around items-center h-full px-6 pt-8">
-              {/* You */}
-              <div className="absolute -top-2 w-24 h-28 bg-muted/30 rounded-t-full rounded-b-lg -z-10" />
-              <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-primary/40 to-primary/10 flex items-center justify-center border-2 border-primary/20"
-                style={{
-                  boxShadow: activeIsMicOn ? `0 0 ${myVoiceLevel / 2}px ${myVoiceLevel / 3}px hsl(var(--primary) / ${Math.min(0.6, myVoiceLevel / 100)})` : 'none',
-                  transform: activeIsMicOn ? `scale(${1 + myVoiceLevel / 300})` : 'scale(1)'
-                }}>
-                {activeIsMicOn ? <Mic className="w-8 h-8 text-primary" /> : <MicOff className="w-8 h-8 text-muted-foreground" />}
-              </div>
-              <div className="text-center">
-                <p className="text-xs font-bold text-primary">{myPseudoName.split('-')[0]}</p>
-                <p className="text-[10px] text-muted-foreground">You</p>
-              </div>
-              <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full transition-all duration-75" style={{ width: activeIsMicOn ? `${myVoiceLevel}%` : '0%' }} />
-              </div>
-            </div>
-
-            {/* Connection Line */}
-            <div className="flex flex-col items-center gap-2 -mt-8">
-              <div className={`w-3 h-3 rounded-full ${activeIsConnected ? 'bg-green-500' : 'bg-yellow-500'} animate-pulse shadow-lg`} />
-              <div className="w-px h-20 bg-gradient-to-b from-primary/30 via-muted to-secondary/30" />
-              <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-yellow-500'} animate-pulse shadow-lg`} />
-            </div>
-
-            {/* Partner */}
-            <div className="flex flex-col items-center gap-3 relative">
-              <div className="absolute -top-2 w-24 h-28 bg-muted/30 rounded-t-full rounded-b-lg -z-10" />
-              <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-secondary/40 to-secondary/10 flex items-center justify-center border-2 border-secondary/20"
-                style={{
-                  boxShadow: activeHasRemote ? `0 0 ${partnerVoiceLevel / 2}px ${partnerVoiceLevel / 3}px hsl(var(--secondary) / ${Math.min(0.6, partnerVoiceLevel / 100)})` : 'none',
-                  transform: activeHasRemote ? `scale(${1 + partnerVoiceLevel / 300})` : 'scale(1)'
-                }}>
-                <Volume2 className={`w-8 h-8 ${activeHasRemote ? 'text-secondary' : 'text-muted-foreground'}`} />
-              </div>
-              <div className="text-center">
-                <p className="text-xs font-bold text-secondary">{partnerPseudoName.split('-')[0]}</p>
-                <p className="text-[10px] text-muted-foreground">Partner</p>
-              </div>
-              <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-secondary rounded-full transition-all duration-75" style={{ width: activeHasRemote ? `${partnerVoiceLevel}%` : '0%' }} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {captionsEnabled && currentCaption && (
-          <div className="absolute bottom-4 left-4 right-4 z-20">
-            <div className="bg-black/80 backdrop-blur-sm px-4 py-2 rounded-lg mx-auto max-w-xs">
-              <p className="text-white text-sm text-center">{currentCaption}</p>
-            </div>
-          </div>
-        )}
+      {/* Simplified Car UI placeholder (temporary) */}
+      <div className="relative w-full max-w-md aspect-[4/3] rounded-3xl overflow-hidden shadow-xl flex items-center justify-center">
+        <p className="text-sm text-muted-foreground">Car UI placeholder — restoring full UI in follow-up patch.</p>
       </div>
 
-      {/* Controls */}
       <div className="flex items-center gap-4 mt-4">
         <button onClick={activeToggleMic}
           className={`w-14 h-14 rounded-full flex items-center justify-center hover:scale-105 shadow-lg ${activeIsMicOn ? 'bg-primary text-primary-foreground' : 'bg-red-500 text-white'}`}>
