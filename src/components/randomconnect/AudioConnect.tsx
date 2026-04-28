@@ -226,9 +226,8 @@ export const AudioConnect: React.FC<AudioConnectProps> = ({
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 h-3/4 bg-gradient-to-t from-card via-card/95 to-transparent rounded-t-[2rem]">
-          <div className="flex justify-around items-center h-full px-6 pt-8">
-            {/* You */}
-            activeLeave().then(() => onSkip());
+            <div className="flex justify-around items-center h-full px-6 pt-8">
+              {/* You */}
               <div className="absolute -top-2 w-24 h-28 bg-muted/30 rounded-t-full rounded-b-lg -z-10" />
               <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-primary/40 to-primary/10 flex items-center justify-center border-2 border-primary/20"
                 style={{
