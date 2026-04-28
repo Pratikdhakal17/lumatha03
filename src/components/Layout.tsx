@@ -451,45 +451,36 @@ function LayoutContent({ children }: LayoutProps) {
 
   const handleScroll = useCallback(() => {
     // Header behavior: 
-    // 1. Messages (/chat*): Always sticky (never hide)
-    // 2. Home subsections & other sections: Hide on scroll down, show on scroll up
-    // 3. Feed (/): Hide on scroll down, show on scroll up
+    // 1. Messages (/chat*): ALWAYS sticky - never hide
+    // 2. All other sections (feed, home subsections, adventures, etc): Hide on scroll down, show on scroll up
+    // 3. Mobile: Same behavior as desktop (no exception)
     
     const isMessages = location.pathname.startsWith('/chat');
-    const isFeed = location.pathname === '/';
-    const isHomeSubsection = ['/', '/search', '/private', '/notifications'].includes(location.pathname) || location.pathname.startsWith('/profile/');
     
-    // Messages section: always sticky
+    // Messages section: ALWAYS sticky - never hide regardless of platform or scroll
     if (isMessages) {
       setHeaderVisible(true);
       return;
     }
     
-    if (isMobile) {
-      setHeaderVisible(true);
-      return;
-    }
-    
+    // For all other sections: Apply scroll-based hide/show behavior
     if (ticking.current) return;
     ticking.current = true;
     window.requestAnimationFrame(() => {
       const st = feedCenterRef.current?.scrollTop || 0;
       const lastY = lastScrollY.current;
       
-      // Apply scroll hide for feed and other sections (not messages)
-      if (isFeed || !isMessages) {
-        // Hide when scrolling down, show when scrolling up
-        if (st > lastY && st > 50) {
-          setHeaderVisible(false);
-        } else if (st < lastY || st <= 50) {
-          setHeaderVisible(true);
-        }
+      // Hide when scrolling down past 50px threshold, show when scrolling up or near top
+      if (st > lastY && st > 50) {
+        setHeaderVisible(false);
+      } else if (st < lastY || st <= 50) {
+        setHeaderVisible(true);
       }
       
       lastScrollY.current = st <= 0 ? 0 : st;
       ticking.current = false;
     });
-  }, [location.pathname, isMobile]);
+  }, [location.pathname]);
 
   useEffect(() => {
     // Always show header when switching sections.
