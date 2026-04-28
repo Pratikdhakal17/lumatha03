@@ -74,6 +74,10 @@ Use this command to build, commit, push, and trigger Vercel deploy:
 npm run ship
 ```
 
+## Deployment checklist
+
+Before promoting a deploy, review [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) for the required env vars and smoke tests.
+
 Useful variants:
 
 ```sh
