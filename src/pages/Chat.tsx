@@ -2679,7 +2679,7 @@ export default function Chat() {
 
   return (
     <div className={cn("pb-6 md:pb-20", isMobile ? "min-h-full" : "min-h-[calc(100vh-56px)]")} style={{ background: '#0a0f1e' }}>
-      <div className="sticky top-0 z-40 bg-[#0B0D1F]/98 backdrop-blur-md">
+      <div className="bg-[#0B0D1F]/95 backdrop-blur-md border-b border-white/5">
         {/* Top Banner */}
         <TopBanner />
 
