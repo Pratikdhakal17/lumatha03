@@ -1,6 +1,6 @@
 import React from 'react';
 import { Shield, Eye, Clock, Heart, AlertTriangle } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -53,6 +53,9 @@ export const SecurityTips: React.FC<SecurityTipsProps> = ({ compact = false }) =
               <Shield className="w-5 h-5 text-primary" />
               Privacy & Security
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Read the safety and privacy guidance for Random Connect.
+            </DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh]">
             <div className="space-y-4">

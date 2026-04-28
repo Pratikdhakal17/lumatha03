@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -51,6 +52,9 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
             <AlertTriangle className="w-5 h-5 text-orange-500" />
             Report User
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Choose a reason and submit a report for this Random Connect session.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="py-2">
