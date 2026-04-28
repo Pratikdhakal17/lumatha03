@@ -867,7 +867,7 @@ export default function Profile() {
                     {story.photos.length > 0 && (
                       <div className="mt-3 grid grid-cols-2 gap-2">
                         {story.photos.slice(0, 2).map((p, i) => (
-                          <img key={i} src={p} className="w-full h-24 object-cover rounded-lg" alt="" />
+                          <img key={i} src={p} className="w-full h-24 object-cover rounded-lg" alt="" loading="lazy" decoding="async" />
                         ))}
                       </div>
                     )}
@@ -886,7 +886,7 @@ export default function Profile() {
                   <div key={doc.id} className="bg-[#111827] border border-[#1f2937] rounded-xl p-3 flex items-center gap-3">
                     <div className="relative w-16 h-20 sm:w-20 sm:h-24 rounded-lg overflow-hidden shrink-0 border border-violet-500/20 bg-violet-950/80">
                       {doc.cover_url ? (
-                        <img src={doc.cover_url} alt="" className="w-full h-full object-cover" />
+                        <img src={doc.cover_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-violet-300 px-1 text-center">
                           <BookOpen className="w-5 h-5" />
@@ -1131,7 +1131,8 @@ export default function Profile() {
                   {filteredMediaEntries.slice(0, 6).map((entry) => (
                     <button
                       key={entry.id}
-                      className="relative aspect-square rounded-md overflow-hidden hover:opacity-80 transition-opacity"
+                      className="relative rounded-md overflow-hidden hover:opacity-80 transition-opacity"
+                      style={{ aspectRatio: '1/1', contentVisibility: 'auto', contain: 'layout' }}
                       onClick={() => {
                         const urls = filteredMediaEntries.map((item) => item.url);
                         const types = filteredMediaEntries.map((item) => (item.isVideo ? 'video' : 'image'));
@@ -1140,9 +1141,9 @@ export default function Profile() {
                       }}
                     >
                       {entry.isVideo ? (
-                        <video src={entry.url} className="w-full h-full object-cover" />
+                        <video src={entry.url} className="w-full h-full object-cover" preload="none" />
                       ) : (
-                        <img src={entry.url} alt="" className="w-full h-full object-cover" />
+                        <img src={entry.url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                       )}
                       {entry.isVideo && (
                         <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">

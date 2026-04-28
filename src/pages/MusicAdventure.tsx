@@ -60,7 +60,7 @@ export default function MusicAdventure() {
   const [searchQuery, setSearchQuery] = useState('');
   const [exploreSearchFilter, setExploreSearchFilter] = useState('all');
   const [profileViewFilter, setProfileViewFilter] = useState<'all' | 'liked' | 'saved' | 'visited'>('all');
-  const [visiblePlaceCount, setVisiblePlaceCount] = useState(48);
+  const [visiblePlaceCount, setVisiblePlaceCount] = useState(72);
 
   const [travelStories, setTravelStories] = useState<any[]>([]);
   const [storiesLoading, setStoriesLoading] = useState(true);
@@ -383,9 +383,10 @@ export default function MusicAdventure() {
                   <div
                     key={place.id}
                     onClick={() => setSelectedPlace(place)}
-                    className="group relative aspect-square overflow-hidden bg-slate-900 border-[0.5px] border-white/5 cursor-pointer shadow-2xl"
+                    className="group relative overflow-hidden bg-slate-900 border-[0.5px] border-white/5 cursor-pointer shadow-2xl"
+                    style={{ aspectRatio: '1/1', contentVisibility: 'auto', contain: 'layout' }}
                   >
-                    <img src={placeImage} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt={placeName} loading="lazy" />
+                    <img src={placeImage} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt={placeName} loading="lazy" decoding="async" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity" />
                     <div className="absolute bottom-3 left-3 right-3">
                       <div className="flex items-end justify-between gap-2">
