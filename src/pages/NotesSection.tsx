@@ -566,13 +566,13 @@ function EditorView({ note, isSaving, onClose, onUpdate, onDelete, onNext, onPre
                 <div className="flex gap-4">
                   <button 
                     onClick={() => { onUpdate({ drawingMode: 'free', strokes: [] }); toast.success('Free draw mode'); setActivePanel(null); }}
-                    className={`flex-1 py-3 rounded-xl font-bold text-[12px] transition-all ${note.drawingMode === 'free' ? 'bg-[#7B61FF] text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                    className={`flex-1 py-3 rounded-full font-bold text-[12px] transition-all ${note.drawingMode === 'free' ? 'bg-[#7B61FF] text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
                   >
                     Free Draw
                   </button>
                   <button 
                     onClick={() => { onUpdate({ drawingMode: 'paper', strokes: [] }); toast.success('Paper mode'); setActivePanel(null); }}
-                    className={`flex-1 py-3 rounded-xl font-bold text-[12px] transition-all ${note.drawingMode === 'paper' ? 'bg-[#7B61FF] text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                    className={`flex-1 py-3 rounded-full font-bold text-[12px] transition-all ${note.drawingMode === 'paper' ? 'bg-[#7B61FF] text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
                   >
                     Paper
                   </button>

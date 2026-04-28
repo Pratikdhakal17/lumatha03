@@ -733,7 +733,7 @@ export function ExpressiveCanvas({
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setBaseWidth(b.size)}
                         className={cn(
-                          "flex flex-col items-center gap-2 px-4 py-2 rounded-xl flex-shrink-0 transition-all min-w-[60px]",
+                          "flex flex-col items-center gap-2 px-4 py-2 rounded-full flex-shrink-0 transition-all min-w-[60px]",
                           baseWidth === b.size 
                             ? "bg-white text-black shadow-lg" 
                             : "bg-white/10 text-white/70 hover:bg-white/20"
@@ -794,7 +794,7 @@ export function ExpressiveCanvas({
                         whileTap={{ scale: 0.9 }}
                         onClick={() => setBgColor(c.hex)}
                         className={cn(
-                          "w-10 h-10 rounded-xl flex-shrink-0 transition-all border-2 shadow-lg relative overflow-hidden",
+                          "w-10 h-10 rounded-full flex-shrink-0 transition-all border-2 shadow-lg relative overflow-hidden",
                           bgColor === c.hex 
                             ? "border-white scale-110 shadow-xl" 
                             : "border-transparent opacity-90 hover:opacity-100"
@@ -874,7 +874,7 @@ export function ExpressiveCanvas({
               setShowBgPanel(false);
             }}
             className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-xl transition-all",
+              "flex items-center gap-2 px-3 py-2 rounded-full transition-all",
               showColorPanel 
                 ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg" 
                 : "bg-white/10 text-white hover:bg-white/20"
@@ -897,7 +897,7 @@ export function ExpressiveCanvas({
               setShowBgPanel(false);
             }}
             className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-xl transition-all",
+              "flex items-center gap-2 px-3 py-2 rounded-full transition-all",
               showBrushPanel 
                 ? "bg-white text-black shadow-lg" 
                 : "bg-white/10 text-white hover:bg-white/20"
@@ -920,7 +920,7 @@ export function ExpressiveCanvas({
               setShowBrushPanel(false);
             }}
             className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-xl transition-all",
+              "flex items-center gap-2 px-3 py-2 rounded-full transition-all",
               showBgPanel 
                 ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg" 
                 : "bg-white/10 text-white hover:bg-white/20"
@@ -1082,7 +1082,7 @@ function ToolbarButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all",
+        "flex flex-col items-center gap-1 px-3 py-2 rounded-full transition-all",
         disabled 
           ? "opacity-30 cursor-not-allowed" 
           : "hover:bg-white/10 active:scale-95",
