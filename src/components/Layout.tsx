@@ -489,12 +489,16 @@ function LayoutContent({ children }: LayoutProps) {
   }, [location.pathname]);
 
   useEffect(() => {
-    // Attach scroll listener to all pages (feed, sections, chat)
-    // Scroll behavior: hide on scroll down, show on scroll up (except always-sticky Messages)
+    // Attach scroll listener to feed container and window as a fallback.
+    // This ensures header visibility toggles correctly even when inner views
+    // use different scroll containers (e.g. chat threads).
     const el = feedCenterRef.current;
-    if (!el) return;
-    el.addEventListener('scroll', handleScroll, { passive: true });
-    return () => el.removeEventListener('scroll', handleScroll);
+    if (el) el.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      if (el) el.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, [handleScroll, location.pathname]);
 
   useEffect(() => {
@@ -616,7 +620,7 @@ function LayoutContent({ children }: LayoutProps) {
         {/* Keep header in normal sticky flow to avoid route-switch jumps */}
         <header className={cn(
           "sticky top-0 z-50 w-full h-[72px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 transition-transform duration-300",
-          headerVisible ? "translate-y-0" : "-translate-y-full"
+          (headerVisible || location.pathname.startsWith('/chat')) ? "translate-y-0" : "-translate-y-full"
         )}>
           <div className="grid h-full grid-cols-[auto_1fr_auto] items-center gap-3 px-3 md:px-5">
             {/* Left side - menu/back button and Lumatha branding OR sidebar icon for non-home sections */}
@@ -661,12 +665,8 @@ function LayoutContent({ children }: LayoutProps) {
               )}
             </div>
             
-            {/* Center - Section name for non-feed pages */}
-            <div className="flex items-center justify-center min-w-0 px-2">
-              {!isFeedPage && (
-                <span className="text-sm font-bold text-white/70 truncate">{sectionLabel}</span>
-              )}
-            </div>
+            {/* Center - reserved for centered content (kept empty for right-aligned labels) */}
+            <div className="flex items-center justify-center min-w-0 px-2" />
             
             {/* Right side - Create + AI + Globe only on Home (proper order) */}
             <div className="flex items-center gap-1.5 justify-end min-w-0 justify-self-end">
@@ -706,7 +706,9 @@ function LayoutContent({ children }: LayoutProps) {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </>
-              ) : null}
+              ) : (
+                <span className="text-sm font-bold text-white/70 truncate ml-2">{sectionLabel}</span>
+              )}
             </div>
           </div>
         </header>
