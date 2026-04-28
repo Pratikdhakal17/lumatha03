@@ -196,7 +196,8 @@ export default function Auth() {
     if (!forgotEmail.trim()) { setForgotError('Please enter your email'); return; }
     setForgotLoading(true); setForgotError('');
     try {
-      const { data, error } = await supabase.from('profiles').select('id, name, avatar_url').eq('email', forgotEmail.trim().toLowerCase()).maybeSingle();
+      // Look up user by email in profiles table (email now stored there)
+      const { data, error } = await supabase.from('profiles').select('id, name, avatar_url, email').eq('email', forgotEmail.trim().toLowerCase()).maybeSingle();
       if (error || !data) { setForgotError('Email not found in our system'); setForgotLoading(false); return; }
       setForgotUserData(data);
       setForgotStep(2);
@@ -212,14 +213,27 @@ export default function Auth() {
   const sendResetCode = async () => {
     setForgotLoading(true); setForgotError(''); setForgotSuccess('');
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim().toLowerCase(), { redirectTo: `${window.location.origin}/auth?reset=true` });
-      if (error) throw error;
+      // Send password reset email via Supabase auth
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim().toLowerCase(), { 
+        redirectTo: `${window.location.origin}/auth?reset=true&email=${encodeURIComponent(forgotEmail.trim().toLowerCase())}` 
+      });
+      if (error) {
+        if (error.message?.includes('User not found')) {
+          setForgotError('Email not found in our system');
+        } else {
+          throw error;
+        }
+        return;
+      }
       setCodeSentEmail(forgotEmail);
       setForgotCodeSent(true);
       setForgotStep(3);
       setCodeCountdown(120);
-      toast.success('Reset code sent to your email');
-    } catch (error: any) { setForgotError(error.message || 'Failed to send reset code'); }
+      toast.success('Reset code sent to your email - check your inbox');
+    } catch (error: any) { 
+      setForgotError(error.message || 'Failed to send reset code. Please try again.'); 
+      console.error('Reset code error:', error);
+    }
     finally { setForgotLoading(false); }
   };
 
@@ -231,8 +245,25 @@ export default function Auth() {
 
   const handleVerifyCode = async () => {
     if (!forgotCode.trim()) { setForgotError('Please enter the code from your email'); return; }
-    setForgotStep(4);
-    setForgotSuccess('Code verified! Now create your new password.');
+    setForgotLoading(true); setForgotError('');
+    try {
+      // Verify OTP token sent to email
+      const { error } = await supabase.auth.verifyOtp({
+        email: forgotEmail.trim().toLowerCase(),
+        token: forgotCode.trim(),
+        type: 'recovery'
+      });
+      if (error) {
+        setForgotError('Invalid or expired code. Please try again or request a new code.');
+        return;
+      }
+      setForgotStep(4);
+      setForgotSuccess('Code verified! Now create your new password.');
+      setForgotError('');
+    } catch (error: any) {
+      setForgotError(error.message || 'Code verification failed');
+      console.error('Code verification error:', error);
+    } finally { setForgotLoading(false); }
   };
 
   const handleResetPassword = async () => {
@@ -242,6 +273,7 @@ export default function Auth() {
     
     setForgotLoading(true); setForgotError('');
     try {
+      // Update password using the verified session
       const { error } = await supabase.auth.updateUser({ password: forgotPassword });
       if (error) throw error;
       setForgotSuccess('Password reset successfully! Redirecting to login...');
@@ -250,14 +282,20 @@ export default function Auth() {
         setShowForgotPassword(false);
         setForgotStep(1);
         setForgotEmail('');
-        setForgotCode('');
         setForgotPassword('');
         setForgotConfirmPassword('');
         setForgotUserData(null);
         setForgotCodeSent(false);
         setIsLogin(true);
-      }, 2000);
-    } catch (error: any) { setForgotError(error.message || 'Failed to reset password'); }
+      }, 1500);
+    } catch (error: any) {
+      if (error.message?.includes('session')) {
+        setForgotError('Session expired. Please request a new reset code.');
+      } else {
+        setForgotError(error.message || 'Failed to reset password');
+      }
+      console.error('Password reset error:', error);
+    }
     finally { setForgotLoading(false); }
   };
 
@@ -288,7 +326,7 @@ export default function Auth() {
           if (!uploadError) { const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName); avatarUrl = urlData.publicUrl; }
         }
         await supabase.from('profiles').upsert({
-          id: data.user.id, name: sanitizedName, first_name: firstName.trim(), last_name: lastName.trim(),
+          id: data.user.id, email: email.trim().toLowerCase(), name: sanitizedName, first_name: firstName.trim(), last_name: lastName.trim(),
           username: username.toLowerCase().trim(), country, detected_city: detectedCity, timezone: detectedTimezone,
           location: detectedCity ? `${detectedCity}, ${country}` : country,
           age_group: ageGroup,
