@@ -450,9 +450,17 @@ function LayoutContent({ children }: LayoutProps) {
   const isInActiveChat = location.pathname.startsWith('/chat/') && location.pathname.length > 6;
 
   const handleScroll = useCallback(() => {
-    // Header hide only on feed, always visible everywhere else
+    // Header behavior: 
+    // 1. Messages (/chat*): Always sticky (never hide)
+    // 2. Home subsections & other sections: Hide on scroll down, show on scroll up
+    // 3. Feed (/): Hide on scroll down, show on scroll up
+    
+    const isMessages = location.pathname.startsWith('/chat');
     const isFeed = location.pathname === '/';
-    if (!isFeed) {
+    const isHomeSubsection = ['/', '/search', '/private', '/notifications'].includes(location.pathname) || location.pathname.startsWith('/profile/');
+    
+    // Messages section: always sticky
+    if (isMessages) {
       setHeaderVisible(true);
       return;
     }
@@ -461,14 +469,15 @@ function LayoutContent({ children }: LayoutProps) {
       setHeaderVisible(true);
       return;
     }
+    
     if (ticking.current) return;
     ticking.current = true;
     window.requestAnimationFrame(() => {
       const st = feedCenterRef.current?.scrollTop || 0;
       const lastY = lastScrollY.current;
       
-      // Only apply scroll hide on feed page
-      if (isFeed) {
+      // Apply scroll hide for feed and other sections (not messages)
+      if (isFeed || !isMessages) {
         // Hide when scrolling down, show when scrolling up
         if (st > lastY && st > 50) {
           setHeaderVisible(false);
@@ -489,10 +498,10 @@ function LayoutContent({ children }: LayoutProps) {
   }, [location.pathname]);
 
   useEffect(() => {
-    // Only attach scroll listener on feed page
+    // Attach scroll listener to all pages (feed, sections, chat)
+    // Scroll behavior: hide on scroll down, show on scroll up (except always-sticky Messages)
     const el = feedCenterRef.current;
-    const isFeed = location.pathname === '/';
-    if (!el || !isFeed) return;
+    if (!el) return;
     el.addEventListener('scroll', handleScroll, { passive: true });
     return () => el.removeEventListener('scroll', handleScroll);
   }, [handleScroll, location.pathname]);
@@ -538,12 +547,12 @@ function LayoutContent({ children }: LayoutProps) {
     : location.pathname === '/private'
       ? 'Private'
       : location.pathname === '/notifications'
-        ? 'Notify'
+        ? 'Notifications'
         : location.pathname.startsWith('/profile/')
           ? 'Profile'
           : location.pathname.startsWith('/education')
             ? educationTab === 'todo'
-              ? 'To do'
+              ? 'To Do'
               : educationTab === 'notes'
                 ? 'Notes'
                 : educationTab === 'docs'
@@ -559,9 +568,7 @@ function LayoutContent({ children }: LayoutProps) {
                   ? 'Marketplace'
                   : location.pathname.startsWith('/settings')
                     ? 'Settings'
-                    : isHomeSection
-                      ? 'Feed'
-                      : 'Section';
+                    : 'Home';
   const feedScopes = [
     { id: 'global', icon: Globe, label: 'Global', desc: 'From every corner' },
     { id: 'regional', icon: Flag, label: 'Regional', desc: 'Regional feed' },
@@ -616,32 +623,60 @@ function LayoutContent({ children }: LayoutProps) {
       }} unreadMessages={unreadMessages} items={currentMenuItems} hidden={false} />}
       <main ref={feedCenterRef} className="feed-center relative flex flex-col min-w-0 flex-1 h-screen overflow-y-auto scrollbar-hide">
         {/* Keep header in normal sticky flow to avoid route-switch jumps */}
-        <header className={cn("sticky top-0 z-50 w-full h-[72px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 transition-transform duration-300", headerVisible ? "translate-y-0" : "-translate-y-full")}>
+        <header className={cn(
+          "sticky top-0 z-50 w-full h-[72px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 transition-transform duration-300",
+          headerVisible ? "translate-y-0" : "-translate-y-full"
+        )}>
           <div className="grid h-full grid-cols-[auto_1fr_auto] items-center gap-3 px-3 md:px-5">
-            {/* Left side - menu button/back button and Lumatha branding */}
+            {/* Left side - menu/back button and Lumatha branding OR sidebar icon for non-home sections */}
             <div className="flex items-center gap-1 min-w-0">
-              {/* Mobile: Show back button when not on feed, hamburger when on feed */}
-              {isMobile && (
-                <button 
-                  onClick={isFeedPage ? handleMobileLeadingAction : handleBack} 
-                  className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5"
-                >
-                  {isFeedPage ? (
-                    <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
-                  ) : (
-                    <ArrowLeft className="w-5 h-5 text-blue-500" strokeWidth={2} />
+              {isFeedPage ? (
+                // Feed page: Hamburger menu
+                <>
+                  {isMobile && (
+                    <button 
+                      onClick={handleMobileLeadingAction} 
+                      className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5"
+                    >
+                      <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
+                    </button>
                   )}
-                </button>
-              )}
-              {/* Lumatha text for both desktop and mobile */}
-              <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
-              {/* Show section label when not on feed */}
-              {!isFeedPage && (
-                <span className="ml-2 text-xs text-slate-400 font-medium">/ {sectionLabel}</span>
+                  <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
+                </>
+              ) : (
+                // Other sections: Show back or sidebar icon + section name
+                <>
+                  {['/', '/search', '/private', '/notifications'].includes(location.pathname) || location.pathname.startsWith('/profile/') ? (
+                    // Home subsections: Back icon
+                    <button 
+                      onClick={handleBack} 
+                      className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5"
+                      aria-label="Go back"
+                    >
+                      <ArrowLeft className="w-5 h-5 text-blue-500" strokeWidth={2} />
+                    </button>
+                  ) : (
+                    // Other sections: Sidebar icon
+                    <button 
+                      onClick={handleMobileLeadingAction} 
+                      className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5"
+                      aria-label="Menu"
+                    >
+                      <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
+                    </button>
+                  )}
+                  <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
+                </>
               )}
             </div>
-            {/* Center - Empty (clean) */}
-            <div className="flex items-center justify-center min-w-0 px-2" />
+            
+            {/* Center - Section name for non-feed pages */}
+            <div className="flex items-center justify-center min-w-0 px-2">
+              {!isFeedPage && (
+                <span className="text-sm font-bold text-white/70 truncate">{sectionLabel}</span>
+              )}
+            </div>
+            
             {/* Right side - Create + AI + Globe only on Home (proper order) */}
             <div className="flex items-center gap-1.5 justify-end min-w-0 justify-self-end">
               {isFeedPage ? (
