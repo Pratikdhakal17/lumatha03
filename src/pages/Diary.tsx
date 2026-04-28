@@ -673,7 +673,7 @@ export default function Diary() {
               {/* ── Music Block ── */}
               {block.type === 'music' && (
                 <div className="flex items-center gap-3 p-3 rounded-2xl" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }}>
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
                     <Music className="w-5 h-5 text-white" />
                   </div>
                   {editingBlockId === block.id ? (
@@ -858,7 +858,7 @@ export default function Diary() {
               <button
                 key={s}
                 onClick={() => addBlock('sticker', { content: s })}
-                className="text-3xl p-2 rounded-xl transition-all active:scale-90 hover:bg-white/10"
+                className="text-3xl p-2 rounded-full transition-all active:scale-90 hover:bg-white/10"
               >
                 {s}
               </button>
@@ -880,7 +880,7 @@ export default function Diary() {
               <button
                 key={bg.id}
                 onClick={() => { setBackground(bg); setShowBgPicker(false); }}
-                className={`w-9 h-9 rounded-lg shrink-0 border-2 transition-all ${background.id === bg.id ? 'border-white scale-110' : 'border-white/20'}`}
+                className={`w-9 h-9 rounded-full shrink-0 border-2 transition-all ${background.id === bg.id ? 'border-white scale-110' : 'border-white/20'}`}
                 style={{ background: bg.value }}
               />
             ))}
@@ -956,7 +956,7 @@ export default function Diary() {
                     onClick={() => setAudience(a.id)}
                     className={`w-full flex items-center gap-3 p-3.5 rounded-2xl transition-all ${audience === a.id ? 'bg-primary/20 border border-primary/40' : 'bg-white/5 border border-transparent'}`}
                   >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${audience === a.id ? 'bg-primary/30' : 'bg-white/10'}`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${audience === a.id ? 'bg-primary/30' : 'bg-white/10'}`}>
                       <Icon className={`w-5 h-5 ${audience === a.id ? 'text-primary' : 'text-white/50'}`} />
                     </div>
                     <div className="text-left flex-1">

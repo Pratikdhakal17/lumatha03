@@ -656,9 +656,9 @@ export function ExpressiveCanvas({
                         whileTap={{ scale: 0.9 }}
                         onClick={() => setColor(c.hex)}
                         className={cn(
-                          "w-10 h-10 rounded-xl flex-shrink-0 transition-all border-2 shadow-lg",
-                          color === c.hex 
-                            ? "border-white scale-110 shadow-xl" 
+                          "w-10 h-10 rounded-full flex-shrink-0 transition-all border-2 shadow-lg",
+                          color === c.hex
+                            ? "border-white scale-110 shadow-xl"
                             : "border-transparent opacity-90 hover:opacity-100"
                         )}
                         style={{ background: c.hex }}
@@ -677,9 +677,9 @@ export function ExpressiveCanvas({
                         whileTap={{ scale: 0.9 }}
                         onClick={() => setColor(c.hex)}
                         className={cn(
-                          "w-10 h-10 rounded-xl flex-shrink-0 transition-all border-2 shadow-lg relative overflow-hidden",
-                          color === c.hex 
-                            ? "border-white scale-110 shadow-xl" 
+                          "w-10 h-10 rounded-full flex-shrink-0 transition-all border-2 shadow-lg relative overflow-hidden",
+                          color === c.hex
+                            ? "border-white scale-110 shadow-xl"
                             : "border-transparent opacity-90 hover:opacity-100"
                         )}
                         style={{ background: c.gradient }}
@@ -698,9 +698,9 @@ export function ExpressiveCanvas({
                         whileTap={{ scale: 0.9 }}
                         onClick={() => setColor(c.hex)}
                         className={cn(
-                          "w-8 h-8 rounded-lg flex-shrink-0 transition-all border-2 shadow-lg",
-                          color === c.hex 
-                            ? "border-white scale-110 shadow-xl" 
+                          "w-8 h-8 rounded-full flex-shrink-0 transition-all border-2 shadow-lg",
+                          color === c.hex
+                            ? "border-white scale-110 shadow-xl"
                             : "border-transparent opacity-90 hover:opacity-100"
                         )}
                         style={{ background: c.hex }}
@@ -773,9 +773,9 @@ export function ExpressiveCanvas({
                         whileTap={{ scale: 0.9 }}
                         onClick={() => setBgColor(c.hex)}
                         className={cn(
-                          "w-10 h-10 rounded-xl flex-shrink-0 transition-all border-2 shadow-lg",
-                          bgColor === c.hex 
-                            ? "border-white scale-110 shadow-xl" 
+                          "w-10 h-10 rounded-full flex-shrink-0 transition-all border-2 shadow-lg",
+                          bgColor === c.hex
+                            ? "border-white scale-110 shadow-xl"
                             : "border-transparent opacity-90 hover:opacity-100"
                         )}
                         style={{ background: c.hex }}
@@ -815,9 +815,9 @@ export function ExpressiveCanvas({
                         whileTap={{ scale: 0.9 }}
                         onClick={() => setBgColor(bg.hex)}
                         className={cn(
-                          "w-8 h-8 rounded-lg flex-shrink-0 transition-all border-2 shadow-lg relative overflow-hidden",
-                          bgColor === bg.hex 
-                            ? "border-white scale-110 shadow-xl" 
+                          "w-8 h-8 rounded-full flex-shrink-0 transition-all border-2 shadow-lg relative overflow-hidden",
+                          bgColor === bg.hex
+                            ? "border-white scale-110 shadow-xl"
                             : "border-transparent opacity-90 hover:opacity-100"
                         )}
                         style={{ background: bg.hex }}

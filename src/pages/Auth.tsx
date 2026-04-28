@@ -521,7 +521,7 @@ export default function Auth() {
               <div className="space-y-1.5">
                 <Label htmlFor="email" className={labelClass}>Email</Label>
                 <Input id="email" type="email" placeholder="you@email.com" value={email}
-                  onChange={(e) => setEmail(e.target.value)} className={inputClass} required />
+                  onChange={(e) => setEmail(e.target.value)} className={inputClass} autoComplete="email" required />
               </div>
 
               {/* Password */}
@@ -529,7 +529,7 @@ export default function Auth() {
                 <Label htmlFor="password" className={labelClass}>Password</Label>
                 <div className="relative">
                   <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="Create a strong password" value={password}
-                    onChange={(e) => setPassword(e.target.value)} className={inputClass + " pr-12"} required />
+                    onChange={(e) => setPassword(e.target.value)} className={inputClass + " pr-12"} autoComplete="new-password" required />
                   <button type="button"
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1"
                     style={{ color: '#94A3B8' }}
@@ -578,7 +578,7 @@ export default function Auth() {
                 <Label htmlFor="confirmPassword" className={labelClass}>Confirm Password</Label>
                 <div className="relative">
                   <Input id="confirmPassword" type={showPassword ? 'text' : 'password'} placeholder="Confirm your password" value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)} className={inputClass + " pr-12"} required />
+                    onChange={(e) => setConfirmPassword(e.target.value)} className={inputClass + " pr-12"} autoComplete="new-password" required />
                   {passwordsMatch && <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: '#10B981' }} />}
                   {passwordsMismatch && <X className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-red-400" />}
                 </div>
@@ -653,13 +653,13 @@ export default function Auth() {
               <div className="space-y-1.5">
                 <Label htmlFor="login-email" className={labelClass}>Email</Label>
                 <Input id="login-email" type="email" placeholder="you@email.com" value={email}
-                  onChange={(e) => setEmail(e.target.value)} className={inputClass} required />
+                  onChange={(e) => setEmail(e.target.value)} className={inputClass} autoComplete="email" required />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="login-password" className={labelClass}>Password</Label>
                 <div className="relative">
                   <Input id="login-password" type={showPassword ? 'text' : 'password'} placeholder="Your password" value={password}
-                    onChange={(e) => setPassword(e.target.value)} className={inputClass + " pr-12"} required />
+                    onChange={(e) => setPassword(e.target.value)} className={inputClass + " pr-12"} autoComplete="current-password" required />
                   <button type="button"
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-colors"
                     style={{ color: '#94A3B8' }}

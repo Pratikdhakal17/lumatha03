@@ -204,25 +204,46 @@ const addScreenTimeSeconds = (section: TrackedSectionKey, seconds: number) => {
 };
 
 function MobileSidebarDrawer({ open, onClose, onNavigate, isActive, unreadMessages, items }: { open: boolean; onClose: () => void; onNavigate: (url: string) => void; isActive: (p: string) => boolean; unreadMessages: number; items: MenuItemConfig[] }) {
+  const handleNavigate = (url: string) => {
+    onNavigate(url);
+    // Close sidebar immediately for faster response
+    onClose();
+  };
+
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent side="left" className="w-[75vw] max-w-[240px] min-w-[220px] p-0 border-r border-white/5 bg-[#0B0D1F] flex flex-col shadow-[20px_0_60px_-15px_rgba(0,0,0,0.5)]">
+      <SheetContent 
+        side="left" 
+        className="w-[75vw] max-w-[240px] min-w-[220px] p-0 border-r border-white/5 bg-[#0B0D1F] flex flex-col"
+        style={{ 
+          willChange: 'transform',
+          transform: 'translateZ(0)',
+        }}
+      >
         {/* Header - LUMATHA text aligned left */}
         <div className="p-4 border-b border-white/5 flex flex-col items-start justify-start bg-[#0B0D1F] min-h-[70px]">
           <p className="text-lg font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
           <p className="text-[9px] text-blue-400/70 uppercase tracking-[0.16em] font-bold whitespace-nowrap">Social Universe</p>
         </div>
-        {/* Navigation items - shifted up with less padding */}
-        <div className="flex-1 overflow-y-auto py-2 px-3 space-y-1 bg-[#0B0D1F]">
+        {/* Navigation items - optimized for faster touch response */}
+        <div className="flex-1 overflow-y-auto py-2 px-3 space-y-1 bg-[#0B0D1F]" style={{ touchAction: 'pan-y' }}>
           {items.map((item) => {
             const active = isActive(item.url);
             const Icon = item.icon;
             const showBadge = item.url === '/chat' && unreadMessages > 0;
             return (
-              <button key={item.url} onClick={() => onNavigate(item.url)} className={cn("w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 relative", active ? "bg-primary/10 text-primary shadow-[0_0_20px_rgba(59,130,246,0.15)] ring-1 ring-primary/20" : "text-slate-400 hover:bg-white/[0.03] hover:text-slate-200")}>
+              <button 
+                key={item.url} 
+                onClick={() => handleNavigate(item.url)} 
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors duration-150 relative active:scale-95",
+                  active ? "bg-primary/10 text-primary ring-1 ring-primary/20" : "text-slate-400 hover:bg-white/[0.03] hover:text-slate-200"
+                )}
+                style={{ willChange: 'transform' }}
+              >
                 {/* Active Glow - 4px left border */}
                 {active && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-10 rounded-r-full bg-gradient-to-b from-blue-500 via-violet-500 to-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.8),0_0_24px_rgba(139,92,246,0.5)]" />
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-10 rounded-r-full bg-gradient-to-b from-blue-500 via-violet-500 to-blue-500" />
                 )}
                 <div className="relative flex-shrink-0 ml-1">
                   <Icon className={cn("w-5 h-5 stroke-[2px]", active ? "text-primary" : "text-slate-400")} strokeWidth={2} />
@@ -597,16 +618,27 @@ function LayoutContent({ children }: LayoutProps) {
         {/* Keep header in normal sticky flow to avoid route-switch jumps */}
         <header className={cn("sticky top-0 z-50 w-full h-[72px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 transition-transform duration-300", headerVisible ? "translate-y-0" : "-translate-y-full")}>
           <div className="grid h-full grid-cols-[auto_1fr_auto] items-center gap-3 px-3 md:px-5">
-            {/* Left side - menu button and Lumatha branding */}
+            {/* Left side - menu button/back button and Lumatha branding */}
             <div className="flex items-center gap-1 min-w-0">
-              {/* Mobile: Always show hamburger menu for consistent navigation */}
+              {/* Mobile: Show back button when not on feed, hamburger when on feed */}
               {isMobile && (
-                <button onClick={handleMobileLeadingAction} className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5">
-                  <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
+                <button 
+                  onClick={isFeedPage ? handleMobileLeadingAction : handleBack} 
+                  className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5"
+                >
+                  {isFeedPage ? (
+                    <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
+                  ) : (
+                    <ArrowLeft className="w-5 h-5 text-blue-500" strokeWidth={2} />
+                  )}
                 </button>
               )}
               {/* Lumatha text for both desktop and mobile */}
               <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
+              {/* Show section label when not on feed */}
+              {!isFeedPage && (
+                <span className="ml-2 text-xs text-slate-400 font-medium">/ {sectionLabel}</span>
+              )}
             </div>
             {/* Center - Empty (clean) */}
             <div className="flex items-center justify-center min-w-0 px-2" />

@@ -42,13 +42,6 @@ const CREATE_TYPES: {
     iconBg: 'linear-gradient(135deg, #10B981, #3B82F6)',
   },
   {
-    type: 'diary',
-    emoji: '📔',
-    label: 'Diary',
-    hint: 'Canvas · Private',
-    iconBg: 'linear-gradient(135deg, hsl(258 90% 66%), hsl(330 81% 60%))',
-  },
-  {
     type: 'reel',
     emoji: '🎬',
     label: 'Reel',
@@ -90,11 +83,6 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
 
     if (type === 'story') {
       setStoryHubOpen(true);
-      return;
-    }
-
-    if (type === 'diary') {
-      navigate('/diary');
       return;
     }
 

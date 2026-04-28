@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Home, Lock, Bell, User, Search, Heart, MessageSquare,
   Mountain, ShoppingCart, Gamepad2, BarChart3, Trophy,
@@ -138,8 +138,8 @@ export function SubNavigation({ visible = true }: { visible?: boolean }) {
   const [layoutMode, setLayoutMode] = useState<number>(1);
   const [activeZone, setActiveZone] = useState<string>('public');
 
-  // Get current zone and its subsections based on path
-  const getCurrentZoneFromPath = (): { zoneId: string; zone: ZoneConfig | null } => {
+  // Memoized zone detection to avoid lag on re-renders
+  const currentZone = useMemo(() => {
     const path = location.pathname;
     const search = location.search;
     const fullPath = path + search;
@@ -173,7 +173,7 @@ export function SubNavigation({ visible = true }: { visible?: boolean }) {
     }
     
     return { zoneId: 'public', zone: null };
-  };
+  }, [location.pathname, location.search, layoutMode]);
 
   // Load layout mode from localStorage
   useEffect(() => {
@@ -198,10 +198,9 @@ export function SubNavigation({ visible = true }: { visible?: boolean }) {
   
   // Update active zone based on current path
   useEffect(() => {
-    const { zoneId } = getCurrentZoneFromPath();
-    setActiveZone(zoneId);
-    localStorage.setItem(ZONE_STORAGE_KEY, zoneId);
-  }, [location.pathname, location.search, layoutMode]);
+    setActiveZone(currentZone.zoneId);
+    localStorage.setItem(ZONE_STORAGE_KEY, currentZone.zoneId);
+  }, [currentZone.zoneId]);
 
 
   useEffect(() => {

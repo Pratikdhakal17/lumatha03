@@ -585,7 +585,7 @@ export const KeepNotesEditor: React.FC<KeepNotesEditorProps> = ({ noteId, onClos
                     setTheme(t.id);
                     setShowBgColorPicker(false);
                   }}
-                  className={`flex-shrink-0 w-10 h-10 rounded-xl border-2 transition-all ${
+                  className={`flex-shrink-0 w-10 h-10 rounded-full border-2 transition-all ${
                     theme === t.id ? 'border-[#7B61FF] scale-110' : 'border-transparent'
                   }`}
                   style={{ 
