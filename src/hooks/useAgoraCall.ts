@@ -1,5 +1,46 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import type { IAgoraRTCClient, ILocalTrack, IRemoteAudioTrack, IRemoteVideoTrack, IRemoteUser } from 'agora-rtc-sdk-ng';
+
+type IAgoraRTCClient = any;
+type ILocalTrack = any;
+type IRemoteAudioTrack = any;
+type IRemoteVideoTrack = any;
+type IRemoteUser = any;
+
+const AGORA_SDK_URL = 'https://download.agora.io/sdk/release/AgoraRTC_N.js';
+
+declare global {
+  interface Window {
+    AgoraRTC?: any;
+  }
+}
+
+let agoraSdkPromise: Promise<any> | null = null;
+
+function loadAgoraSdk() {
+  if (typeof window === 'undefined') {
+    return Promise.reject(new Error('Agora SDK can only load in the browser'));
+  }
+  if (window.AgoraRTC) return Promise.resolve(window.AgoraRTC);
+  if (!agoraSdkPromise) {
+    agoraSdkPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector(`script[data-agora-sdk="true"]`) as HTMLScriptElement | null;
+      if (existing) {
+        existing.addEventListener('load', () => resolve(window.AgoraRTC));
+        existing.addEventListener('error', () => reject(new Error('Failed to load Agora SDK')));
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = AGORA_SDK_URL;
+      script.async = true;
+      script.dataset.agoraSdk = 'true';
+      script.onload = () => resolve(window.AgoraRTC);
+      script.onerror = () => reject(new Error('Failed to load Agora SDK'));
+      document.head.appendChild(script);
+    });
+  }
+  return agoraSdkPromise;
+}
 
 interface UseAgoraCallOptions {
   channel: string | undefined;
@@ -27,7 +68,7 @@ export function useAgoraCall({ channel, mode, uid, onPartnerJoined, onPartnerLef
   const join = useCallback(async () => {
     if (!channel) return;
     try {
-      const { default: AgoraRTC } = await import('agora-rtc-sdk-ng');
+      const AgoraRTC = await loadAgoraSdk();
       const resp = await fetch('/api/agora-token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel, uid }) });
       if (!resp.ok) throw new Error('Failed to fetch Agora token');
       const body = await resp.json();
