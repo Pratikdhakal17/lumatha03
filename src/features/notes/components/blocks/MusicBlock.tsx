@@ -58,7 +58,7 @@ export const MusicBlock: React.FC<MusicBlockProps> = ({ content, onChange, onDel
   return (
     <div className="relative group select-none">
       <div className={cn(
-        "flex items-center gap-6 bg-[#0D1425F2] backdrop-blur-[60px] border border-white/10 p-6 rounded-[40px] shadow-2xl transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] min-w-[320px]",
+        "flex items-center gap-6 bg-[#0D1425F2] backdrop-blur-[60px] border border-white/10 p-6 rounded-[40px] shadow-2xl transition-all duration-700 ease-in-out min-w-[320px]",
         isFocused ? "ring-[3px] ring-[#8B5CF6] scale-[1.05] shadow-[0_40px_80px_rgba(0,0,0,0.6)]" : "hover:bg-white/[0.05]"
       )}>
         <div className="relative shrink-0">
@@ -66,7 +66,7 @@ export const MusicBlock: React.FC<MusicBlockProps> = ({ content, onChange, onDel
             "w-20 h-20 rounded-[28px] bg-gradient-to-br from-[#8B5CF6] via-[#D946EF] to-[#3B82F6] flex items-center justify-center text-white shadow-xl relative overflow-hidden",
             isPlaying && "animate-pulse"
           )}>
-            <Disc className={cn("w-10 h-10 relative z-10 transition-transform duration-[2000ms]", isPlaying && "rotate-[360deg] repeat-infinite")} />
+            <Disc className={cn("w-10 h-10 relative z-10 transition-transform", isPlaying && "rotate-[360deg] repeat-infinite")} style={{ transitionDuration: '2000ms' }} />
             {isPlaying && (
               <motion.div 
                 animate={{ scale: [1, 1.2, 1], rotate: 360 }}

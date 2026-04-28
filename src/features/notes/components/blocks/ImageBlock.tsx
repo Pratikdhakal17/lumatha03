@@ -50,7 +50,7 @@ export const ImageBlock: React.FC<ImageBlockProps> = ({ content, onChange, onDel
   return (
     <div className="relative group select-none">
       <div className={cn(
-        "relative overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]",
+        "relative overflow-hidden transition-all duration-700 ease-in-out",
         isFocused ? "shadow-[0_40px_80px_rgba(0,0,0,0.6)] ring-[3px] ring-[#8B5CF6] scale-[1.02]" : "shadow-2xl ring-1 ring-white/10",
         "rounded-[32px] bg-[#0D1425]"
       )}>

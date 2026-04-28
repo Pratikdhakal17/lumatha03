@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import DailyIframe, { DailyCall, DailyParticipant, DailyEventObjectParticipant } from '@daily-co/daily-js';
+import type { DailyCall, DailyParticipant, DailyEventObjectParticipant } from '@daily-co/daily-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -44,7 +44,13 @@ export function useDailyCall({
       return data?.url || null;
     } catch (err: any) {
       console.error('[useDailyCall] Failed to create room:', err);
-      onError?.('Failed to create call room');
+      // Detect Daily-specific billing error and signal caller to fallback
+      const msg = err?.message || String(err);
+      if (msg.includes('account-missing-payment-method') || msg.includes('payment') || msg.includes('billing')) {
+        onError?.('daily-account-payment');
+      } else {
+        onError?.('Failed to create call room');
+      }
       return null;
     }
   }, [sessionId, mode, onError]);
@@ -110,6 +116,7 @@ export function useDailyCall({
     setRoomUrl(url);
 
     // 3. Create call object
+    const { default: DailyIframe } = await import('@daily-co/daily-js');
     const callObject = DailyIframe.createCallObject({
       audioSource: true,
       videoSource: mode === 'video',

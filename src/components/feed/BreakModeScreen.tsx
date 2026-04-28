@@ -30,11 +30,12 @@ export function BreakModeScreen({ onReturn }: BreakModeScreenProps) {
     <div className="glass-card rounded-2xl p-6 text-center space-y-4">
       <div className="relative w-24 h-24 mx-auto">
         <div
-          className={`w-full h-full rounded-full transition-all duration-[4000ms] ease-in-out ${
+          className={`w-full h-full rounded-full transition-all ease-in-out ${
             phase === 'inhale' ? 'scale-100 bg-primary/30' :
             phase === 'hold' ? 'scale-110 bg-primary/40' :
             'scale-90 bg-primary/20'
           }`}
+          style={{ transitionDuration: '4000ms' }}
         />
         <span className="absolute inset-0 flex items-center justify-center text-xs font-medium capitalize text-primary">
           {phase}
