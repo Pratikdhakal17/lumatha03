@@ -57,6 +57,22 @@ export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [step, setStep] = useState(1);
   
+  // Forgot password states
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1); // 1: email, 2: confirm account, 3: code, 4: password
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotCode, setForgotCode] = useState('');
+  const [forgotPassword, setForgotPassword] = useState('');
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotUserData, setForgotUserData] = useState<any>(null);
+  const [forgotShowPassword, setForgotShowPassword] = useState(false);
+  const [forgotCodeSent, setForgotCodeSent] = useState(false);
+  const [codeSentEmail, setCodeSentEmail] = useState('');
+  const [forgotError, setForgotError] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState('');
+  const [codeCountdown, setCodeCountdown] = useState(0);
+  
   const [firstName, setFirstName] = useState('');
   const [gender, setGender] = useState('');
   const [lastName, setLastName] = useState('');
@@ -173,6 +189,76 @@ export default function Auth() {
       toast.success('Welcome back to Lumatha!'); navigate('/');
     } catch (error: any) { toast.error(error.message || 'Authentication failed'); }
     finally { setLoading(false); }
+  };
+
+  // Forgot password handlers
+  const handleForgotPasswordStep1 = async () => {
+    if (!forgotEmail.trim()) { setForgotError('Please enter your email'); return; }
+    setForgotLoading(true); setForgotError('');
+    try {
+      const { data, error } = await supabase.from('profiles').select('id, name, avatar_url').eq('email', forgotEmail.trim().toLowerCase()).maybeSingle();
+      if (error || !data) { setForgotError('Email not found in our system'); setForgotLoading(false); return; }
+      setForgotUserData(data);
+      setForgotStep(2);
+    } catch (error: any) { setForgotError(error.message || 'Error verifying email'); }
+    finally { setForgotLoading(false); }
+  };
+
+  const handleForgotPasswordConfirm = (confirmed: boolean) => {
+    if (!confirmed) { setShowForgotPassword(false); setForgotStep(1); setForgotEmail(''); setForgotUserData(null); return; }
+    sendResetCode();
+  };
+
+  const sendResetCode = async () => {
+    setForgotLoading(true); setForgotError(''); setForgotSuccess('');
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim().toLowerCase(), { redirectTo: `${window.location.origin}/auth?reset=true` });
+      if (error) throw error;
+      setCodeSentEmail(forgotEmail);
+      setForgotCodeSent(true);
+      setForgotStep(3);
+      setCodeCountdown(120);
+      toast.success('Reset code sent to your email');
+    } catch (error: any) { setForgotError(error.message || 'Failed to send reset code'); }
+    finally { setForgotLoading(false); }
+  };
+
+  useEffect(() => {
+    if (codeCountdown <= 0) return;
+    const timer = setTimeout(() => setCodeCountdown(codeCountdown - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [codeCountdown]);
+
+  const handleVerifyCode = async () => {
+    if (!forgotCode.trim()) { setForgotError('Please enter the code from your email'); return; }
+    setForgotStep(4);
+    setForgotSuccess('Code verified! Now create your new password.');
+  };
+
+  const handleResetPassword = async () => {
+    if (!forgotPassword || !forgotConfirmPassword) { setForgotError('Please enter both passwords'); return; }
+    if (forgotPassword !== forgotConfirmPassword) { setForgotError('Passwords do not match'); return; }
+    if (forgotPassword.length < 8) { setForgotError('Password must be at least 8 characters'); return; }
+    
+    setForgotLoading(true); setForgotError('');
+    try {
+      const { error } = await supabase.auth.updateUser({ password: forgotPassword });
+      if (error) throw error;
+      setForgotSuccess('Password reset successfully! Redirecting to login...');
+      toast.success('Password updated successfully');
+      setTimeout(() => {
+        setShowForgotPassword(false);
+        setForgotStep(1);
+        setForgotEmail('');
+        setForgotCode('');
+        setForgotPassword('');
+        setForgotConfirmPassword('');
+        setForgotUserData(null);
+        setForgotCodeSent(false);
+        setIsLogin(true);
+      }, 2000);
+    } catch (error: any) { setForgotError(error.message || 'Failed to reset password'); }
+    finally { setForgotLoading(false); }
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -667,6 +753,14 @@ export default function Auth() {
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
+                {/* Forgot password link - appears below password */}
+                <button
+                  type="button"
+                  onClick={() => { setShowForgotPassword(true); setForgotStep(1); setForgotError(''); setForgotSuccess(''); }}
+                  className="text-[12px] text-blue-400 hover:text-blue-300 transition-colors mt-1.5"
+                  style={{ fontFamily: "'Inter', sans-serif" }}>
+                  Forgot password?
+                </button>
               </div>
 
               {/* Sign In button */}
@@ -753,6 +847,212 @@ export default function Auth() {
           </button>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-[420px] relative z-10"
+            style={{
+              background: 'linear-gradient(145deg, #0f172a 0%, #1e293b 100%)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 20,
+              padding: 40,
+              boxShadow: '0 25px 60px rgba(0,0,0,0.4), 0 0 40px rgba(59,130,246,0.1)',
+              animation: 'auth-card-in 0.3s cubic-bezier(0.4,0,0.2,1)',
+            }}>
+            
+            {/* Close button */}
+            <button
+              onClick={() => { setShowForgotPassword(false); setForgotStep(1); setForgotEmail(''); setForgotUserData(null); }}
+              className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-lg transition-colors">
+              <X className="w-5 h-5 text-slate-400" />
+            </button>
+
+            {/* Step 1: Email */}
+            {forgotStep === 1 && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="text-center mb-6">
+                  <h3 className="text-[24px] font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Forgot Password?</h3>
+                  <p className="text-[13px] mt-1" style={{ color: '#94A3B8', fontFamily: "'Inter', sans-serif" }}>Enter your email to reset</p>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <Label className={labelClass}>Email Address</Label>
+                  <Input
+                    type="email"
+                    placeholder="you@email.com"
+                    value={forgotEmail}
+                    onChange={(e) => { setForgotEmail(e.target.value); setForgotError(''); }}
+                    className={inputClass}
+                    autoComplete="email"
+                  />
+                </div>
+
+                {forgotError && <p className="text-[12px] text-red-400" style={{ fontFamily: "'Inter', sans-serif" }}>{forgotError}</p>}
+
+                <button
+                  type="button"
+                  onClick={handleForgotPasswordStep1}
+                  disabled={forgotLoading || !forgotEmail.trim()}
+                  className="w-full h-[48px] rounded-xl text-white font-bold text-[14px] flex items-center justify-center gap-2 transition-all disabled:opacity-50 hover:opacity-[0.88] active:scale-[0.98]"
+                  style={{ background: 'linear-gradient(135deg, #7C3AED, #3B82F6)', fontFamily: "'Inter', sans-serif" }}>
+                  {forgotLoading ? <><Loader2 className="w-4 h-4 animate-spin" />Verifying...</> : <>Continue <ArrowRight className="w-4 h-4" /></>}
+                </button>
+              </div>
+            )}
+
+            {/* Step 2: Confirm Account */}
+            {forgotStep === 2 && forgotUserData && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="text-center mb-6">
+                  <h3 className="text-[20px] font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Is this your account?</h3>
+                  <p className="text-[12px] mt-1" style={{ color: '#94A3B8', fontFamily: "'Inter', sans-serif" }}>Confirm to proceed with password reset</p>
+                </div>
+
+                <div className="flex flex-col items-center gap-3 py-4">
+                  <Avatar className="w-20 h-20">
+                    <AvatarImage src={forgotUserData.avatar_url || undefined} />
+                    <AvatarFallback style={{ background: 'linear-gradient(135deg, #7C3AED, #3B82F6)', color: 'white', fontSize: 24, fontWeight: 700 }}>
+                      {forgotUserData.name?.[0]?.toUpperCase() || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="text-center">
+                    <p className="text-[16px] font-bold text-white">{forgotUserData.name}</p>
+                    <p className="text-[12px]" style={{ color: '#94A3B8' }}>{forgotEmail}</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleForgotPasswordConfirm(false)}
+                    className="flex-1 h-[48px] rounded-xl border text-white font-bold text-[14px] transition-all"
+                    style={{ borderColor: '#374151', background: 'transparent', fontFamily: "'Inter', sans-serif" }}>
+                    No
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleForgotPasswordConfirm(true)}
+                    disabled={forgotLoading}
+                    className="flex-1 h-[48px] rounded-xl text-white font-bold text-[14px] flex items-center justify-center gap-2 transition-all disabled:opacity-50 hover:opacity-[0.88] active:scale-[0.98]"
+                    style={{ background: 'linear-gradient(135deg, #7C3AED, #3B82F6)', fontFamily: "'Inter', sans-serif" }}>
+                    {forgotLoading ? <><Loader2 className="w-4 h-4 animate-spin" />Processing...</> : <>Yes, it\'s me</>}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Verify Code */}
+            {forgotStep === 3 && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="text-center mb-6">
+                  <h3 className="text-[20px] font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Enter Code</h3>
+                  <p className="text-[12px] mt-1" style={{ color: '#94A3B8', fontFamily: "'Inter', sans-serif" }}>Check your email for the reset code</p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className={labelClass}>Reset Code</Label>
+                  <Input
+                    type="text"
+                    placeholder="Enter 6-digit code"
+                    value={forgotCode}
+                    onChange={(e) => { setForgotCode(e.target.value); setForgotError(''); }}
+                    maxLength={6}
+                    className={inputClass}
+                  />
+                </div>
+
+                {forgotError && <p className="text-[12px] text-red-400" style={{ fontFamily: "'Inter', sans-serif" }}>{forgotError}</p>}
+
+                <button
+                  type="button"
+                  onClick={handleVerifyCode}
+                  disabled={forgotLoading || !forgotCode.trim()}
+                  className="w-full h-[48px] rounded-xl text-white font-bold text-[14px] flex items-center justify-center gap-2 transition-all disabled:opacity-50 hover:opacity-[0.88] active:scale-[0.98]"
+                  style={{ background: 'linear-gradient(135deg, #7C3AED, #3B82F6)', fontFamily: "'Inter', sans-serif" }}>
+                  {forgotLoading ? <><Loader2 className="w-4 h-4 animate-spin" />Verifying...</> : <>Verify <Check className="w-4 h-4" /></>}
+                </button>
+
+                {codeCountdown > 0 && (
+                  <p className="text-center text-[12px]" style={{ color: '#94A3B8', fontFamily: "'Inter', sans-serif" }}>Resend in {codeCountdown}s</p>
+                )}
+                {codeCountdown === 0 && (
+                  <button
+                    type="button"
+                    onClick={sendResetCode}
+                    className="w-full text-[12px] text-blue-400 hover:text-blue-300 transition-colors"
+                    style={{ fontFamily: "'Inter', sans-serif" }}>
+                    Didn't receive the code? Resend
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Step 4: New Password */}
+            {forgotStep === 4 && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="text-center mb-6">
+                  <h3 className="text-[20px] font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Create New Password</h3>
+                  <p className="text-[12px] mt-1" style={{ color: '#94A3B8', fontFamily: "'Inter', sans-serif" }}>Make it strong and secure</p>
+                </div>
+
+                {forgotSuccess && <p className="text-[12px] text-green-400" style={{ fontFamily: "'Inter', sans-serif" }}>{forgotSuccess}</p>}
+
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label className={labelClass}>New Password</Label>
+                    <div className="relative">
+                      <Input
+                        type={forgotShowPassword ? 'text' : 'password'}
+                        placeholder="Create a strong password"
+                        value={forgotPassword}
+                        onChange={(e) => { setForgotPassword(e.target.value); setForgotError(''); }}
+                        className={inputClass + " pr-12"}
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-colors"
+                        style={{ color: '#94A3B8' }}
+                        onClick={() => setForgotShowPassword(!forgotShowPassword)}>
+                        {forgotShowPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className={labelClass}>Confirm Password</Label>
+                    <div className="relative">
+                      <Input
+                        type={forgotShowPassword ? 'text' : 'password'}
+                        placeholder="Confirm your password"
+                        value={forgotConfirmPassword}
+                        onChange={(e) => { setForgotConfirmPassword(e.target.value); setForgotError(''); }}
+                        className={inputClass + " pr-12"}
+                        autoComplete="new-password"
+                      />
+                      {forgotPassword === forgotConfirmPassword && forgotConfirmPassword.length > 0 && (
+                        <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#10B981' }} />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {forgotError && <p className="text-[12px] text-red-400" style={{ fontFamily: "'Inter', sans-serif" }}>{forgotError}</p>}
+
+                <button
+                  type="button"
+                  onClick={handleResetPassword}
+                  disabled={forgotLoading || !forgotPassword || !forgotConfirmPassword || forgotPassword !== forgotConfirmPassword}
+                  className="w-full h-[48px] rounded-xl text-white font-bold text-[14px] flex items-center justify-center gap-2 transition-all disabled:opacity-50 hover:opacity-[0.88] active:scale-[0.98]"
+                  style={{ background: 'linear-gradient(135deg, #7C3AED, #3B82F6)', fontFamily: "'Inter', sans-serif" }}>
+                  {forgotLoading ? <><Loader2 className="w-4 h-4 animate-spin" />Updating...</> : <>Reset Password <Check className="w-4 h-4" /></>}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
