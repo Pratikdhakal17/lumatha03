@@ -5,7 +5,7 @@ import {
   Send, Search, Paperclip, X, MoreVertical, 
   Archive, Ghost, Trash2, Mic, Music,
   Image, Users, UserSearch, MessageCircle, Star, Video as VideoIcon,
-  Palette, Eye, Pin, Forward, Copy,
+  Palette, Eye, Pin, Forward, Copy, Phone,
   Bell, BellOff, CornerUpLeft, Pencil, Lock, Plus, Camera,
   MessageSquare, ShoppingCart, Menu, Heart
 } from 'lucide-react';
@@ -619,6 +619,15 @@ export default function Chat() {
     const trace = beginPerfTrace('chat.openConversation', { userId });
     // Open the chat shell immediately for near-instant transition.
     setCurrentChatUser(userId);
+    // Reset transient overlays/banners so state from a previous chat does not leak.
+    setLongPressTarget(null);
+    setLongPressMenuPos(null);
+    setReplyTo(null);
+    setEditingMsg(null);
+    setShowAttachments(false);
+    setSelectedAttachmentType(null);
+    setShowSettings(false);
+    setShowComposeMenu(false);
     // Reset scroll tracking state when switching chats
     prevMessagesLengthRef.current = 0;
     isNearBottomRef.current = true;
