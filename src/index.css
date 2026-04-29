@@ -295,7 +295,8 @@ input[type="text"], input[type="email"], input[type="password"], textarea {
   /* Root wrapper */
   .app-layout {
     display: flex;
-    height: 100vh;
+    height: 100svh;
+    height: 100vh;  /* Fallback for older browsers */
     overflow: hidden;
   }
 
@@ -303,7 +304,8 @@ input[type="text"], input[type="email"], input[type="password"], textarea {
   .sidebar-left {
     width: 30%;
     flex-shrink: 0;
-    height: 100vh;
+    height: 100svh;
+    height: 100vh;  /* Fallback for older browsers */
     overflow-y: auto;
     position: sticky;
     top: 0;
@@ -312,7 +314,8 @@ input[type="text"], input[type="email"], input[type="password"], textarea {
   /* Center Feed — ONLY this scrolls */
   .feed-center {
     flex: 1;
-    height: 100vh;
+    height: 100svh;  /* Small viewport height (accounts for mobile address bar) */
+    height: 100vh;  /* Fallback for older browsers */
     overflow-y: scroll;
     overflow-x: hidden;
     scroll-behavior: smooth;
@@ -330,7 +333,8 @@ input[type="text"], input[type="email"], input[type="password"], textarea {
   .sidebar-right {
     width: 30%;
     flex-shrink: 0;
-    height: 100vh;
+    height: 100svh;
+    height: 100vh;  /* Fallback for older browsers */
     overflow-y: auto;
     position: sticky;
     top: 0;

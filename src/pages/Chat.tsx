@@ -1908,6 +1908,20 @@ export default function Chat() {
               <MessageSquare className="w-4 h-4 text-slate-300" />
             </button>
             <button
+              className="w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center hover:bg-primary/10 transition-colors touch-target-44"
+              title="Start video call"
+              onClick={() => setCallState({ open: true, isVideo: true })}
+            >
+              <VideoIcon className="w-4 h-4 text-primary" />
+            </button>
+            <button
+              className="w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center hover:bg-secondary/10 transition-colors touch-target-44"
+              title="Start voice call"
+              onClick={() => setCallState({ open: true, isVideo: false })}
+            >
+              <Phone className="w-4 h-4 text-secondary" />
+            </button>
+            <button
               className="w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center hover:bg-white/5 transition-colors touch-target-44"
               title="Chat settings"
               onClick={() => setShowSettings(true)}
@@ -1917,9 +1931,15 @@ export default function Chat() {
           </div>
         </div>
 
-        {/* Pinned Messages Banner - Sticky on mobile */}
+        {/* Pinned Messages Banner - Sticky on mobile with safe area */}
         {pinnedMsgs.length > 0 && (
-          <div className="sticky top-0 z-30 px-3 md:px-4 py-2" style={{ background: 'rgba(124,58,237,0.08)', borderBottom: '1px solid rgba(124,58,237,0.2)' }}>
+          <div className="sticky top-0 z-30 px-3 md:px-4 py-2" style={{ 
+            background: 'rgba(124,58,237,0.08)', 
+            borderBottom: '1px solid rgba(124,58,237,0.2)',
+            paddingTop: 'max(0.5rem, env(safe-area-inset-top))',
+            paddingLeft: 'max(0.75rem, env(safe-area-inset-left))',
+            paddingRight: 'max(0.75rem, env(safe-area-inset-right))'
+          }}>
             <div className="flex items-center gap-2.5 text-xs md:text-sm overflow-hidden">
               <Pin className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" style={{ color: '#7C3AED' }} />
               <p className="truncate flex-1" style={{ color: '#9CA3AF' }}>{pinnedMsgs[pinnedMsgs.length - 1]?.content}</p>
@@ -1933,15 +1953,21 @@ export default function Chat() {
         {/* Messages — Messenger-like: pushes to bottom when few, scrollable when many */}
         <div
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto chat-messages scrollbar-hide"
-          style={{ overscrollBehavior: 'contain', minHeight: 0, WebkitOverflowScrolling: 'touch' }}
+          className="flex-1 overflow-y-auto chat-messages scrollbar-hide w-full"
+          style={{ 
+            overscrollBehavior: 'contain', 
+            minHeight: 0,
+            WebkitOverflowScrolling: 'touch',
+            display: 'flex',
+            flexDirection: 'column'
+          }}
           onScroll={() => {
             const el = scrollContainerRef.current;
             if (!el) return;
             isNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
           }}
         >
-          <div className="flex flex-col justify-end min-h-full p-3 pb-6 md:p-5 md:pb-8">
+          <div className="flex flex-col justify-end flex-1 min-h-full p-3 md:p-5 pb-6 md:pb-8">
             {messages.length === 0 ? (
               loading ? (
                 <div className="flex flex-1 items-center justify-center py-14">
@@ -1990,7 +2016,7 @@ export default function Chat() {
           </div>
         </div>
 
-        {/* Message long-press action menu with enhanced animations */}
+        {/* Message long-press action menu with enhanced animations and safe areas */}
         <AnimatePresence>
           {longPressTarget && messages.some((m) => m.id === longPressTarget) && (
             <motion.div
@@ -1999,7 +2025,7 @@ export default function Chat() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 5 }}
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              className="fixed z-40 max-h-[74vh] rounded-2xl p-0 border border-white/10 overflow-hidden shadow-2xl"
+              className="fixed z-40 max-h-[74svh] md:max-h-[74vh] rounded-2xl p-0 border border-white/10 overflow-hidden shadow-2xl"
               style={{ 
                 background: 'rgba(15, 23, 42, 0.98)', 
                 backdropFilter: 'blur(14px)',
@@ -2008,7 +2034,9 @@ export default function Chat() {
                 width: Math.min(292, (longPressMenuPos?.width ?? 268)),
                 maxWidth: 'calc(100vw - 24px)',
                 transformOrigin: 'top center',
-                willChange: 'transform, opacity'
+                willChange: 'transform, opacity',
+                paddingLeft: 'max(0, env(safe-area-inset-left))',
+                paddingRight: 'max(0, env(safe-area-inset-right))'
               }}
             >
               {/* Reaction Tray with Haptics */}
@@ -2204,9 +2232,17 @@ export default function Chat() {
             />
           )}
 
-          {/* Premium Instagram-Style Input Bar */}
+          {/* Premium Instagram-Style Input Bar with proper safe area */}
           {!isRecording && !audioBlob && (
-            <div className="relative shrink-0 flex items-center gap-2 px-3 py-2" style={{ background: '#0a0f1e', borderTop: '1px solid #1f2937', minHeight: 56, paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
+            <div className="relative shrink-0 flex items-center gap-2 px-3 md:px-4 py-2" style={{ 
+              background: '#0a0f1e', 
+              borderTop: '1px solid #1f2937', 
+              minHeight: 56,
+              paddingLeft: 'max(0.75rem, env(safe-area-inset-left))',
+              paddingRight: 'max(0.75rem, env(safe-area-inset-right))',
+              paddingBottom: 'max(0.625rem, env(safe-area-inset-bottom))',
+              overflow: 'hidden'
+            }}>
               <input type="file" ref={fileInputRef} className="hidden" accept="image/*,video/*,audio/*,.pdf,.doc,.docx" multiple onChange={handleFileSelect} />
               
               {/* Plus Button - 36dp */}
