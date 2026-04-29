@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Plus, RotateCcw, Trash2, Bell, Folder, Sun, CalendarDays, CalendarRange, Pencil } from 'lucide-react';
+import { Plus, RotateCcw, Trash2, Bell, Folder, Sun, CalendarDays, CalendarRange, Pencil, RefreshCw, Trash } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TODO_CATEGORIES, TodoCategory, getDefaultTodos } from '@/data/defaultTodos';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -114,41 +114,116 @@ export function TodoModule() {
     }
   }, []);
 
+  // MANUAL Reset All - Clear all todos and start fresh
+  const resetAllTodos = () => {
+    if (!confirm('Reset ALL todos? This will mark all tasks as incomplete for a fresh start.')) return;
+    
+    const updated: Record<TodoCategory, Todo[]> = {
+      daily: todos.daily.map(t => ({ ...t, completed: false, completed_at: undefined })),
+      weekly: todos.weekly.map(t => ({ ...t, completed: false, completed_at: undefined })),
+      monthly: todos.monthly.map(t => ({ ...t, completed: false, completed_at: undefined })),
+      yearly: todos.yearly.map(t => ({ ...t, completed: false, completed_at: undefined })),
+      lifetime: todos.lifetime.map(t => ({ ...t, completed: false, completed_at: undefined })),
+      custom: todos.custom.map(t => ({ ...t, completed: false, completed_at: undefined })),
+    };
+    
+    setTodos(updated);
+    localStorage.setItem(todosStorageKey, JSON.stringify(updated));
+    
+    // Reset stats
+    const resetStats: TodoStats = {
+      totalCompleted: 0,
+      totalCreated: Object.values(updated).flat().length,
+      streakDays: streak,
+      lastActiveDate: new Date().toISOString().split('T')[0],
+      categoryStats: {
+        daily: { completed: 0, total: updated.daily.length },
+        weekly: { completed: 0, total: updated.weekly.length },
+        monthly: { completed: 0, total: updated.monthly.length },
+        yearly: { completed: 0, total: updated.yearly.length },
+        lifetime: { completed: 0, total: updated.lifetime.length },
+        custom: { completed: 0, total: updated.custom.length },
+      }
+    };
+    setStats(resetStats);
+    localStorage.setItem(statsStorageKey, JSON.stringify(resetStats));
+    
+    // Update last reset date
+    const today = new Date().toISOString().split('T')[0];
+    localStorage.setItem(lastResetStorageKey, today);
+    
+    toast.success('All todos reset! Fresh start 🎯');
+  };
+
+  // Clear All - Delete all todo items completely
+  const clearAllTodos = () => {
+    if (!confirm('DELETE all todos? This will remove ALL tasks permanently. This cannot be undone.')) return;
+    
+    const empty: Record<TodoCategory, Todo[]> = {
+      daily: [], weekly: [], monthly: [], yearly: [], lifetime: [], custom: []
+    };
+    
+    setTodos(empty);
+    localStorage.setItem(todosStorageKey, JSON.stringify(empty));
+    
+    // Reset stats
+    const resetStats: TodoStats = {
+      totalCompleted: 0,
+      totalCreated: 0,
+      streakDays: streak,
+      lastActiveDate: new Date().toISOString().split('T')[0],
+      categoryStats: {
+        daily: { completed: 0, total: 0 },
+        weekly: { completed: 0, total: 0 },
+        monthly: { completed: 0, total: 0 },
+        yearly: { completed: 0, total: 0 },
+        lifetime: { completed: 0, total: 0 },
+        custom: { completed: 0, total: 0 },
+      }
+    };
+    setStats(resetStats);
+    localStorage.setItem(statsStorageKey, JSON.stringify(resetStats));
+    
+    toast.success('All todos cleared! 🗑️');
+  };
+
   // Check and auto-reset daily/weekly/monthly todos - AUTO RESET TO 0 EVERYDAY
   const checkAndAutoReset = () => {
     const lastReset = localStorage.getItem(lastResetStorageKey);
     const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
     
     if (!lastReset) {
       localStorage.setItem(lastResetStorageKey, today);
       return;
     }
     
+    // Check if it's a new day (after midnight)
     if (lastReset !== today) {
-      // It's a new day - auto reset ALL todos to 0 (clear completed count)
       const lastResetDate = new Date(lastReset);
       const currentDate = new Date(today);
       const daysDiff = Math.floor((currentDate.getTime() - lastResetDate.getTime()) / (1000 * 60 * 60 * 24));
       
       // Archive completed todos before resetting
       archiveCompletedTodos('daily');
-      archiveCompletedTodos('weekly');
-      archiveCompletedTodos('monthly');
       
       // Reset ALL todos to incomplete (completed = false) - clears to 0
       const updated = { ...todos };
       
-      // Reset daily todos - mark ALL as incomplete (clears the 5 done today to 0 tomorrow)
+      // Always reset daily todos every day
       updated.daily = updated.daily.map(t => ({ ...t, completed: false, completed_at: undefined }));
       
-      // Reset weekly on Monday
-      const currentDay = currentDate.getDay();
-      if (currentDay === 1 && daysDiff >= 1) {
+      // Reset weekly on Monday (day 1)
+      const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday
+      if (currentDay === 1) {
+        archiveCompletedTodos('weekly');
         updated.weekly = updated.weekly.map(t => ({ ...t, completed: false, completed_at: undefined }));
       }
       
       // Reset monthly on 1st of month
-      if (currentDate.getDate() === 1 && daysDiff >= 1) {
+      const currentDateOfMonth = now.getDate();
+      if (currentDateOfMonth === 1) {
+        archiveCompletedTodos('monthly');
         updated.monthly = updated.monthly.map(t => ({ ...t, completed: false, completed_at: undefined }));
       }
       
@@ -158,7 +233,7 @@ export function TodoModule() {
       // Reset stats to 0 for today
       const resetStats: TodoStats = {
         totalCompleted: 0,
-        totalCreated: updated.daily.length + updated.weekly.length + updated.monthly.length + updated.yearly.length + updated.lifetime.length + updated.custom.length,
+        totalCreated: Object.values(updated).flat().length,
         streakDays: streak,
         lastActiveDate: today,
         categoryStats: {
@@ -174,7 +249,9 @@ export function TodoModule() {
       localStorage.setItem(statsStorageKey, JSON.stringify(resetStats));
       
       localStorage.setItem(lastResetStorageKey, today);
-      toast.success('Daily reset complete! All todos cleared to 0.');
+      
+      // Silent reset - no toast to avoid annoying daily notifications
+      console.log('Auto-reset complete for', today);
     }
   };
 
@@ -506,13 +583,37 @@ export function TodoModule() {
             </button>
           </div>
 
-          {/* Category header + reset */}
+          {/* Category header + reset options */}
           <div className="flex items-center justify-between px-1">
             <p className="text-[12px]" style={{ color: '#94A3B8' }}>
               {getCompletedCount(activeCategory)}/{getTotalCount(activeCategory)} done
             </p>
-            <Button variant="ghost" size="sm" onClick={() => resetCategory(activeCategory)} className="gap-1 text-xs h-7 text-[#94A3B8] hover:text-white hover:bg-white/5">
-              <RotateCcw className="w-3.5 h-3.5" />Reset
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="sm" onClick={() => resetCategory(activeCategory)} className="gap-1 text-xs h-7 text-[#94A3B8] hover:text-white hover:bg-white/5">
+                <RotateCcw className="w-3.5 h-3.5" />Reset
+              </Button>
+            </div>
+          </div>
+          
+          {/* Global Reset All / Clear All Buttons */}
+          <div className="flex items-center gap-2 px-1">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={resetAllTodos} 
+              className="gap-1 text-xs h-8 flex-1 border-white/10 hover:bg-white/5 hover:text-white text-[#94A3B8]"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Reset All (Mark Incomplete)
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={clearAllTodos} 
+              className="gap-1 text-xs h-8 flex-1 border-red-500/20 hover:bg-red-500/10 hover:text-red-400 text-red-400/60"
+            >
+              <Trash className="w-3.5 h-3.5" />
+              Clear All (Delete)
             </Button>
           </div>
 

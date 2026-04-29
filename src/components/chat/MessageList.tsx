@@ -112,10 +112,11 @@ const MessageItem = memo(function MessageItem({
             touchStartRef.current = { x: touch.clientX, y: touch.clientY };
             swipeHandledRef.current = false;
             clearLongPressTimer();
+            // Faster long-press for mobile (350ms vs 500ms)
             longPressTimerRef.current = setTimeout(() => {
-              if (navigator.vibrate) navigator.vibrate(30);
+              if (navigator.vibrate) navigator.vibrate(25);
               onLongPress(msg.id);
-            }, 500);
+            }, 350);
           }}
           onTouchMove={(e) => {
             const start = touchStartRef.current;
@@ -125,7 +126,8 @@ const MessageItem = memo(function MessageItem({
             const deltaX = touch.clientX - start.x;
             const deltaY = touch.clientY - start.y;
 
-            if (Math.abs(deltaX) > 12 || Math.abs(deltaY) > 12) {
+            // Cancel long-press on any significant movement (8px threshold)
+            if (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8) {
               clearLongPressTimer();
             }
 
@@ -135,7 +137,7 @@ const MessageItem = memo(function MessageItem({
             if (deltaX > swipeThresholdPx && horizontalIntent) {
               swipeHandledRef.current = true;
               clearLongPressTimer();
-              if (navigator.vibrate) navigator.vibrate(10);
+              if (navigator.vibrate) navigator.vibrate(12);
               onSwipeReply(msg.id);
             }
           }}
@@ -212,11 +214,14 @@ const MessageItem = memo(function MessageItem({
               }
               return (
                 <button
-                  className="flex items-center gap-2 px-4 py-3 w-full hover:bg-white/5 transition-colors"
+                  className="flex items-center gap-2 px-4 py-3 w-full hover:bg-white/10 active:bg-white/20 transition-all active:scale-[0.98] touch-manipulation"
                   onClick={() => {
+                    // Instant haptic feedback
+                    if (navigator.vibrate) navigator.vibrate(20);
                     onMarkViewOnce(msg.id);
                     onOpenMedia(msg.media_url!);
                   }}
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   <Eye className="w-5 h-5" style={{ color: '#7C3AED' }} />
                   <span className="text-[14px] font-medium" style={{ color: '#7C3AED' }}>
@@ -253,11 +258,14 @@ const MessageItem = memo(function MessageItem({
               }
               return (
                 <button
-                  className="flex items-center gap-2 px-4 py-3 w-full hover:bg-white/5 transition-colors"
+                  className="flex items-center gap-2 px-4 py-3 w-full hover:bg-white/10 active:bg-white/20 transition-all active:scale-[0.98] touch-manipulation"
                   onClick={() => {
+                    // Instant haptic feedback
+                    if (navigator.vibrate) navigator.vibrate(20);
                     onMarkViewOnce(msg.id);
                     onOpenMedia(msg.media_url!);
                   }}
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   <Camera className="w-5 h-5" style={{ color: '#7C3AED' }} />
                   <span className="text-[14px] font-medium" style={{ color: '#7C3AED' }}>

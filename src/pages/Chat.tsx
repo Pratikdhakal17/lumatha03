@@ -7,7 +7,7 @@ import {
   Image, Users, UserSearch, MessageCircle, Star, Video as VideoIcon,
   Palette, Eye, Pin, Forward, Copy, Phone,
   Bell, BellOff, CornerUpLeft, Pencil, Lock, Plus, Camera,
-  MessageSquare, ShoppingCart, Menu, Heart
+  MessageSquare, ShoppingCart, Menu, Heart, ArrowLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1885,7 +1885,7 @@ export default function Chat() {
         <WatermarkOverlay username={username} enabled={false} />
         {isBlurred && <BlurOverlay />}
 
-        {/* Chat Header - Clean minimal header */}
+        {/* Chat Header - Clean minimal header with back button */}
         <div className="shrink-0 border-b border-white/10 px-3 md:px-4 py-2.5" style={{
           background: '#000',
           paddingTop: 'max(0.625rem, env(safe-area-inset-top))',
@@ -1893,6 +1893,15 @@ export default function Chat() {
           paddingRight: 'max(0.75rem, env(safe-area-inset-right))'
         }}>
           <div className="flex items-center gap-3">
+            {/* Back button - visible on all devices */}
+            <button
+              onClick={() => navigate('/chat')}
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors shrink-0"
+              aria-label="Back to messages"
+            >
+              <ArrowLeft className="w-5 h-5 text-white/80" />
+            </button>
+            
             <div className="relative shrink-0 cursor-pointer" onClick={() => navigate(`/profile/${currentChatUser}`)}>
               <Avatar className="w-10 h-10">
                 <AvatarImage src={selectedConversation?.user_avatar || undefined} />

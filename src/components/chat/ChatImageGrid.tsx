@@ -39,6 +39,12 @@ export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGrid
     return 'aspect-square max-h-[180px]';
   };
 
+  const handleImageTap = (url: string) => {
+    // Haptic feedback for mobile
+    if (navigator.vibrate) navigator.vibrate(15);
+    onImageTap?.(url);
+  };
+
   return (
     <div className={gridClass}>
       {displayUrls.map((url, i) => (
@@ -46,17 +52,20 @@ export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGrid
           key={i}
           className={cn(
             'relative overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 group',
+            'active:scale-[0.98] transition-transform duration-100 touch-manipulation',
             getImageStyle(i)
           )}
-          onClick={() => onImageTap?.(url)}
+          onClick={() => handleImageTap(url)}
+          style={{ WebkitTapHighlightColor: 'transparent' }}
           aria-label={`Image ${i + 1} of ${count}`}
         >
           <img
             src={url}
             alt=""
-            className="w-full h-full object-cover"
-            loading="lazy"
+            className="w-full h-full object-cover pointer-events-none select-none"
+            loading="eager" // Load immediately for better perceived performance
             draggable={false}
+            decoding="async"
           />
           {i === 3 && extraCount > 0 && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">

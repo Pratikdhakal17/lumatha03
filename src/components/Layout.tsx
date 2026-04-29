@@ -445,21 +445,27 @@ function LayoutContent({ children }: LayoutProps) {
     };
   }, [user]);
 
-  // All sections including chat should show the header consistently
+  // Header visibility rules:
+  // - Chat list (/chat): Show header with Messages label
+  // - Active chat (/chat/:id): Hide app header completely (chat has its own header)
   const isChatListView = location.pathname === '/chat';
   const isInActiveChat = location.pathname.startsWith('/chat/') && location.pathname.length > 6;
 
   const handleScroll = useCallback(() => {
     // Header behavior: 
-    // 1. Messages (/chat*): ALWAYS sticky - never hide
-    // 2. All other sections (feed, home subsections, adventures, etc): Hide on scroll down, show on scroll up
-    // 3. Mobile: Same behavior as desktop (no exception)
+    // 1. Active chat (/chat/:id): Header is completely hidden (chat has its own)
+    // 2. Chat list (/chat) and all other sections: Hide on scroll down, show on scroll up
+    // 3. Mobile: Same behavior as desktop
     
-    // Messages (/chat*) should keep the header always visible to avoid
-    // content shifting inside chat threads. Early-return here prevents
-    // scroll handlers from toggling header visibility for chat.
-    const isMessages = location.pathname.startsWith('/chat');
-    if (isMessages) {
+    // Active chat: App header is hidden, so no scroll handling needed
+    if (isInActiveChat) {
+      setHeaderVisible(false);
+      ticking.current = false;
+      return;
+    }
+    
+    // Chat list view: Always show header
+    if (isChatListView) {
       setHeaderVisible(true);
       ticking.current = false;
       return;
@@ -619,15 +625,19 @@ function LayoutContent({ children }: LayoutProps) {
         navigate(url);
       }} unreadMessages={unreadMessages} items={currentMenuItems} hidden={false} />}
       <main ref={feedCenterRef} className="feed-center relative flex flex-col min-w-0 flex-1 h-screen overflow-y-auto scrollbar-hide">
-        {/* Keep header in normal sticky flow to avoid route-switch jumps */}
+        {/* App Header - Hidden in active chat (chat has its own header) */}
         <header className={cn(
           "sticky top-0 z-50 w-full h-[72px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 transition-transform duration-300",
-          (headerVisible || location.pathname.startsWith('/chat')) ? "translate-y-0" : "-translate-y-full"
+          headerVisible ? "translate-y-0" : "-translate-y-full",
+          isInActiveChat && "hidden" // Completely hide header in active chat
         )}>
           <div className="grid h-full grid-cols-[auto_1fr_auto] items-center gap-3 px-3 md:px-5">
-            {/* Left side - menu/back button and Lumatha branding OR sidebar icon for non-home sections */}
+            {/* Left side - menu/back button and branding */}
             <div className="flex items-center gap-1 min-w-0">
-              {isFeedPage ? (
+              {isChatListView ? (
+                // Chat list: Just show Messages title (chat list has its own sub-nav)
+                <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
+              ) : isFeedPage ? (
                 // Feed page: Hamburger menu
                 <>
                   {isMobile && (
@@ -672,7 +682,10 @@ function LayoutContent({ children }: LayoutProps) {
             
             {/* Right side - Create + AI + Globe only on Home (proper order) */}
             <div className="flex items-center gap-1.5 justify-end min-w-0 justify-self-end">
-              {isFeedPage ? (
+              {isChatListView ? (
+                // Chat list: Show Messages label on right
+                <span className="text-sm font-bold text-white/70 truncate ml-2">Messages</span>
+              ) : isFeedPage ? (
                 <>
                   <button
                     onClick={() => setCreateSheetOpen(true)}

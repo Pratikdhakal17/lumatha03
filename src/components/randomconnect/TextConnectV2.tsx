@@ -240,9 +240,12 @@ export const TextConnectV2: React.FC<TextConnectV2Props> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
+    // Set canvas size with device pixel ratio for sharp rendering
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+    canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+    ctx.scale(dpr, dpr);
 
     // Set drawing style
     ctx.strokeStyle = '#7B61FF';
@@ -259,6 +262,9 @@ export const TextConnectV2: React.FC<TextConnectV2Props> = ({
     const rect = canvas.getBoundingClientRect();
     const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    
+    // Haptic feedback on start drawing
+    if (navigator.vibrate && 'touches' in e) navigator.vibrate(10);
     
     lastPointRef.current = {
       x: clientX - rect.left,
@@ -486,7 +492,8 @@ export const TextConnectV2: React.FC<TextConnectV2Props> = ({
                 onTouchStart={startDrawing}
                 onTouchMove={draw}
                 onTouchEnd={stopDrawing}
-                className="w-full h-full bg-white rounded-2xl cursor-crosshair touch-none"
+                className="w-full h-full bg-white rounded-2xl cursor-crosshair touch-none select-none"
+                style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
               />
             </div>
 

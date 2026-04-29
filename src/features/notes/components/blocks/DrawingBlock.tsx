@@ -75,6 +75,14 @@ export const DrawingBlock: React.FC<DrawingBlockProps> = ({
 
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isFocused && !freeDrawMode) return;
+    
+    // Prevent default to stop scrolling while drawing
+    if ('touches' in e) {
+      e.preventDefault();
+      // Haptic feedback on mobile
+      if (navigator.vibrate) navigator.vibrate(10);
+    }
+    
     setIsDrawing(true);
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -94,6 +102,12 @@ export const DrawingBlock: React.FC<DrawingBlockProps> = ({
   const draw = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDrawing) return;
     if (!isFocused && !freeDrawMode) return;
+    
+    // Prevent default for touch events to avoid scrolling
+    if ('touches' in e) {
+      e.preventDefault();
+    }
+    
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
 
@@ -146,10 +160,17 @@ export const DrawingBlock: React.FC<DrawingBlockProps> = ({
         onTouchStart={startDrawing}
         onTouchMove={draw}
         onTouchEnd={endDrawing}
+        onTouchCancel={endDrawing}
         className={cn(
-          "w-full h-full cursor-crosshair touch-none rounded-[40px] transition-all",
+          "w-full h-full cursor-crosshair touch-none rounded-[40px] transition-all select-none",
           isFocused ? "bg-white/[0.04]" : "bg-transparent"
         )}
+        style={{ 
+          touchAction: 'none', 
+          WebkitUserSelect: 'none', 
+          userSelect: 'none',
+          WebkitTouchCallout: 'none'
+        }}
       />
       
       {(isFocused || freeDrawMode) && (
