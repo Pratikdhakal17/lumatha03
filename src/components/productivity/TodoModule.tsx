@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Plus, RotateCcw, Trash2, Bell, Folder, Sun, CalendarDays, CalendarRange, Pencil, RefreshCw, Trash } from 'lucide-react';
+import { Plus, RotateCcw, Trash2, Bell, Folder, Sun, CalendarDays, CalendarRange, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TODO_CATEGORIES, TodoCategory, getDefaultTodos } from '@/data/defaultTodos';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -113,79 +113,6 @@ export function TodoModule() {
       checkAndAutoReset();
     }
   }, []);
-
-  // MANUAL Reset All - Clear all todos and start fresh
-  const resetAllTodos = () => {
-    if (!confirm('Reset ALL todos? This will mark all tasks as incomplete for a fresh start.')) return;
-    
-    const updated: Record<TodoCategory, Todo[]> = {
-      daily: todos.daily.map(t => ({ ...t, completed: false, completed_at: undefined })),
-      weekly: todos.weekly.map(t => ({ ...t, completed: false, completed_at: undefined })),
-      monthly: todos.monthly.map(t => ({ ...t, completed: false, completed_at: undefined })),
-      yearly: todos.yearly.map(t => ({ ...t, completed: false, completed_at: undefined })),
-      lifetime: todos.lifetime.map(t => ({ ...t, completed: false, completed_at: undefined })),
-      custom: todos.custom.map(t => ({ ...t, completed: false, completed_at: undefined })),
-    };
-    
-    setTodos(updated);
-    localStorage.setItem(todosStorageKey, JSON.stringify(updated));
-    
-    // Reset stats
-    const resetStats: TodoStats = {
-      totalCompleted: 0,
-      totalCreated: Object.values(updated).flat().length,
-      streakDays: streak,
-      lastActiveDate: new Date().toISOString().split('T')[0],
-      categoryStats: {
-        daily: { completed: 0, total: updated.daily.length },
-        weekly: { completed: 0, total: updated.weekly.length },
-        monthly: { completed: 0, total: updated.monthly.length },
-        yearly: { completed: 0, total: updated.yearly.length },
-        lifetime: { completed: 0, total: updated.lifetime.length },
-        custom: { completed: 0, total: updated.custom.length },
-      }
-    };
-    setStats(resetStats);
-    localStorage.setItem(statsStorageKey, JSON.stringify(resetStats));
-    
-    // Update last reset date
-    const today = new Date().toISOString().split('T')[0];
-    localStorage.setItem(lastResetStorageKey, today);
-    
-    toast.success('All todos reset! Fresh start 🎯');
-  };
-
-  // Clear All - Delete all todo items completely
-  const clearAllTodos = () => {
-    if (!confirm('DELETE all todos? This will remove ALL tasks permanently. This cannot be undone.')) return;
-    
-    const empty: Record<TodoCategory, Todo[]> = {
-      daily: [], weekly: [], monthly: [], yearly: [], lifetime: [], custom: []
-    };
-    
-    setTodos(empty);
-    localStorage.setItem(todosStorageKey, JSON.stringify(empty));
-    
-    // Reset stats
-    const resetStats: TodoStats = {
-      totalCompleted: 0,
-      totalCreated: 0,
-      streakDays: streak,
-      lastActiveDate: new Date().toISOString().split('T')[0],
-      categoryStats: {
-        daily: { completed: 0, total: 0 },
-        weekly: { completed: 0, total: 0 },
-        monthly: { completed: 0, total: 0 },
-        yearly: { completed: 0, total: 0 },
-        lifetime: { completed: 0, total: 0 },
-        custom: { completed: 0, total: 0 },
-      }
-    };
-    setStats(resetStats);
-    localStorage.setItem(statsStorageKey, JSON.stringify(resetStats));
-    
-    toast.success('All todos cleared! 🗑️');
-  };
 
   // Check and auto-reset daily/weekly/monthly todos - AUTO RESET TO 0 EVERYDAY
   const checkAndAutoReset = () => {
@@ -583,37 +510,13 @@ export function TodoModule() {
             </button>
           </div>
 
-          {/* Category header + reset options */}
+          {/* Category header + reset */}
           <div className="flex items-center justify-between px-1">
             <p className="text-[12px]" style={{ color: '#94A3B8' }}>
               {getCompletedCount(activeCategory)}/{getTotalCount(activeCategory)} done
             </p>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" onClick={() => resetCategory(activeCategory)} className="gap-1 text-xs h-7 text-[#94A3B8] hover:text-white hover:bg-white/5">
-                <RotateCcw className="w-3.5 h-3.5" />Reset
-              </Button>
-            </div>
-          </div>
-          
-          {/* Global Reset All / Clear All Buttons */}
-          <div className="flex items-center gap-2 px-1">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={resetAllTodos} 
-              className="gap-1 text-xs h-8 flex-1 border-white/10 hover:bg-white/5 hover:text-white text-[#94A3B8]"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              Reset All (Mark Incomplete)
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={clearAllTodos} 
-              className="gap-1 text-xs h-8 flex-1 border-red-500/20 hover:bg-red-500/10 hover:text-red-400 text-red-400/60"
-            >
-              <Trash className="w-3.5 h-3.5" />
-              Clear All (Delete)
+            <Button variant="ghost" size="sm" onClick={() => resetCategory(activeCategory)} className="gap-1 text-xs h-7 text-[#94A3B8] hover:text-white hover:bg-white/5">
+              <RotateCcw className="w-3.5 h-3.5" />Reset
             </Button>
           </div>
 

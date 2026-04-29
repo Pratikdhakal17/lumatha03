@@ -3,9 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, MoreHorizontal, Pin, Bell, Archive, Trash2,
   Type, Image as ImageIcon, Video, Mic, CheckSquare, Plus,
-  Bold, Italic, Underline, Heading1, Heading2, List,
+  Bold, Italic, Underline, Heading1, Heading2, List, ListOrdered,
   Palette, Sparkles, Save, Cloud, CloudOff,
-  Tag, Hash, X, Check
+  Tag, Hash, X, Check, Eraser, Brush, RotateCcw, RotateCw,
+  AlignLeft, AlignCenter, AlignRight, Square, Minus, Aperture,
+  Paintbrush, Sticker, Layers
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -77,12 +79,36 @@ export const NoteEditorScreenAI: React.FC<NoteEditorScreenAIProps> = ({ noteId, 
   const [showFormatBar, setShowFormatBar] = useState(false);
   const [showTypePicker, setShowTypePicker] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showTextFormat, setShowTextFormat] = useState(false);
+  const [showLayoutMenu, setShowLayoutMenu] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [showBrushSettings, setShowBrushSettings] = useState(false);
+  const [showDrawingMode, setShowDrawingMode] = useState(false);
   const [selectedText, setSelectedText] = useState('');
   const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null);
   const [activeTheme, setActiveTheme] = useState('deepNavy');
+  const [activeColor, setActiveColor] = useState('#FFFFFF');
+  const [activeBgColor, setActiveBgColor] = useState('transparent');
+  const [brushSize, setBrushSize] = useState(4);
+  const [eraserSize, setEraserSize] = useState(20);
+  const [isEraser, setIsEraser] = useState(false);
+  const [freeDrawMode, setFreeDrawMode] = useState(false);
+  const [drawingHistory, setDrawingHistory] = useState<any[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   
   const saveTimeout = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Text colors palette
+  const TEXT_COLORS = [
+    '#FFFFFF', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57', '#FF9FF3', '#54A0FF'
+  ];
+  
+  // Background colors palette
+  const BG_COLORS = [
+    'transparent', '#FF6B6B20', '#4ECDC420', '#45B7D120', '#96CEB420', '#FECA5720', '#FF9FF320', '#54A0FF20',
+    '#2C3E50', '#34495E', '#7F8C8D', '#1ABC9C20', '#3498DB20', '#9B59B620', '#E74C3C20', '#F39C1220'
+  ];
 
   // Load note data
   useEffect(() => {
@@ -507,151 +533,424 @@ export const NoteEditorScreenAI: React.FC<NoteEditorScreenAIProps> = ({ noteId, 
         </button>
       </main>
 
-      {/* ====== FLOATING FORMAT BAR (Appears on text selection) ====== */}
-      <AnimatePresence>
-        {showFormatBar && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-24 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#0f0f23]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-2xl z-40"
-          >
-            <FormatButton icon={Bold} label="Bold" />
-            <FormatButton icon={Italic} label="Italic" />
-            <FormatButton icon={Underline} label="Underline" />
-            <div className="w-px h-6 bg-white/10 mx-1" />
-            <FormatButton icon={Heading1} label="H1" />
-            <FormatButton icon={Heading2} label="H2" />
-            <div className="w-px h-6 bg-white/10 mx-1" />
-            <FormatButton icon={List} label="List" />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* ====== COMPREHENSIVE BOTTOM TOOLBAR ====== */}
+      <footer className="pb-safe px-2 pt-2 flex flex-col items-center gap-2 z-30">
+        
+        {/* Drawing Mode Panel - Shows when clicking Draw */}
+        <AnimatePresence>
+          {showDrawingMode && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              className="w-full max-w-md bg-[#0f0f23]/98 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl"
+            >
+              <p className="text-xs text-white/50 mb-3 text-center">Choose Drawing Mode</p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => {
+                    addBlock('drawing');
+                    setShowDrawingMode(false);
+                  }}
+                  className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all"
+                >
+                  <Square className="w-8 h-8 text-blue-400" />
+                  <span className="text-sm text-white/80">Take Sheet</span>
+                  <span className="text-[10px] text-white/40">A4 canvas block</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setFreeDrawMode(true);
+                    setShowDrawingMode(false);
+                    toast.success('Free draw mode enabled - draw anywhere!');
+                  }}
+                  className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all"
+                >
+                  <Paintbrush className="w-8 h-8 text-pink-400" />
+                  <span className="text-sm text-white/80">Draw Free</span>
+                  <span className="text-[10px] text-white/40">Draw anywhere like Instagram</span>
+                </button>
+              </div>
+              <button
+                onClick={() => setShowDrawingMode(false)}
+                className="w-full mt-3 py-2 text-xs text-white/40 hover:text-white/60"
+              >
+                Cancel
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* ====== COMMAND CENTER (Bottom Toolbar) ====== */}
-      <footer className="pb-safe pt-2 px-4 flex flex-col items-center gap-3 z-30">
-        {/* Command Center Panel */}
+        {/* Add Media Panel - Shows when clicking + */}
         <AnimatePresence>
           {showCommandCenter && (
             <motion.div
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.95 }}
-              className="w-full max-w-sm bg-[#0f0f23]/95 backdrop-blur-xl border border-white/10 rounded-3xl p-4 shadow-2xl"
+              className="w-full max-w-md bg-[#0f0f23]/98 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl"
             >
-              <div className="grid grid-cols-4 gap-3">
-                <CommandButton
-                  icon={Type}
-                  label="Text"
-                  onClick={() => addBlock('text')}
-                />
-                <CommandButton
-                  icon={Heading1}
-                  label="Heading"
-                  onClick={() => addBlock('heading')}
-                />
-                <CommandButton
-                  icon={CheckSquare}
-                  label="To-do"
-                  onClick={() => addBlock('todo')}
-                  color="text-green-400"
-                />
-                <CommandButton
-                  icon={ImageIcon}
-                  label="Image"
-                  onClick={() => addBlock('image')}
-                  color="text-blue-400"
-                />
-                <CommandButton
-                  icon={Video}
-                  label="Video"
-                  onClick={() => addBlock('video')}
-                  color="text-purple-400"
-                />
-                <CommandButton
-                  icon={Mic}
-                  label="Audio"
-                  onClick={() => addBlock('audio')}
-                  color="text-pink-400"
-                />
-                <CommandButton
-                  icon={Palette}
-                  label="Draw"
-                  onClick={() => addBlock('drawing')}
-                  color="text-orange-400"
-                />
-                <CommandButton
-                  icon={X}
-                  label="Close"
-                  onClick={() => setShowCommandCenter(false)}
-                  color="text-gray-400"
-                />
+              <div className="grid grid-cols-4 gap-2">
+                <CommandButton icon={ImageIcon} label="Image" onClick={() => addBlock('image')} color="text-blue-400" />
+                <CommandButton icon={Video} label="Video" onClick={() => addBlock('video')} color="text-purple-400" />
+                <CommandButton icon={Mic} label="Audio" onClick={() => addBlock('audio')} color="text-pink-400" />
+                <CommandButton icon={Sticker} label="Drawing" onClick={() => { setShowCommandCenter(false); setShowDrawingMode(true); }} color="text-orange-400" />
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Main Toolbar */}
-        <div className="flex items-center justify-between w-full max-w-sm">
-          {/* Theme Toggle */}
-          <button
+        {/* Text Format Panel */}
+        <AnimatePresence>
+          {showTextFormat && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              className="w-full max-w-sm bg-[#0f0f23]/98 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl"
+            >
+              <p className="text-xs text-white/50 mb-2">Text Format</p>
+              <div className="flex items-center gap-2">
+                <ToolbarButton icon={Type} label="Normal" onClick={() => applyTextFormat('normal')} />
+                <ToolbarButton icon={Bold} label="Bold" onClick={() => applyTextFormat('bold')} />
+                <ToolbarButton icon={Italic} label="Italic" onClick={() => applyTextFormat('italic')} />
+                <ToolbarButton icon={Underline} label="Underline" onClick={() => applyTextFormat('underline')} />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Layout Panel */}
+        <AnimatePresence>
+          {showLayoutMenu && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              className="w-full max-w-sm bg-[#0f0f23]/98 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl"
+            >
+              <p className="text-xs text-white/50 mb-2">Layout</p>
+              <div className="grid grid-cols-4 gap-2">
+                <ToolbarButton icon={Heading1} label="H1" onClick={() => { addBlock('heading'); setShowLayoutMenu(false); }} />
+                <ToolbarButton icon={Heading2} label="H2" onClick={() => { addBlock('heading'); setShowLayoutMenu(false); }} />
+                <ToolbarButton icon={List} label="Dots" onClick={() => { addBlock('todo'); setShowLayoutMenu(false); }} />
+                <ToolbarButton icon={ListOrdered} label="1,2,3" onClick={() => { addBlock('text'); setShowLayoutMenu(false); }} />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Color Picker Panel */}
+        <AnimatePresence>
+          {showColorPicker && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              className="w-full max-w-sm bg-[#0f0f23]/98 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl"
+            >
+              <p className="text-xs text-white/50 mb-2">Text Color</p>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {TEXT_COLORS.map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => setActiveColor(color)}
+                    className={cn(
+                      "w-8 h-8 rounded-full border-2 transition-all",
+                      activeColor === color ? "border-white scale-110" : "border-transparent"
+                    )}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+              <p className="text-xs text-white/50 mb-2">Background</p>
+              <div className="flex flex-wrap gap-2">
+                {BG_COLORS.map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => setActiveBgColor(color)}
+                    className={cn(
+                      "w-8 h-8 rounded-lg border border-white/20 transition-all",
+                      activeBgColor === color ? "ring-2 ring-white" : ""
+                    )}
+                    style={{ backgroundColor: color === 'transparent' ? '#ffffff10' : color }}
+                  >
+                    {color === 'transparent' && <Minus className="w-4 h-4 mx-auto text-white/40" />}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Brush Settings Panel */}
+        <AnimatePresence>
+          {showBrushSettings && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              className="w-full max-w-sm bg-[#0f0f23]/98 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-white/50">Brush Size: {brushSize}px</p>
+                <p className="text-xs text-white/50">Eraser: {eraserSize}px</p>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Brush className="w-4 h-4 text-white/40" />
+                  <input
+                    type="range"
+                    min="1"
+                    max="20"
+                    value={brushSize}
+                    onChange={(e) => setBrushSize(parseInt(e.target.value))}
+                    className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer"
+                  />
+                  <div 
+                    className="w-6 h-6 rounded-full" 
+                    style={{ backgroundColor: activeColor, transform: `scale(${brushSize / 10})` }}
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Eraser className="w-4 h-4 text-white/40" />
+                  <input
+                    type="range"
+                    min="5"
+                    max="50"
+                    value={eraserSize}
+                    onChange={(e) => setEraserSize(parseInt(e.target.value))}
+                    className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer"
+                  />
+                  <div 
+                    className="rounded-full border-2 border-white/40" 
+                    style={{ width: eraserSize / 3, height: eraserSize / 3 }}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Free Draw Exit Notice */}
+        <AnimatePresence>
+          {freeDrawMode && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-500/20 border border-pink-500/30"
+            >
+              <Paintbrush className="w-3 h-3 text-pink-400" />
+              <span className="text-xs text-pink-300">Free Draw Mode</span>
+              <button
+                onClick={() => setFreeDrawMode(false)}
+                className="ml-1 text-xs text-pink-300/60 hover:text-pink-300"
+              >
+                Exit
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Main Bottom Toolbar */}
+        <div className="flex items-center justify-center gap-1 w-full max-w-md px-2">
+          {/* + Add Media */}
+          <ToolbarIconButton
+            icon={Plus}
+            isActive={showCommandCenter}
             onClick={() => {
-              const themes = Object.keys(VIBE_THEMES);
-              const currentIndex = themes.indexOf(activeTheme);
-              const nextTheme = themes[(currentIndex + 1) % themes.length];
-              setActiveTheme(nextTheme);
-              if (note) setNote({ ...note, vibe_theme: nextTheme });
+              setShowCommandCenter(!showCommandCenter);
+              closeOtherPanels('command');
             }}
-            className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all active:scale-90"
-          >
-            <Palette className="w-5 h-5" />
-          </button>
+            label="Add"
+          />
 
-          {/* Command Center Trigger (+) */}
-          <button
-            onClick={() => setShowCommandCenter(!showCommandCenter)}
-            className={cn(
-              "w-14 h-14 flex items-center justify-center rounded-2xl transition-all active:scale-90 shadow-lg",
-              showCommandCenter
-                ? "bg-white text-black"
-                : "bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white"
-            )}
-          >
-            <Plus className={cn("w-6 h-6 transition-transform", showCommandCenter && "rotate-45")} />
-          </button>
+          {/* Aa Text Format */}
+          <ToolbarIconButton
+            icon={Type}
+            isActive={showTextFormat}
+            onClick={() => {
+              setShowTextFormat(!showTextFormat);
+              closeOtherPanels('text');
+            }}
+            label="Aa"
+            customIcon={<span className="text-sm font-bold">Aa</span>}
+          />
 
-          {/* Sync Status */}
-          <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/5 border border-white/10">
-            {syncStatus === 'synced' ? (
-              <>
-                <Cloud className="w-4 h-4 text-green-400" />
-                <span className="text-xs text-white/50">
-                  {lastSaved ? formatTime(lastSaved) : 'Saved'}
-                </span>
-              </>
-            ) : syncStatus === 'pending' ? (
-              <>
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                  className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full"
-                />
-                <span className="text-xs text-white/50">Saving...</span>
-              </>
-            ) : (
-              <>
-                <CloudOff className="w-4 h-4 text-orange-400" />
-                <span className="text-xs text-white/50">Offline</span>
-              </>
-            )}
-          </div>
+          {/* Layout */}
+          <ToolbarIconButton
+            icon={Layers}
+            isActive={showLayoutMenu}
+            onClick={() => {
+              setShowLayoutMenu(!showLayoutMenu);
+              closeOtherPanels('layout');
+            }}
+            label="Layout"
+          />
+
+          {/* Color Palette */}
+          <ToolbarIconButton
+            icon={Palette}
+            isActive={showColorPicker}
+            onClick={() => {
+              setShowColorPicker(!showColorPicker);
+              closeOtherPanels('color');
+            }}
+            label="Colors"
+            accent={activeColor}
+          />
+
+          {/* Brush Settings */}
+          <ToolbarIconButton
+            icon={Brush}
+            isActive={showBrushSettings}
+            onClick={() => {
+              setShowBrushSettings(!showBrushSettings);
+              closeOtherPanels('brush');
+            }}
+            label="Brush"
+          />
+
+          <div className="w-px h-6 bg-white/10 mx-1" />
+
+          {/* Previous/Undo */}
+          <ToolbarIconButton
+            icon={RotateCcw}
+            onClick={handleUndo}
+            label="Undo"
+          />
+
+          {/* Next/Redo */}
+          <ToolbarIconButton
+            icon={RotateCw}
+            onClick={handleRedo}
+            label="Redo"
+          />
+
+          {/* Erase Mode Toggle */}
+          <ToolbarIconButton
+            icon={Eraser}
+            isActive={isEraser}
+            onClick={() => setIsEraser(!isEraser)}
+            label="Erase"
+            activeColor="text-orange-400"
+          />
+        </div>
+
+        {/* Sync Status */}
+        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
+          {syncStatus === 'synced' ? (
+            <>
+              <Cloud className="w-3 h-3 text-green-400" />
+              <span className="text-[10px] text-white/50">{lastSaved ? formatTime(lastSaved) : 'Saved'}</span>
+            </>
+          ) : syncStatus === 'pending' ? (
+            <>
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-2.5 h-2.5 border-2 border-white/20 border-t-white rounded-full" />
+              <span className="text-[10px] text-white/50">Saving...</span>
+            </>
+          ) : (
+            <>
+              <CloudOff className="w-3 h-3 text-orange-400" />
+              <span className="text-[10px] text-white/50">Offline</span>
+            </>
+          )}
         </div>
       </footer>
     </motion.div>
   );
 };
 
+// ====== HELPER FUNCTIONS ======
+
+const closeOtherPanels = (keepOpen: string) => {
+  if (keepOpen !== 'command') setShowCommandCenter(false);
+  if (keepOpen !== 'text') setShowTextFormat(false);
+  if (keepOpen !== 'layout') setShowLayoutMenu(false);
+  if (keepOpen !== 'color') setShowColorPicker(false);
+  if (keepOpen !== 'brush') setShowBrushSettings(false);
+  if (keepOpen !== 'draw') setShowDrawingMode(false);
+};
+
+const applyTextFormat = (format: string) => {
+  // Apply text formatting to selected text or current block
+  const selection = window.getSelection();
+  if (selection && selection.toString()) {
+    document.execCommand(format === 'bold' ? 'bold' : format === 'italic' ? 'italic' : format === 'underline' ? 'underline' : 'removeFormat', false);
+  }
+  toast.success(`Text format: ${format}`);
+  setShowTextFormat(false);
+};
+
+const handleUndo = () => {
+  if (historyIndex > 0) {
+    setHistoryIndex(historyIndex - 1);
+    setBlocks(drawingHistory[historyIndex - 1]);
+    toast.success('Undo');
+  } else {
+    document.execCommand('undo', false);
+  }
+};
+
+const handleRedo = () => {
+  if (historyIndex < drawingHistory.length - 1) {
+    setHistoryIndex(historyIndex + 1);
+    setBlocks(drawingHistory[historyIndex + 1]);
+    toast.success('Redo');
+  } else {
+    document.execCommand('redo', false);
+  }
+};
+
 // ====== SUB-COMPONENTS ======
+
+const ToolbarIconButton = ({ 
+  icon: Icon, 
+  isActive, 
+  onClick, 
+  label, 
+  accent, 
+  customIcon,
+  activeColor 
+}: { 
+  icon: any; 
+  isActive?: boolean; 
+  onClick: () => void; 
+  label: string;
+  accent?: string;
+  customIcon?: React.ReactNode;
+  activeColor?: string;
+}) => (
+  <button
+    onClick={onClick}
+    className={cn(
+      "flex flex-col items-center gap-0.5 p-2 rounded-xl transition-all active:scale-90 min-w-[48px]",
+      isActive 
+        ? "bg-white/20 text-white" 
+        : "text-white/50 hover:text-white hover:bg-white/10"
+    )}
+    title={label}
+  >
+    {customIcon ? customIcon : (
+      <Icon 
+        className={cn("w-5 h-5", activeColor)} 
+        style={accent ? { color: accent } : undefined}
+      />
+    )}
+    <span className="text-[9px]">{label}</span>
+  </button>
+);
+
+const ToolbarButton = ({ icon: Icon, label, onClick }: { icon: any; label: string; onClick: () => void }) => (
+  <button
+    onClick={onClick}
+    className="flex flex-col items-center gap-1 p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-all active:scale-95"
+  >
+    <Icon className="w-5 h-5 text-white/70" />
+    <span className="text-[10px] text-white/50">{label}</span>
+  </button>
+);
 
 const FormatButton = ({ icon: Icon, label }: { icon: any; label: string }) => (
   <button
