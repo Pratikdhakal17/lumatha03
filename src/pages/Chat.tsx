@@ -1943,25 +1943,6 @@ export default function Chat() {
           </div>
         </div>
 
-        {/* Pinned Messages Banner - Sticky on mobile with safe area */}
-        {pinnedMsgs.length > 0 && (
-          <div className="sticky top-0 z-30 px-3 md:px-4 py-2" style={{ 
-            background: 'rgba(124,58,237,0.08)', 
-            borderBottom: '1px solid rgba(124,58,237,0.2)',
-            paddingTop: 'max(0.5rem, env(safe-area-inset-top))',
-            paddingLeft: 'max(0.75rem, env(safe-area-inset-left))',
-            paddingRight: 'max(0.75rem, env(safe-area-inset-right))'
-          }}>
-            <div className="flex items-center gap-2.5 text-xs md:text-sm overflow-hidden">
-              <Pin className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" style={{ color: '#7C3AED' }} />
-              <p className="truncate flex-1" style={{ color: '#9CA3AF' }}>{pinnedMsgs[pinnedMsgs.length - 1]?.content}</p>
-              <span className="text-[10px] md:text-[11px] whitespace-nowrap shrink-0" style={{ color: '#7C3AED' }}>
-                {pinnedMsgs.length} {pinnedMsgs.length === 1 ? 'pinned' : 'pinned'}
-              </span>
-            </div>
-          </div>
-        )}
-
         {/* Messages — Messenger-like: pushes to bottom when few, scrollable when many */}
         <div
           ref={scrollContainerRef}
