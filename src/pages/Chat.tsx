@@ -1885,59 +1885,48 @@ export default function Chat() {
         <WatermarkOverlay username={username} enabled={false} />
         {isBlurred && <BlurOverlay />}
 
-        {/* Chat Header - Premium glass-morphism header matching call screen */}
-        <div className="relative shrink-0 border-b border-white/10" style={{
-          background: 'linear-gradient(180deg, rgba(15,28,55,0.8) 0%, rgba(12,20,40,0.6) 100%)',
-          backdropFilter: 'blur(12px)',
-          paddingTop: 'max(0.75rem, env(safe-area-inset-top))',
+        {/* Chat Header - Clean minimal header */}
+        <div className="shrink-0 border-b border-white/10 px-3 md:px-4 py-2.5" style={{
+          background: '#000',
+          paddingTop: 'max(0.625rem, env(safe-area-inset-top))',
           paddingLeft: 'max(0.75rem, env(safe-area-inset-left))',
-          paddingRight: 'max(0.75rem, env(safe-area-inset-right))',
-          paddingBottom: '0.625rem'
+          paddingRight: 'max(0.75rem, env(safe-area-inset-right))'
         }}>
-          <div className="flex items-center gap-3 md:gap-4 px-3 md:px-4">
-            <div className="relative shrink-0 cursor-pointer transition-transform hover:scale-105" onClick={() => navigate(`/profile/${currentChatUser}`)}>
-              <Avatar className="w-11 h-11 md:w-12 md:h-12 ring-2 ring-cyan-300/20">
+          <div className="flex items-center gap-3">
+            <div className="relative shrink-0 cursor-pointer" onClick={() => navigate(`/profile/${currentChatUser}`)}>
+              <Avatar className="w-10 h-10">
                 <AvatarImage src={selectedConversation?.user_avatar || undefined} />
-                <AvatarFallback className="bg-gradient-to-br from-cyan-500/30 to-blue-500/30 text-sm font-semibold text-white">
+                <AvatarFallback className="bg-slate-700 text-white font-semibold">
                   {displayName?.charAt(0)?.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-1.5 border-[#0f1c37] bg-emerald-400" />
             </div>
             
             <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/profile/${currentChatUser}`)}>
-              <p className="text-sm md:text-base font-semibold text-white truncate" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{displayName}</p>
-              <p className="text-[11px] md:text-xs text-white/60 truncate">Online • Secure connection</p>
+              <p className="text-sm font-semibold text-white truncate">{displayName}</p>
             </div>
             
-            <div className="shrink-0 flex items-center gap-1.5">
+            <div className="shrink-0 flex items-center gap-1">
               <button
-                className="hidden md:flex w-9 h-9 rounded-full items-center justify-center border border-white/15 bg-white/5 hover:bg-cyan-400/15 hover:text-cyan-300 transition-all active:scale-95 touch-target-44"
+                className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded transition-colors"
                 title="Start video call"
                 onClick={() => setCallState({ open: true, isVideo: true })}
               >
-                <VideoIcon className="w-4 h-4 text-cyan-300/80" />
+                <VideoIcon className="w-4 h-4 text-white/80" />
               </button>
               <button
-                className="hidden md:flex w-9 h-9 rounded-full items-center justify-center border border-white/15 bg-white/5 hover:bg-emerald-400/15 hover:text-emerald-300 transition-all active:scale-95 touch-target-44"
+                className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded transition-colors"
                 title="Start voice call"
                 onClick={() => setCallState({ open: true, isVideo: false })}
               >
-                <Phone className="w-4 h-4 text-emerald-300/80" />
+                <Phone className="w-4 h-4 text-white/80" />
               </button>
               <button
-                className="w-9 h-9 rounded-full flex items-center justify-center border border-white/15 bg-white/5 hover:bg-white/15 transition-all active:scale-95 touch-target-44 md:hidden"
-                title="Back to chats"
-                onClick={handleBackToChats}
-              >
-                <MessageSquare className="w-4 h-4 text-white/70" />
-              </button>
-              <button
-                className="w-9 h-9 rounded-full flex items-center justify-center border border-white/15 bg-white/5 hover:bg-white/15 transition-all active:scale-95 touch-target-44"
-                title="Chat settings"
+                className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded transition-colors"
+                title="Chat options"
                 onClick={() => setShowSettings(true)}
               >
-                <MoreVertical className="w-4 h-4 text-white/70" />
+                <MoreVertical className="w-4 h-4 text-white/80" />
               </button>
             </div>
           </div>
