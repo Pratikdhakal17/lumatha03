@@ -1886,57 +1886,64 @@ export default function Chat() {
         <WatermarkOverlay username={username} enabled={false} />
         {isBlurred && <BlurOverlay />}
 
-        {/* Chat Header - Clean minimal header with back button */}
-        <div className="shrink-0 sticky top-0 z-30 border-b border-white/10 px-3 md:px-4 py-2.5" style={{
+        {/* Chat Header - Responsive header optimized for mobile & desktop */}
+        <div className="shrink-0 sticky top-0 z-30 border-b border-white/10 px-3 sm:px-4 md:px-5 py-2 sm:py-2.5" style={{
           background: '#0B0D1F',
-          paddingTop: 'max(0.625rem, env(safe-area-inset-top))',
+          paddingTop: 'max(0.5rem, env(safe-area-inset-top))',
           paddingLeft: 'max(0.75rem, env(safe-area-inset-left))',
           paddingRight: 'max(0.75rem, env(safe-area-inset-right))'
         }}>
-          <div className="flex items-center gap-3">
-            {/* Back button - visible on all devices */}
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-3">
+            {/* Back button - larger touch target on mobile */}
             <button
               onClick={handleBackToChats}
-              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors shrink-0"
+              className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 transition-colors shrink-0"
               aria-label="Back to messages"
             >
               <ArrowLeft className="w-5 h-5 text-white/80" />
             </button>
             
-            <div className="relative shrink-0 cursor-pointer" onClick={() => navigate(`/profile/${currentChatUser}`)}>
-              <Avatar className="w-10 h-10">
+            {/* Avatar - larger on mobile, clickable */}
+            <div className="relative shrink-0 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => navigate(`/profile/${currentChatUser}`)}>
+              <Avatar className="w-10 h-10 sm:w-10 sm:h-10 border border-white/10">
                 <AvatarImage src={selectedConversation?.user_avatar || undefined} />
-                <AvatarFallback className="bg-slate-700 text-white font-semibold">
+                <AvatarFallback className="bg-slate-700 text-white font-semibold text-xs">
                   {displayName?.charAt(0)?.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
             </div>
             
-            <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/profile/${currentChatUser}`)}>
-              <p className="text-sm font-semibold text-white truncate">{displayName}</p>
+            {/* Display name & online status - flexible, truncates on narrow screens */}
+            <div className="flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => navigate(`/profile/${currentChatUser}`)}>
+              <p className="text-xs sm:text-sm font-semibold text-white truncate line-clamp-1">{displayName}</p>
+              <p className="text-[10px] sm:text-[11px] text-white/50">Online</p>
             </div>
             
-            <div className="shrink-0 flex items-center gap-1">
+            {/* Action buttons - responsive sizing, larger touch targets on mobile */}
+            <div className="shrink-0 flex items-center gap-2 sm:gap-2">
               <button
-                className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded transition-colors"
+                className="w-10 h-10 sm:w-9 sm:h-9 md:w-8 md:h-8 flex items-center justify-center hover:bg-white/10 active:bg-white/20 rounded transition-colors"
                 title="Start video call"
                 onClick={() => setCallState({ open: true, isVideo: true })}
+                aria-label="Start video call"
               >
-                <VideoIcon className="w-4 h-4 text-white/80" />
+                <VideoIcon className="w-5 sm:w-4 h-5 sm:h-4 text-white/80" />
               </button>
               <button
-                className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded transition-colors"
+                className="w-10 h-10 sm:w-9 sm:h-9 md:w-8 md:h-8 flex items-center justify-center hover:bg-white/10 active:bg-white/20 rounded transition-colors"
                 title="Start voice call"
                 onClick={() => setCallState({ open: true, isVideo: false })}
+                aria-label="Start voice call"
               >
-                <Phone className="w-4 h-4 text-white/80" />
+                <Phone className="w-5 sm:w-4 h-5 sm:h-4 text-white/80" />
               </button>
               <button
-                className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded transition-colors"
+                className="w-10 h-10 sm:w-9 sm:h-9 md:w-8 md:h-8 flex items-center justify-center hover:bg-white/10 active:bg-white/20 rounded transition-colors"
                 title="Chat options"
                 onClick={() => setShowSettings(true)}
+                aria-label="Chat options"
               >
-                <MoreVertical className="w-4 h-4 text-white/80" />
+                <MoreVertical className="w-5 sm:w-4 h-5 sm:h-4 text-white/80" />
               </button>
             </div>
           </div>
