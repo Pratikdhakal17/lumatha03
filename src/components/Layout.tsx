@@ -446,7 +446,7 @@ function LayoutContent({ children }: LayoutProps) {
   }, [user]);
 
   // Header visibility rules:
-  // - Chat list (/chat): Show header with Messages label
+  // - ALL sections: Show header always (NO scroll hiding for stability)
   // - Active chat (/chat/:id): Hide app header completely (chat has its own header)
   const isChatListView = location.pathname === '/chat';
   const isInActiveChat = location.pathname.startsWith('/chat/') && location.pathname.length > 6;
@@ -454,8 +454,7 @@ function LayoutContent({ children }: LayoutProps) {
   const handleScroll = useCallback(() => {
     // Header behavior: 
     // 1. Active chat (/chat/:id): Header is completely hidden (chat has its own)
-    // 2. Chat list (/chat): Always show header - NO SCROLL HIDING
-    // 3. Other sections: Hide on scroll down, show on scroll up
+    // 2. ALL other sections: Always show header - NO SCROLL HIDING anywhere for stability
     
     // Active chat: App header is hidden
     if (isInActiveChat) {
@@ -464,32 +463,11 @@ function LayoutContent({ children }: LayoutProps) {
       return;
     }
     
-    // Chat list view: FORCE header always visible - don't allow scroll to hide
-    if (isChatListView) {
-      setHeaderVisible(true);
-      lastScrollY.current = 0;
-      ticking.current = false;
-      return;
-    }
-    
-    // For all other sections: Apply scroll-based hide/show behavior
-    if (ticking.current) return;
-    ticking.current = true;
-    window.requestAnimationFrame(() => {
-      const st = feedCenterRef.current?.scrollTop || 0;
-      const lastY = lastScrollY.current;
-      
-      // Hide when scrolling down past 50px threshold, show when scrolling up or near top
-      if (st > lastY && st > 50) {
-        setHeaderVisible(false);
-      } else if (st < lastY || st <= 50) {
-        setHeaderVisible(true);
-      }
-      
-      lastScrollY.current = st <= 0 ? 0 : st;
-      ticking.current = false;
-    });
-  }, [location.pathname, isChatListView, isInActiveChat]);
+    // ALL sections: FORCE header always visible - disable scroll hiding completely
+    setHeaderVisible(true);
+    lastScrollY.current = 0;
+    ticking.current = false;
+  }, [location.pathname, isInActiveChat]);
 
   useEffect(() => {
     // Always show header when switching sections.
@@ -497,39 +475,37 @@ function LayoutContent({ children }: LayoutProps) {
     lastScrollY.current = 0;
   }, [location.pathname]);
 
-  // Extra safety: Force header always visible for chat list view
+  // Extra safety: Force header always visible for ALL sections (except active chat)
   useEffect(() => {
-    if (isChatListView) {
+    if (!isInActiveChat) {
       setHeaderVisible(true);
       lastScrollY.current = 0;
       
-      // Interval to keep forcing header visible every 100ms for 2 seconds
+      // Interval to keep forcing header visible every 100ms for 3 seconds
       // This prevents any race conditions or delayed scroll events from hiding it
       const interval = setInterval(() => {
         setHeaderVisible(true);
         lastScrollY.current = 0;
       }, 100);
       
-      // Stop after 2 seconds (20 intervals)
-      const timeout = setTimeout(() => clearInterval(interval), 2000);
+      // Stop after 3 seconds
+      const timeout = setTimeout(() => clearInterval(interval), 3000);
       
       return () => {
         clearInterval(interval);
         clearTimeout(timeout);
       };
     }
-  }, [isChatListView]);
+  }, [location.pathname, isInActiveChat]);
 
   useEffect(() => {
-    // Skip scroll listener for chat list view - header should never hide
-    if (isChatListView) {
+    // Skip scroll listener for all sections except active chat - header should never hide
+    if (!isInActiveChat) {
       setHeaderVisible(true);
       return;
     }
     
-    // Attach scroll listener to feed container and window as a fallback.
-    // This ensures header visibility toggles correctly even when inner views
-    // use different scroll containers (e.g. chat threads).
+    // Only attach scroll listener for active chat (where header is hidden)
     const el = feedCenterRef.current;
     if (el) el.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -537,7 +513,7 @@ function LayoutContent({ children }: LayoutProps) {
       if (el) el.removeEventListener('scroll', handleScroll);
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [handleScroll, location.pathname, isChatListView]);
+  }, [handleScroll, location.pathname, isInActiveChat]);
 
   useEffect(() => {
     const prevPath = previousPathRef.current;
@@ -659,11 +635,11 @@ function LayoutContent({ children }: LayoutProps) {
         {/* App Header - Hidden in active chat (chat has its own header) */}
         <header className={cn(
           "sticky top-0 z-50 w-full h-[88px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5",
-          // No transition for chat list to prevent animation issues
-          !isChatListView && "transition-transform duration-300",
-          // Chat list always visible at top, never shifted up
-          isChatListView ? "translate-y-0" : (headerVisible ? "translate-y-0" : "-translate-y-full"),
-          isInActiveChat && "hidden" // Let active chat own its mobile banner; keep app header for chat list
+          // No transition for ALL sections (except active chat) to prevent animation issues
+          isInActiveChat && "transition-transform duration-300",
+          // ALL sections always visible at top, never shifted up (except active chat which is hidden)
+          !isInActiveChat ? "translate-y-0" : (headerVisible ? "translate-y-0" : "-translate-y-full"),
+          isInActiveChat && "hidden" // Let active chat own its mobile banner; keep app header for all other sections
         )}>
           <div className="grid h-full grid-cols-[auto_1fr_auto] items-center gap-3 px-3 md:px-5">
             {/* Left side - menu/back button and branding */}

@@ -2674,7 +2674,7 @@ export default function Chat() {
       { id: 'main', icon: MessageSquare, label: 'Chats' },
       { id: 'find', icon: UserSearch, label: 'Find' },
       { id: 'hidden', icon: Lock, label: 'Hidden' },
-      { id: 'market', icon: ShoppingCart, label: 'Marketplace' },
+      { id: 'market', icon: ShoppingCart, label: 'Market' },
     ];
     const activeIndex = tabs.findIndex(t => t.id === chatTab);
 
