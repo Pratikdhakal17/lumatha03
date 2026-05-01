@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { 
-  User, Settings, Bookmark, MessageSquare, Music, FileText, 
+  Settings, Bookmark, MessageSquare, Music, FileText, 
   Palette, GraduationCap, ShoppingBag, Compass, ChevronRight,
   Heart, Users, Bell, LogOut
 } from 'lucide-react';
@@ -13,7 +13,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const shortcuts = [
-  { icon: User, label: 'View Profile', path: 'profile', color: 'from-primary to-primary/60' },
   { icon: Settings, label: 'Settings', path: '/settings', color: 'from-slate-500 to-slate-600' },
   { icon: Bookmark, label: 'Saved Items', path: '/saved', color: 'from-amber-500 to-orange-500' },
   { icon: MessageSquare, label: 'Messages', path: '/chat', color: 'from-blue-500 to-cyan-500' },
