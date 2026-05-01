@@ -584,8 +584,9 @@ function LayoutContent({ children }: LayoutProps) {
     window.dispatchEvent(new CustomEvent('lumatha_feed_scope_change', { detail: scope }));
   };
 
+  const APP_HEADER_PX = 88;
   return (
-    <div className="app-layout w-full relative min-h-screen bg-[#0B0D1F]">
+  <div className="app-layout w-full relative min-h-screen bg-[#0B0D1F]" style={{ ['--lumatha-app-header-height' as any]: headerVisible ? `${APP_HEADER_PX}px` : '0px' }}>
       <BackgroundOrnaments />
       {isMobile && <MobileSidebarDrawer open={mobileSidebarOpen} onClose={() => setMobileSidebarOpen(false)} onNavigate={(url) => { 
         // Set active zone based on navigation for Layout 2 & 3
@@ -627,7 +628,7 @@ function LayoutContent({ children }: LayoutProps) {
       <main ref={feedCenterRef} className="feed-center relative flex flex-col min-w-0 flex-1 h-screen overflow-y-auto scrollbar-hide">
         {/* App Header - Hidden in active chat (chat has its own header) */}
         <header className={cn(
-          "sticky top-0 z-50 w-full h-[72px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 transition-transform duration-300",
+          `sticky top-0 z-50 w-full h-[${APP_HEADER_PX}px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 transition-transform duration-300`,
           headerVisible ? "translate-y-0" : "-translate-y-full",
           isInActiveChat && "hidden" // Let active chat own its mobile banner; keep app header for chat list
         )}>

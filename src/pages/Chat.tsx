@@ -2658,7 +2658,7 @@ export default function Chat() {
 
   // Top banner component - shows "Messages" label only (no Lumatha branding - main Layout header handles it)
   const TopBanner = () => (
-    <div className="sticky top-0 z-30 bg-[#0a0f1e]/98 backdrop-blur-xl border-b border-white/5 px-4 py-2 min-h-12">
+    <div className="sticky z-30 bg-[#0a0f1e]/98 backdrop-blur-xl border-b border-white/5 px-4 py-2 min-h-12" style={{ top: 'var(--lumatha-app-header-height)' }}>
       <div className="flex items-center justify-between">
         <span className="text-lg md:text-base font-black text-white tracking-wide">Messages</span>
         <div className="flex items-center gap-2">
@@ -2678,7 +2678,7 @@ export default function Chat() {
 
   // Subsection navigation component - tabs with icons
   const SubsectionNavigation = () => (
-    <div className="sticky top-12 z-30 bg-[#0a0f1e]/98 backdrop-blur-md border-b border-white/5 px-2 py-2">
+    <div className="sticky z-30 bg-[#0a0f1e]/98 backdrop-blur-md border-b border-white/5 px-2 py-2" style={{ top: 'calc(var(--lumatha-app-header-height) + 48px)' }}>
       <div className="flex items-center justify-between w-full gap-1">
         {[
           { id: 'main', icon: MessageSquare, label: 'Chats' },
