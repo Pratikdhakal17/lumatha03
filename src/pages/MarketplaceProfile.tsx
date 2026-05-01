@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, ArrowLeft, Edit3, ChevronRight, MessageCircle, Phone, ExternalLink, Star } from 'lucide-react';
+import { MapPin, ArrowLeft, Edit3, MessageCircle, Phone, ExternalLink, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow, format } from 'date-fns';
@@ -220,7 +220,7 @@ export default function MarketplaceProfile() {
 
         {/* Social profile link */}
         <button onClick={() => navigate(`/profile/${userId}`)} className="mt-4 flex items-center gap-2 text-[13px] font-medium" style={{ color: '#A78BFA' }}>
-          <ExternalLink className="w-3.5 h-3.5" /> View {profile.name} on Lumatha →
+          <ExternalLink className="w-3.5 h-3.5" /> View {profile.name} on Lumatha
         </button>
       </div>
 

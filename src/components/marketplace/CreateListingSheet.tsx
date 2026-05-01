@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, X } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -148,16 +148,9 @@ export function CreateListingSheet({ editListing, defaultDetectedLocation, onClo
         className="h-[92vh] p-0 border-0 flex flex-col bg-[#0B0D1F] rounded-t-[32px] overflow-hidden [&>button]:hidden"
       >
         <SheetHeader className="px-4 py-3 border-b border-white/5 flex-shrink-0 flex-row items-center justify-between space-y-0">
-          <div className="flex items-center gap-2">
-            {type && !editListing && (
-              <button onClick={() => setType(null)} className="p-1 text-slate-400">
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-            )}
-            <SheetTitle className="text-[17px] font-bold text-white">
-              {editListing ? 'Edit Listing' : type ? 'Details' : 'Create Listing'}
-            </SheetTitle>
-          </div>
+          <SheetTitle className="text-[17px] font-bold text-white">
+            {editListing ? 'Edit Listing' : type ? 'Details' : 'Create Listing'}
+          </SheetTitle>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
             <X className="w-4 h-4 text-slate-400" />
           </button>

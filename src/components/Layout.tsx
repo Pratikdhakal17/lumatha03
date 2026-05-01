@@ -629,7 +629,7 @@ function LayoutContent({ children }: LayoutProps) {
         <header className={cn(
           "sticky top-0 z-50 w-full h-[72px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 transition-transform duration-300",
           headerVisible ? "translate-y-0" : "-translate-y-full",
-          isInActiveChat && "hidden" // Completely hide header in active chat
+          (isInActiveChat || isChatListView) && "hidden" // Let chat own its mobile banner in list and detail views
         )}>
           <div className="grid h-full grid-cols-[auto_1fr_auto] items-center gap-3 px-3 md:px-5">
             {/* Left side - menu/back button and branding */}
