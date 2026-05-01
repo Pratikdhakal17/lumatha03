@@ -301,6 +301,7 @@ export default function Chat() {
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const conversationsContainerRef = useRef<HTMLDivElement>(null);
+  const previousConversationsScrollRef = useRef<number>(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const messageMenuOpenedAtRef = useRef<number>(0);
@@ -618,6 +619,11 @@ export default function Chat() {
     if (!userId) return;
     const trace = beginPerfTrace('chat.openConversation', { userId });
     // Open the chat shell immediately for near-instant transition.
+    // Save current conversations scroll so we can restore it when going back.
+    try {
+      const container = conversationsContainerRef.current;
+      if (container) previousConversationsScrollRef.current = container.scrollTop || 0;
+    } catch {}
     setCurrentChatUser(userId);
     // Reset transient overlays/banners so state from a previous chat does not leak.
     setLongPressTarget(null);
@@ -1292,6 +1298,16 @@ export default function Chat() {
     setViewOnceMode(false);
     navigate('/chat', { replace: true });
     // Removed: scrollTo was causing header shifting when exiting chat
+    // Restore previous conversations scroll to keep top banner stable
+    try {
+      setTimeout(() => {
+        const container = conversationsContainerRef.current;
+        if (container && previousConversationsScrollRef.current) {
+          container.scrollTop = previousConversationsScrollRef.current;
+          previousConversationsScrollRef.current = 0;
+        }
+      }, 60);
+    } catch {}
   };
 
   function openMobileSidebar() {
@@ -2663,8 +2679,10 @@ export default function Chat() {
     ];
     const activeIndex = tabs.findIndex(t => t.id === chatTab);
 
+    const compact = chatTab !== 'main';
+
     return (
-      <div className="px-4 py-3">
+      <div className={compact ? 'px-3 py-2' : 'px-4 py-3'}>
         <div className="relative flex items-center rounded-xl overflow-hidden shrink-0" style={{ background: '#0d1220', border: '1px solid #1f2937' }}>
           <div
             className="absolute top-0 bottom-0 rounded-xl transition-all duration-200 ease-out"
@@ -2682,11 +2700,12 @@ export default function Chat() {
                 key={tab.id}
                 onClick={() => setChatTab(tab.id as any)}
                 className={cn(
-                  "relative z-10 flex items-center gap-1 justify-center flex-1 py-2.5 transition-colors duration-200 text-xs font-semibold",
+                  "relative z-10 flex items-center gap-1 justify-center flex-1 transition-colors duration-200 text-xs font-semibold",
+                  compact ? 'py-2' : 'py-2.5',
                   isActive ? "text-white" : "text-[#64748B]"
                 )}
               >
-                <Icon className="w-3.5 h-3.5" />
+                <Icon className={compact ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
                 <span>{tab.label}</span>
               </button>
             );
