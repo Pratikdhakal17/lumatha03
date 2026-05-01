@@ -501,12 +501,32 @@ function LayoutContent({ children }: LayoutProps) {
   useEffect(() => {
     if (isChatListView) {
       setHeaderVisible(true);
-      // Disable any scroll-based hiding by resetting scroll tracking
       lastScrollY.current = 0;
+      
+      // Interval to keep forcing header visible every 100ms for 2 seconds
+      // This prevents any race conditions or delayed scroll events from hiding it
+      const interval = setInterval(() => {
+        setHeaderVisible(true);
+        lastScrollY.current = 0;
+      }, 100);
+      
+      // Stop after 2 seconds (20 intervals)
+      const timeout = setTimeout(() => clearInterval(interval), 2000);
+      
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      };
     }
   }, [isChatListView]);
 
   useEffect(() => {
+    // Skip scroll listener for chat list view - header should never hide
+    if (isChatListView) {
+      setHeaderVisible(true);
+      return;
+    }
+    
     // Attach scroll listener to feed container and window as a fallback.
     // This ensures header visibility toggles correctly even when inner views
     // use different scroll containers (e.g. chat threads).
@@ -517,7 +537,7 @@ function LayoutContent({ children }: LayoutProps) {
       if (el) el.removeEventListener('scroll', handleScroll);
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [handleScroll, location.pathname]);
+  }, [handleScroll, location.pathname, isChatListView]);
 
   useEffect(() => {
     const prevPath = previousPathRef.current;
@@ -638,8 +658,11 @@ function LayoutContent({ children }: LayoutProps) {
       <main ref={feedCenterRef} className="feed-center relative flex flex-col min-w-0 flex-1 h-screen overflow-y-auto scrollbar-hide">
         {/* App Header - Hidden in active chat (chat has its own header) */}
         <header className={cn(
-          "sticky top-0 z-50 w-full h-[88px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 transition-transform duration-300",
-          headerVisible ? "translate-y-0" : "-translate-y-full",
+          "sticky top-0 z-50 w-full h-[88px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5",
+          // No transition for chat list to prevent animation issues
+          !isChatListView && "transition-transform duration-300",
+          // Chat list always visible at top, never shifted up
+          isChatListView ? "translate-y-0" : (headerVisible ? "translate-y-0" : "-translate-y-full"),
           isInActiveChat && "hidden" // Let active chat own its mobile banner; keep app header for chat list
         )}>
           <div className="grid h-full grid-cols-[auto_1fr_auto] items-center gap-3 px-3 md:px-5">
