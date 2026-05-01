@@ -1872,7 +1872,7 @@ export default function Chat() {
 
         {/* Chat Header - Clean minimal header with back button */}
         <div className="shrink-0 border-b border-white/10 px-3 md:px-4 py-2.5" style={{
-          background: '#000',
+          background: '#0B0D1F',
           paddingTop: 'max(0.625rem, env(safe-area-inset-top))',
           paddingLeft: 'max(0.75rem, env(safe-area-inset-left))',
           paddingRight: 'max(0.75rem, env(safe-area-inset-right))'
@@ -1880,7 +1880,7 @@ export default function Chat() {
           <div className="flex items-center gap-3">
             {/* Back button - visible on all devices */}
             <button
-              onClick={() => navigate('/chat')}
+              onClick={handleBackToChats}
               className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors shrink-0"
               aria-label="Back to messages"
             >
@@ -2781,13 +2781,8 @@ export default function Chat() {
           `}</style>
         </div>
       ) : chatTab === 'hidden' && sortedConversations.length > 0 ? (
-        /* Hidden tab: Archived + Private conversations */
-        <div ref={conversationsContainerRef} className="pt-2">
-          <div className="flex items-center gap-2 px-4 py-2.5" style={{ borderBottom: '1px solid #1f2937' }}>
-            <Lock className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">Hidden (Archived + Private)</span>
-            <span className="text-[11px] text-muted-foreground">({sortedConversations.length})</span>
-          </div>
+        /* Hidden tab: Archived + Private conversations - Simple layout like Find */
+        <div ref={conversationsContainerRef} className="px-4 pt-2">
           {visibleConversations.map(conv => renderHiddenChatRow(conv))}
           {remainingConversations > 0 && (
             <div className="flex justify-center py-3">
@@ -2802,7 +2797,7 @@ export default function Chat() {
           )}
         </div>
       ) : sortedConversations.length > 0 ? (
-        /* Conversation Rows */
+        /* Conversation Rows - Simple layout */
         <div ref={conversationsContainerRef} className="pt-2">
           {visibleConversations.map(conv => {
             const isPinned = pinnedChats.has(conv.user_id);
