@@ -7,7 +7,7 @@ import {
   Image, Users, UserSearch, MessageCircle, Star, Video as VideoIcon,
   Palette, Eye, Pin, Forward, Copy, Phone,
   Bell, BellOff, CornerUpLeft, Pencil, Lock, Plus, Camera,
-  MessageSquare, ShoppingCart, Menu, Heart, ArrowLeft
+  MessageSquare, ShoppingCart, Menu, Heart, ArrowLeft, Compass, MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -202,7 +202,7 @@ export default function Chat() {
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
-  const [chatTab, setChatTab] = useState<'main' | 'find' | 'hidden' | 'market'>('main');
+  const [chatTab, setChatTab] = useState<'main' | 'find' | 'travel' | 'hidden' | 'market'>('main');
   const [findSubTab, setFindSubTab] = useState<'suggestions' | 'friends'>('suggestions');
 
   // Media
@@ -2662,6 +2662,7 @@ export default function Chat() {
   const sectionLabelByTab: Record<typeof chatTab, string> = {
     main: 'Main',
     find: 'Find',
+    travel: 'Travel',
     hidden: 'Hidden',
     market: 'Marketplace',
   };
@@ -2699,6 +2700,7 @@ export default function Chat() {
     const tabs = [
       { id: 'main', icon: MessageSquare, label: 'Chats' },
       { id: 'find', icon: UserSearch, label: 'Find' },
+      { id: 'travel', icon: Compass, label: 'Travel' },
       { id: 'hidden', icon: Lock, label: 'Hidden' },
       { id: 'market', icon: ShoppingCart, label: 'Market' },
     ];
@@ -2827,6 +2829,51 @@ export default function Chat() {
               to { opacity: 1; transform: translateY(0); }
             }
           `}</style>
+        </div>
+      ) : chatTab === 'travel' ? (
+        /* Travel Stories Tab */
+        <div className="px-4 pt-3 pb-2 space-y-3" style={{ background: '#0a0f1e' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[13px] font-semibold text-white/80">Travel Stories</p>
+              <p className="text-[11px] text-[#64748B]">Explore adventures & journeys</p>
+            </div>
+            <button
+              onClick={() => navigate('/create?type=travel')}
+              className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
+              style={{ background: '#7C3AED' }}
+              aria-label="Create travel story"
+            >
+              <Plus className="w-4 h-4 text-white" />
+            </button>
+          </div>
+          <div className="space-y-3">
+            <p className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: '#64748B' }}>Featured Journeys</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div 
+                onClick={() => navigate('/adventure')}
+                className="aspect-[3/4] rounded-2xl overflow-hidden relative cursor-pointer group"
+                style={{ background: 'linear-gradient(135deg, #7C3AED20, #3B82F620)' }}
+              >
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
+                  <Compass className="w-10 h-10 mb-2" style={{ color: '#7C3AED' }} />
+                  <p className="text-[14px] font-semibold text-white">Adventure</p>
+                  <p className="text-[11px] text-[#94A3B8] mt-1">Discover new places</p>
+                </div>
+              </div>
+              <div 
+                onClick={() => navigate('/explore')}
+                className="aspect-[3/4] rounded-2xl overflow-hidden relative cursor-pointer group"
+                style={{ background: 'linear-gradient(135deg, #0F766E20, #065F4620)' }}
+              >
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
+                  <MapPin className="w-10 h-10 mb-2" style={{ color: '#10B981' }} />
+                  <p className="text-[14px] font-semibold text-white">Explore</p>
+                  <p className="text-[11px] text-[#94A3B8] mt-1">Local guides & tips</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       ) : chatTab === 'hidden' && sortedConversations.length > 0 ? (
         /* Hidden tab: Archived + Private conversations */
@@ -3032,20 +3079,22 @@ export default function Chat() {
       ) : (
         /* Empty State */
         <div className="flex flex-col items-center justify-center py-16 px-4">
-          <span className="text-6xl mb-4">💬</span>
+          <span className="text-6xl mb-4">
+            {chatTab === 'travel' ? '🧭' : '💬'}
+          </span>
           <p className="text-[18px] font-bold text-white mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            {chatTab === 'hidden' ? 'No hidden chats' : chatTab === 'market' ? 'No marketplace chats' : 'No messages yet'}
+            {chatTab === 'hidden' ? 'No hidden chats' : chatTab === 'market' ? 'No marketplace chats' : chatTab === 'travel' ? 'Travel Stories' : 'No messages yet'}
           </p>
           <p className="text-[14px] mb-5" style={{ color: '#94A3B8' }}>
-            {chatTab === 'hidden' ? 'Archive or mark chats private to keep them here' : chatTab === 'market' ? 'Start a chat from Marketplace listings' : 'Connect with people on Lumatha'}
+            {chatTab === 'hidden' ? 'Archive or mark chats private to keep them here' : chatTab === 'market' ? 'Start a chat from Marketplace listings' : chatTab === 'travel' ? 'Share your adventures and explore journeys' : 'Connect with people on Lumatha'}
           </p>
-          {chatTab === 'main' && (
+          {(chatTab === 'main' || chatTab === 'travel') && (
             <button
-              onClick={() => navigate('/search')}
+              onClick={() => chatTab === 'travel' ? navigate('/create?type=travel') : navigate('/search')}
               className="px-6 py-2.5 rounded-full text-[14px] font-semibold text-white transition-all hover:scale-105"
               style={{ background: '#7C3AED' }}
             >
-              Find People
+              {chatTab === 'travel' ? 'Create Story' : 'Find People'}
             </button>
           )}
         </div>
