@@ -634,12 +634,11 @@ function LayoutContent({ children }: LayoutProps) {
       <main ref={feedCenterRef} className="feed-center relative flex flex-col min-w-0 flex-1 h-screen overflow-y-auto scrollbar-hide">
         {/* App Header - Hidden in active chat (chat has its own header) */}
         <header className={cn(
-          "sticky top-0 z-50 w-full h-[88px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5",
-          // No transition for ALL sections (except active chat) to prevent animation issues
-          isInActiveChat && "transition-transform duration-300",
-          // ALL sections always visible at top, never shifted up (except active chat which is hidden)
-          !isInActiveChat ? "translate-y-0" : (headerVisible ? "translate-y-0" : "-translate-y-full"),
-          isInActiveChat && "hidden" // Let active chat own its mobile banner; keep app header for all other sections
+          "sticky top-0 z-50 w-full h-[88px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 translate-y-0",
+          // No transition anywhere to prevent any animation shifts
+          "transition-none",
+          // Only active chat hides the header completely
+          isInActiveChat && "hidden"
         )}>
           <div className="grid h-full grid-cols-[auto_1fr_auto] items-center gap-3 px-3 md:px-5">
             {/* Left side - menu/back button and branding */}

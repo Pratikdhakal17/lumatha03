@@ -732,14 +732,8 @@ export default function Chat() {
   }, [window.location.search, currentChatUser]);
 
   useEffect(() => {
-    if (currentChatUser || !conversationsContainerRef.current) return;
-
-    const exitedActiveChat = wasInActiveChatRef.current;
-    wasInActiveChatRef.current = false;
-
-    setTimeout(() => {
-      conversationsContainerRef.current?.scrollIntoView({ behavior: exitedActiveChat ? 'auto' : 'smooth', block: 'start' });
-    }, 100);
+    // Removed: scrollIntoView was causing layout shifting
+    // Content visibility is handled by React state, not scroll manipulation
   }, [currentChatUser, chatTab]);
 
   useEffect(() => {
@@ -748,10 +742,8 @@ export default function Chat() {
     }
   }, [currentChatUser]);
 
-  useEffect(() => {
-    if (currentChatUser) return;
-    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
-  }, [chatTab, currentChatUser]);
+  // Removed: window.scrollTo was causing header shifting when switching tabs
+  // Header stability is now handled by Layout.tsx
 
   // User search
   useEffect(() => {
@@ -1299,14 +1291,7 @@ export default function Chat() {
     setEditingMsg(null);
     setViewOnceMode(false);
     navigate('/chat', { replace: true });
-    requestAnimationFrame(() => {
-      const appScrollContainer = document.querySelector('.feed-center');
-      if (appScrollContainer instanceof HTMLElement) {
-        appScrollContainer.scrollTo({ top: 0, behavior: 'auto' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'auto' });
-      }
-    });
+    // Removed: scrollTo was causing header shifting when exiting chat
   };
 
   function openMobileSidebar() {
