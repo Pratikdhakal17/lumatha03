@@ -1880,86 +1880,84 @@ export default function Chat() {
       <div
         className={cn(
           "flex flex-col chat-protected bg-[#0a0f1e]",
-          "fixed inset-0 z-[100] h-screen w-full overflow-hidden"
+          "fixed inset-0 z-[100] w-full overflow-hidden"
         )}
+        style={{ height: '100dvh', maxHeight: '100dvh' }}
       >
         <WatermarkOverlay username={username} enabled={false} />
         {isBlurred && <BlurOverlay />}
 
-        {/* Chat Header - Instagram-style layout optimized for mobile */}
+        {/* Chat Header - Compact mobile layout */}
         <div className="shrink-0 sticky top-0 z-30 border-b border-white/10" style={{
           background: '#0B0D1F',
-          paddingTop: 'max(0.75rem, env(safe-area-inset-top))',
-          paddingLeft: 'max(0.5rem, env(safe-area-inset-left))',
-          paddingRight: 'max(0.5rem, env(safe-area-inset-right))',
-          paddingBottom: '0.75rem',
-          minHeight: '64px'
+          paddingTop: 'max(0.5rem, env(safe-area-inset-top))',
+          paddingLeft: 'max(0.25rem, env(safe-area-inset-left))',
+          paddingRight: 'max(0.25rem, env(safe-area-inset-right))',
+          paddingBottom: '0.5rem',
+          minHeight: '52px'
         }}>
-          <div className="flex items-center gap-2 h-full px-2">
-            {/* Back button - Instagram-style large touch target */}
+          <div className="flex items-center gap-1 h-full px-1">
+            {/* Back button */}
             <button
               onClick={handleBackToChats}
-              className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all shrink-0"
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all shrink-0"
               aria-label="Back to messages"
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
-              <ArrowLeft className="w-6 h-6 text-white/90" strokeWidth={2} />
+              <ArrowLeft className="w-5 h-5 text-white/90" strokeWidth={2} />
             </button>
 
-            {/* Avatar - Instagram-style larger avatar */}
+            {/* Avatar - clickable */}
             <div
               className="relative shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => navigate(`/profile/${currentChatUser}`)}
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
-              <Avatar className="w-11 h-11 border-2 border-white/10">
+              <Avatar className="w-9 h-9 border border-white/10">
                 <AvatarImage src={selectedConversation?.user_avatar || undefined} />
-                <AvatarFallback className="bg-slate-700 text-white font-semibold text-sm">
+                <AvatarFallback className="bg-slate-700 text-white font-semibold text-xs">
                   {displayName?.charAt(0)?.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              {/* Online indicator dot */}
-              <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#0B0D1F]" />
             </div>
 
-            {/* Display name & online status - Instagram DM style */}
+            {/* Display name - clickable */}
             <div
-              className="flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity px-1"
+              className="flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity px-2"
               onClick={() => navigate(`/profile/${currentChatUser}`)}
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
-              <p className="text-[15px] font-bold text-white truncate leading-tight">{displayName}</p>
-              <p className="text-[12px] text-green-400 font-medium">online</p>
+              <p className="text-[14px] font-semibold text-white truncate">{displayName}</p>
             </div>
 
-            {/* Action buttons - Instagram-style with proper touch targets */}
-            <div className="shrink-0 flex items-center gap-1">
+            {/* Action buttons */}
+            <div className="shrink-0 flex items-center gap-0.5">
               <button
-                className="w-11 h-11 flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 rounded-full transition-all"
+                className="w-10 h-10 flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 rounded-full transition-all"
                 title="Start video call"
                 onClick={() => setCallState({ open: true, isVideo: true })}
                 aria-label="Start video call"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                <VideoIcon className="w-5 h-5 text-white/90" strokeWidth={2} />
+                <VideoIcon className="w-5 h-5 text-white/80" strokeWidth={2} />
               </button>
               <button
-                className="w-11 h-11 flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 rounded-full transition-all"
+                className="w-10 h-10 flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 rounded-full transition-all"
                 title="Start voice call"
                 onClick={() => setCallState({ open: true, isVideo: false })}
                 aria-label="Start voice call"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                <Phone className="w-5 h-5 text-white/90" strokeWidth={2} />
+                <Phone className="w-5 h-5 text-white/80" strokeWidth={2} />
               </button>
               <button
-                className="w-11 h-11 flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 rounded-full transition-all"
+                className="w-10 h-10 flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 rounded-full transition-all"
                 title="Chat options"
                 onClick={() => setShowSettings(true)}
                 aria-label="Chat options"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                <MoreVertical className="w-5 h-5 text-white/90" strokeWidth={2} />
+                <MoreVertical className="w-5 h-5 text-white/80" strokeWidth={2} />
               </button>
             </div>
           </div>
