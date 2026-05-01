@@ -98,7 +98,7 @@ export default function Auth() {
   const [showCitySearch, setShowCitySearch] = useState(false);
   const [manualCity, setManualCity] = useState('');
   const [showAvatarOptions, setShowAvatarOptions] = useState(false);
-  const [selectedAvatarType, setSelectedAvatarType] = useState<'letter' | 'halloween' | 'skeleton' | 'smiley'>('letter');
+  const [selectedAvatarGradient, setSelectedAvatarGradient] = useState<string | null>(null);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showWelcome, setShowWelcome] = useState(false);
   const [signupUserId, setSignupUserId] = useState('');
@@ -331,7 +331,6 @@ export default function Auth() {
           location: detectedCity ? `${detectedCity}, ${country}` : country,
           age_group: ageGroup,
           avatar_url: avatarUrl,
-          avatar_type: profilePic ? null : selectedAvatarType,
           gender: gender || null
         } as any);
       }
@@ -536,112 +535,77 @@ export default function Auth() {
         );
       case 4: {
         const initials = `${firstName.charAt(0)}${lastName.charAt(0) || ''}`.toUpperCase() || '?';
-        
-        const avatarOptions = [
-          { 
-            id: 'letter', 
-            label: 'Letter Avatar',
-            bg: 'linear-gradient(135deg, #7C3AED, #3B82F6)',
-            render: () => <span className="text-white font-bold text-[28px] select-none" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{initials}</span>
-          },
-          { 
-            id: 'halloween', 
-            label: 'Halloween Avatar',
-            bg: 'linear-gradient(135deg, #F97316, #DC2626)',
-            render: () => (
-              <div className="relative w-full h-full flex items-center justify-center">
-                <div className="text-[40px]">🎃</div>
-              </div>
-            )
-          },
-          { 
-            id: 'skeleton', 
-            label: 'Skeleton Avatar',
-            bg: 'linear-gradient(135deg, #1e293b, #0f172a)',
-            render: () => (
-              <div className="relative w-full h-full flex items-center justify-center">
-                <div className="text-[35px]">💀</div>
-              </div>
-            )
-          },
-          { 
-            id: 'smiley', 
-            label: 'Smiley Avatar',
-            bg: 'linear-gradient(135deg, #FBBF24, #F59E0B)',
-            render: () => (
-              <div className="relative w-full h-full flex items-center justify-center">
-                <div className="text-[40px]">😊</div>
-              </div>
-            )
-          },
+        const avatarGradients = [
+          { id: 'purple-blue', gradient: 'linear-gradient(135deg, #7C3AED, #3B82F6)' },
+          { id: 'teal-green', gradient: 'linear-gradient(135deg, #0F766E, #065F46)' },
+          { id: 'amber-orange', gradient: 'linear-gradient(135deg, #B45309, #92400E)' },
+          { id: 'pink-rose', gradient: 'linear-gradient(135deg, #BE185D, #9D174D)' },
         ];
-
-        const selectedAvatar = avatarOptions.find(a => a.id === selectedAvatarType);
 
         return (
           <div className="space-y-5 animate-fade-in">
             <div className="text-center mb-2">
-              <h2 className="text-[22px] font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Choose your avatar</h2>
-              <p className="text-[13px] mt-1" style={{ color: '#94A3B8', fontFamily: "'Inter', sans-serif" }}>Pick a style that represents you</p>
+              <h2 className="text-[22px] font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Add your photo</h2>
+              <p className="text-[13px] mt-1" style={{ color: '#94A3B8', fontFamily: "'Inter', sans-serif" }}>Help others recognize you</p>
             </div>
 
-            <div className="flex flex-col items-center gap-4">
-              {/* Avatar Preview */}
+            <div className="flex flex-col items-center gap-3">
+              {/* Upload circle */}
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="relative w-[120px] h-[120px] rounded-full flex items-center justify-center cursor-pointer group transition-all duration-200 hover:scale-105"
+                className="relative w-[120px] h-[120px] rounded-full flex items-center justify-center cursor-pointer group transition-all duration-200 hover:border-[#7C3AED]"
                 style={{
-                  background: profilePic ? 'transparent' : (selectedAvatar?.bg || '#1e293b'),
-                  border: profilePic ? 'none' : '3px solid #7C3AED',
+                  background: profilePic ? 'transparent' : selectedAvatarGradient || '#1e293b',
+                  border: profilePic || selectedAvatarGradient ? 'none' : '2px dashed #374151',
                   overflow: 'hidden',
-                  boxShadow: '0 0 20px rgba(124, 58, 237, 0.3)',
                 }}
               >
                 {profilePic ? (
                   <img src={profilePic} alt="Profile" className="w-full h-full object-cover rounded-full" />
-                ) : selectedAvatar ? (
-                  selectedAvatar.render()
+                ) : selectedAvatarGradient ? (
+                  <span className="text-white font-bold text-[28px] select-none" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{initials}</span>
                 ) : (
                   <Camera className="w-8 h-8" style={{ color: '#94A3B8' }} />
                 )}
-                {/* Camera overlay for uploading photo */}
-                <div className="absolute bottom-1 right-1 w-8 h-8 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: '#7C3AED' }}>
-                  <Camera className="w-4 h-4 text-white" />
+                {/* Camera overlay for changing */}
+                {(profilePic || selectedAvatarGradient) && (
+                  <div className="absolute bottom-1 right-1 w-8 h-8 rounded-full flex items-center justify-center shadow-lg" style={{ background: '#7C3AED' }}>
+                    <Camera className="w-4 h-4 text-white" />
+                  </div>
+                )}
+              </div>
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => { handleProfilePicChange(e); setSelectedAvatarGradient(null); }} className="hidden" />
+
+              {/* OR divider */}
+              <p className="text-[13px]" style={{ color: '#4B5563', fontFamily: "'Inter', sans-serif" }}>OR</p>
+
+              {/* Generate avatar button */}
+              {!showAvatarOptions ? (
+                <button
+                  type="button"
+                  onClick={() => setShowAvatarOptions(true)}
+                  className="px-6 py-3 rounded-xl text-[15px] transition-all duration-200 hover:bg-[#7C3AED]/10"
+                  style={{ border: '1px solid #7C3AED', color: '#7C3AED', fontFamily: "'Inter', sans-serif" }}>
+                  ✨ Generate Avatar
+                </button>
+              ) : (
+                <div className="grid grid-cols-4 gap-3 animate-fade-in">
+                  {avatarGradients.map((ag) => (
+                    <button
+                      key={ag.id}
+                      type="button"
+                      onClick={() => { setSelectedAvatarGradient(ag.gradient); setProfilePic(null); setProfilePicFile(null); }}
+                      className="w-[72px] h-[72px] rounded-full flex items-center justify-center transition-all duration-200"
+                      style={{
+                        background: ag.gradient,
+                        boxShadow: selectedAvatarGradient === ag.gradient ? '0 0 0 3px #7C3AED, 0 0 0 5px rgba(124,58,237,0.3)' : 'none',
+                        transform: selectedAvatarGradient === ag.gradient ? 'scale(1.05)' : 'scale(1)',
+                      }}>
+                      <span className="text-white font-bold text-[24px] select-none" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{initials}</span>
+                    </button>
+                  ))}
                 </div>
-              </div>
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => { handleProfilePicChange(e); }} className="hidden" />
-
-              {/* Avatar Options Grid */}
-              <div className="grid grid-cols-4 gap-3 w-full">
-                {avatarOptions.map((avatar) => (
-                  <button
-                    key={avatar.id}
-                    type="button"
-                    onClick={() => { setSelectedAvatarType(avatar.id as any); setProfilePic(null); setProfilePicFile(null); }}
-                    className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-200 hover:scale-105"
-                    style={{
-                      background: avatar.bg,
-                      border: selectedAvatarType === avatar.id ? '3px solid #7C3AED' : '2px solid transparent',
-                      boxShadow: selectedAvatarType === avatar.id ? '0 0 15px rgba(124, 58, 237, 0.5)' : 'none',
-                      transform: selectedAvatarType === avatar.id ? 'scale(1.05)' : 'scale(1)',
-                    }}
-                  >
-                    <div className="scale-75">
-                      {avatar.render()}
-                    </div>
-                    <span className="text-[9px] text-white/80 font-medium text-center px-1 leading-tight">{avatar.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Upload photo button */}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] transition-all duration-200 hover:bg-white/5"
-                style={{ border: '1px solid #374151', color: '#94A3B8', fontFamily: "'Inter', sans-serif" }}>
-                <Camera className="w-4 h-4" /> Upload your photo
-              </button>
+              )}
 
               {/* Skip link */}
               <button
@@ -759,7 +723,7 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 overflow-y-auto relative bg-[#0B0D1F]" style={{ maxHeight: '100vh' }}>
+    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 overflow-hidden relative bg-[#0B0D1F]">
       {/* Injected keyframes */}
       <style>{floatingDotsStyle}</style>
 
