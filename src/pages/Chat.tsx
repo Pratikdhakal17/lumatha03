@@ -1880,7 +1880,7 @@ export default function Chat() {
       <div
         className={cn(
           "flex flex-col chat-protected bg-[#0a0f1e]",
-          "h-full min-h-0 flex-1 overflow-visible"
+          "fixed inset-0 z-[100] h-screen w-full overflow-hidden"
         )}
       >
         <WatermarkOverlay username={username} enabled={false} />

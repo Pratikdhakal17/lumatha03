@@ -631,7 +631,11 @@ function LayoutContent({ children }: LayoutProps) {
         }
         navigate(url);
       }} unreadMessages={unreadMessages} items={currentMenuItems} hidden={false} />}
-      <main ref={feedCenterRef} className="feed-center relative flex flex-col min-w-0 flex-1 h-screen overflow-y-auto scrollbar-hide">
+      <main ref={feedCenterRef} className={cn(
+        "feed-center relative flex flex-col min-w-0 flex-1 h-screen scrollbar-hide",
+        // Active chat handles its own scrolling - disable main scroll
+        isInActiveChat ? "overflow-hidden" : "overflow-y-auto"
+      )}>
         {/* App Header - Hidden in active chat (chat has its own header) */}
         <header className={cn(
           "sticky top-0 z-50 w-full h-[88px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 translate-y-0",
