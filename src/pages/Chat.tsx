@@ -2656,11 +2656,11 @@ export default function Chat() {
     });
   };
 
-  // Top banner component - shows "Messages" label only (no Lumatha branding - main Layout header handles it)
+  // Top banner component - simplified for stability (matches Learn section)
   const TopBanner = () => (
-    <div className="sticky z-30 bg-[#0a0f1e]/98 backdrop-blur-xl border-b border-white/5 px-4 py-2 min-h-12" style={{ top: 'var(--lumatha-app-header-height)' }}>
+    <div className="px-4 py-2 border-b border-white/5" style={{ background: '#0B0D1F' }}>
       <div className="flex items-center justify-between">
-        <span className="text-lg md:text-base font-black text-white tracking-wide">Messages</span>
+        <span className="text-base font-black text-white tracking-wide">Messages</span>
         <div className="flex items-center gap-2">
           <span className="text-[11px] uppercase tracking-[0.12em] text-slate-500 font-semibold mr-2">{sectionLabelByTab[chatTab]}</span>
           <button
@@ -2676,50 +2676,53 @@ export default function Chat() {
     </div>
   );
 
-  // Subsection navigation component - tabs with icons
-  const SubsectionNavigation = () => (
-    <div className="sticky z-30 bg-[#0a0f1e]/98 backdrop-blur-md border-b border-white/5 px-2 py-2" style={{ top: 'calc(var(--lumatha-app-header-height) + 48px)' }}>
-      <div className="flex items-center justify-between w-full gap-1">
-        {[
-          { id: 'main', icon: MessageSquare, label: 'Chats' },
-          { id: 'find', icon: UserSearch, label: 'Find' },
-          { id: 'hidden', icon: Lock, label: 'Hidden' },
-          { id: 'market', icon: ShoppingCart, label: 'Marketplace' },
-        ].map(tab => {
-          const Icon = tab.icon;
-          const isActive = chatTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setChatTab(tab.id as any)}
-              className={cn(
-                "flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl transition-all active:scale-95 flex-1",
-                isActive ? "bg-primary/10 text-primary ring-1 ring-primary/20" : "text-slate-400 hover:bg-white/[0.03] hover:text-slate-200"
-              )}
-            >
-              <Icon
-                className="w-4 h-4 transition-colors"
-                style={{ color: isActive ? '#7C3AED' : '#64748B' }}
-              />
-              <span className={cn(
-                "text-[11px] font-bold transition-colors whitespace-nowrap",
-                isActive ? 'text-primary' : 'text-slate-500'
-              )}>
-                {tab.label}
-              </span>
-            </button>
-          );
-        })}
+  // Subsection navigation component - tabs with icons (matches Learn section styling)
+  const SubsectionNavigation = () => {
+    const tabs = [
+      { id: 'main', icon: MessageSquare, label: 'Chats' },
+      { id: 'find', icon: UserSearch, label: 'Find' },
+      { id: 'hidden', icon: Lock, label: 'Hidden' },
+      { id: 'market', icon: ShoppingCart, label: 'Marketplace' },
+    ];
+    const activeIndex = tabs.findIndex(t => t.id === chatTab);
+
+    return (
+      <div className="px-3 py-2">
+        <div className="relative flex items-center rounded-xl overflow-hidden shrink-0" style={{ background: '#0d1220', border: '1px solid #1f2937' }}>
+          <div
+            className="absolute top-0 bottom-0 rounded-xl transition-all duration-200 ease-out"
+            style={{
+              left: `${activeIndex * (100 / tabs.length)}%`,
+              width: `${100 / tabs.length}%`,
+              background: '#7C3AED',
+            }}
+          />
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = chatTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setChatTab(tab.id as any)}
+                className={cn(
+                  "relative z-10 flex items-center gap-1 justify-center flex-1 py-2.5 transition-colors duration-200 text-xs font-semibold",
+                  isActive ? "text-white" : "text-[#64748B]"
+                )}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
-    <div className={cn("pb-6 md:pb-20", isMobile ? "min-h-full" : "min-h-[calc(100vh-56px)]")} style={{ background: '#0a0f1e' }}>
-      <div
-        className="sticky top-0 z-30 bg-[#0B0D1F]/95 backdrop-blur-md border-b border-white/5"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
-      >
+    <div className={cn("min-h-screen flex flex-col pb-6 md:pb-20")} style={{ background: '#0a0f1e' }}>
+      {/* Header Container - consistent with Learn section */}
+      <div className="w-full" style={{ background: '#0a0f1e' }}>
         {/* Top Banner */}
         <TopBanner />
 
@@ -2728,21 +2731,21 @@ export default function Chat() {
 
         {/* Search Bar - Only show when in main tab and search is enabled */}
         {chatTab === 'main' && showSearch && (
-          <div className="px-4 py-2.5 border-b border-white/5 bg-[#0B0D1F]">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#4B5563' }} />
-            <input
-              ref={searchInputRef}
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search conversations..."
-              className="w-full h-11 rounded-full pl-11 pr-10 text-[14px] font-medium text-white placeholder:text-[#4B5563] outline-none"
-              style={{ background: '#111827', border: '1px solid #1f2937' }}
-            />
-            <button onClick={() => { setShowSearch(false); setSearchQuery(''); }} className="absolute right-3 top-1/2 -translate-y-1/2">
-              <X className="w-4 h-4 text-muted-foreground" />
-            </button>
-          </div>
+          <div className="px-4 py-2.5 border-b border-white/5" style={{ background: '#0a0f1e' }}>
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#4B5563' }} />
+              <input
+                ref={searchInputRef}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search conversations..."
+                className="w-full h-11 rounded-full pl-11 pr-10 text-[14px] font-medium text-white placeholder:text-[#4B5563] outline-none"
+                style={{ background: '#111827', border: '1px solid #1f2937' }}
+              />
+              <button onClick={() => { setShowSearch(false); setSearchQuery(''); }} className="absolute right-3 top-1/2 -translate-y-1/2">
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
           </div>
         )}
       </div>
