@@ -105,14 +105,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id);
-        upsertStoredAccount(session);
+    // Dev bypass: allow setting a localStorage flag to simulate a logged-in user
+    // for local testing without valid Supabase sessions.
+    try {
+      if (import.meta.env.DEV && localStorage.getItem('lumatha_dev_bypass_auth') === '1') {
+        const fakeUser = {
+          id: 'dev-user-0001',
+          email: 'dev@local.test',
+          user_metadata: { name: 'Dev User', username: 'dev' },
+        } as any;
+        const fakeSession = {
+          user: fakeUser,
+          access_token: 'dev_access_token',
+          refresh_token: 'dev_refresh_token',
+          expires_at: null,
+        } as any;
+        setUser(fakeUser);
+        loadProfile(fakeUser.id).catch(() => {});
+        upsertStoredAccount(fakeSession, { id: fakeUser.id, name: 'Dev User', avatar_url: '' });
+      } else {
+        // Get initial session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          setUser(session?.user ?? null);
+          if (session?.user) {
+            loadProfile(session.user.id);
+            upsertStoredAccount(session);
+          }
+        });
       }
-    });
+    } catch (e) {
+      // fall back to normal behavior
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          loadProfile(session.user.id);
+          upsertStoredAccount(session);
+        }
+      });
+    }
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
