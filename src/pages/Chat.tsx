@@ -1886,79 +1886,96 @@ export default function Chat() {
         <WatermarkOverlay username={username} enabled={false} />
         {isBlurred && <BlurOverlay />}
 
-        {/* Chat Header - Responsive header optimized for mobile & desktop */}
-        <div className="shrink-0 sticky top-0 z-30 border-b border-white/10 px-3 sm:px-4 md:px-5 py-2 sm:py-2.5" style={{
+        {/* Chat Header - Instagram-style layout optimized for mobile */}
+        <div className="shrink-0 sticky top-0 z-30 border-b border-white/10" style={{
           background: '#0B0D1F',
-          paddingTop: 'max(0.5rem, env(safe-area-inset-top))',
-          paddingLeft: 'max(0.75rem, env(safe-area-inset-left))',
-          paddingRight: 'max(0.75rem, env(safe-area-inset-right))'
+          paddingTop: 'max(0.75rem, env(safe-area-inset-top))',
+          paddingLeft: 'max(0.5rem, env(safe-area-inset-left))',
+          paddingRight: 'max(0.5rem, env(safe-area-inset-right))',
+          paddingBottom: '0.75rem',
+          minHeight: '64px'
         }}>
-          <div className="flex items-center gap-2 sm:gap-3 md:gap-3">
-            {/* Back button - larger touch target on mobile */}
+          <div className="flex items-center gap-2 h-full px-2">
+            {/* Back button - Instagram-style large touch target */}
             <button
               onClick={handleBackToChats}
-              className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 transition-colors shrink-0"
+              className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all shrink-0"
               aria-label="Back to messages"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
             >
-              <ArrowLeft className="w-5 h-5 text-white/80" />
+              <ArrowLeft className="w-6 h-6 text-white/90" strokeWidth={2} />
             </button>
-            
-            {/* Avatar - larger on mobile, clickable */}
-            <div className="relative shrink-0 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => navigate(`/profile/${currentChatUser}`)}>
-              <Avatar className="w-10 h-10 sm:w-10 sm:h-10 border border-white/10">
+
+            {/* Avatar - Instagram-style larger avatar */}
+            <div
+              className="relative shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => navigate(`/profile/${currentChatUser}`)}
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+            >
+              <Avatar className="w-11 h-11 border-2 border-white/10">
                 <AvatarImage src={selectedConversation?.user_avatar || undefined} />
-                <AvatarFallback className="bg-slate-700 text-white font-semibold text-xs">
+                <AvatarFallback className="bg-slate-700 text-white font-semibold text-sm">
                   {displayName?.charAt(0)?.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
+              {/* Online indicator dot */}
+              <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#0B0D1F]" />
             </div>
-            
-            {/* Display name & online status - flexible, truncates on narrow screens */}
-            <div className="flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => navigate(`/profile/${currentChatUser}`)}>
-              <p className="text-xs sm:text-sm font-semibold text-white truncate line-clamp-1">{displayName}</p>
-              <p className="text-[10px] sm:text-[11px] text-white/50">Online</p>
+
+            {/* Display name & online status - Instagram DM style */}
+            <div
+              className="flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity px-1"
+              onClick={() => navigate(`/profile/${currentChatUser}`)}
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+            >
+              <p className="text-[15px] font-bold text-white truncate leading-tight">{displayName}</p>
+              <p className="text-[12px] text-green-400 font-medium">online</p>
             </div>
-            
-            {/* Action buttons - responsive sizing, larger touch targets on mobile */}
-            <div className="shrink-0 flex items-center gap-2 sm:gap-2">
+
+            {/* Action buttons - Instagram-style with proper touch targets */}
+            <div className="shrink-0 flex items-center gap-1">
               <button
-                className="w-10 h-10 sm:w-9 sm:h-9 md:w-8 md:h-8 flex items-center justify-center hover:bg-white/10 active:bg-white/20 rounded transition-colors"
+                className="w-11 h-11 flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 rounded-full transition-all"
                 title="Start video call"
                 onClick={() => setCallState({ open: true, isVideo: true })}
                 aria-label="Start video call"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                <VideoIcon className="w-5 sm:w-4 h-5 sm:h-4 text-white/80" />
+                <VideoIcon className="w-5 h-5 text-white/90" strokeWidth={2} />
               </button>
               <button
-                className="w-10 h-10 sm:w-9 sm:h-9 md:w-8 md:h-8 flex items-center justify-center hover:bg-white/10 active:bg-white/20 rounded transition-colors"
+                className="w-11 h-11 flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 rounded-full transition-all"
                 title="Start voice call"
                 onClick={() => setCallState({ open: true, isVideo: false })}
                 aria-label="Start voice call"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                <Phone className="w-5 sm:w-4 h-5 sm:h-4 text-white/80" />
+                <Phone className="w-5 h-5 text-white/90" strokeWidth={2} />
               </button>
               <button
-                className="w-10 h-10 sm:w-9 sm:h-9 md:w-8 md:h-8 flex items-center justify-center hover:bg-white/10 active:bg-white/20 rounded transition-colors"
+                className="w-11 h-11 flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 rounded-full transition-all"
                 title="Chat options"
                 onClick={() => setShowSettings(true)}
                 aria-label="Chat options"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                <MoreVertical className="w-5 sm:w-4 h-5 sm:h-4 text-white/80" />
+                <MoreVertical className="w-5 h-5 text-white/90" strokeWidth={2} />
               </button>
             </div>
           </div>
         </div>
 
-        {/* Messages — Messenger-like: pushes to bottom when few, scrollable when many */}
+        {/* Messages — Instagram-style: scrollable middle area */}
         <div
           ref={scrollContainerRef}
           className="flex-1 overflow-y-auto chat-messages scrollbar-hide w-full"
-          style={{ 
-            overscrollBehavior: 'contain', 
+          style={{
+            overscrollBehavior: 'contain',
             minHeight: 0,
             WebkitOverflowScrolling: 'touch',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            scrollBehavior: 'smooth'
           }}
           onScroll={() => {
             const el = scrollContainerRef.current;
@@ -1966,7 +1983,7 @@ export default function Chat() {
             isNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
           }}
         >
-          <div className="flex flex-col justify-end flex-1 min-h-full p-3 md:p-5 pb-6 md:pb-8">
+          <div className="flex flex-col justify-end flex-1 min-h-full p-3 md:p-5 pb-4">
             {messages.length === 0 ? (
               loading ? (
                 <div className="flex flex-1 items-center justify-center py-14">
@@ -2231,31 +2248,32 @@ export default function Chat() {
             />
           )}
 
-          {/* Premium Instagram-Style Input Bar with proper safe area */}
+          {/* Instagram-Style Input Bar with proper mobile safe areas */}
           {!isRecording && !audioBlob && (
-            <div className="relative shrink-0 flex items-center gap-2 px-3 md:px-4 py-2" style={{ 
-              background: '#0a0f1e', 
-              borderTop: '1px solid #1f2937', 
-              minHeight: 56,
+            <div className="relative z-40 shrink-0 flex items-center gap-2 px-3 md:px-4 py-2.5" style={{
+              background: '#0a0f1e',
+              borderTop: '1px solid #1f2937',
+              minHeight: 60,
               paddingLeft: 'max(0.75rem, env(safe-area-inset-left))',
               paddingRight: 'max(0.75rem, env(safe-area-inset-right))',
-              paddingBottom: 'max(0.625rem, env(safe-area-inset-bottom))',
-              overflow: 'hidden'
+              paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
+              position: 'relative'
             }}>
               <input type="file" ref={fileInputRef} className="hidden" accept="image/*,video/*,audio/*,.pdf,.doc,.docx" multiple onChange={handleFileSelect} />
-              
-              {/* Plus Button - 36dp */}
-              <motion.button 
-                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 hover:bg-white/5 active:scale-90"
+
+              {/* Plus Button - 44dp touch target */}
+              <motion.button
+                className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
                 onClick={() => setShowAttachments(true)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.9 }}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <Plus className="w-5 h-5" style={{ color: '#94A3B8' }} />
               </motion.button>
 
-              {/* Message Input Field - Pill shape */}
-              <div className="flex-1 flex items-center rounded-full px-4 py-2" style={{ background: '#1e293b', border: '1px solid #334155', minHeight: 40 }}>
+              {/* Message Input Field - Instagram-style pill */}
+              <div className="flex-1 flex items-center rounded-full px-4 py-2.5" style={{ background: '#1e293b', border: '1px solid #334155', minHeight: 44 }}>
                 <input
                   value={newMessage}
                   onChange={e => setNewMessage(e.target.value)}
@@ -2263,25 +2281,26 @@ export default function Chat() {
                   placeholder={rateLimit.isRateLimited ? `Wait ${rateLimit.secondsUntilReset}s` : (editingMsg ? "Edit message..." : "Message...")}
                   className="flex-1 bg-transparent text-[15px] text-white placeholder:text-[#64748B] outline-none"
                   disabled={uploading || rateLimit.isRateLimited}
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 />
               </div>
 
               {/* Right Side: Send or Primary Reaction */}
               {(newMessage.trim() || mediaPreviews.length > 0) ? (
                 <motion.button
-                  className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                  className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 active:scale-95 transition-all"
                   style={{ background: !rateLimit.isRateLimited ? '#7C3AED' : '#1e293b' }}
                   onClick={handleSend}
                   disabled={uploading || rateLimit.isRateLimited}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.9 }}
                 >
-                  <Send className="w-[18px] h-[18px]" style={{ color: !rateLimit.isRateLimited ? 'white' : '#4B5563' }} />
+                  <Send className="w-5 h-5" style={{ color: !rateLimit.isRateLimited ? 'white' : '#4B5563' }} />
                 </motion.button>
               ) : (
                 /* Primary Reaction Button - Tap to send, Long press for panel */
                 <motion.button
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-[22px] relative"
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-[22px] relative hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
                   onClick={() => {
                     if (navigator.vibrate) navigator.vibrate(20);
                     void sendPrimaryReaction();
@@ -2302,17 +2321,18 @@ export default function Chat() {
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   title="Tap to send, hold for more"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
-                  <motion.span 
+                  <motion.span
                     className="inline-flex items-center justify-center"
                     initial={{ scale: 0.85 }}
                     animate={{ scale: 1 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                   >
                     {primaryStickerPreview ? (
-                      <img 
-                        src={primaryStickerPreview.dataUrl} 
-                        alt="Primary" 
+                      <img
+                        src={primaryStickerPreview.dataUrl}
+                        alt="Primary"
                         className="w-6 h-6 rounded object-cover"
                       />
                     ) : (
@@ -2686,11 +2706,14 @@ export default function Chat() {
     ];
     const activeIndex = tabs.findIndex(t => t.id === chatTab);
 
-    // Use medium/compact banner size for all subsections to match Find
+    // Consistent medium/compact banner size for all subsections
     const compact = true;
 
     return (
-      <div className={compact ? 'px-3 py-2' : 'px-4 py-3'}>
+      <div className={cn(
+        "w-full shrink-0",
+        compact ? 'px-3 py-2.5' : 'px-4 py-3'
+      )} style={{ background: '#0a0f1e' }}>
         <div className="relative flex items-center rounded-xl overflow-hidden shrink-0" style={{ background: '#0d1220', border: '1px solid #1f2937' }}>
           <div
             className="absolute top-0 bottom-0 rounded-xl transition-all duration-200 ease-out"
@@ -2708,12 +2731,12 @@ export default function Chat() {
                 key={tab.id}
                 onClick={() => setChatTab(tab.id as any)}
                 className={cn(
-                  "relative z-10 flex items-center gap-1 justify-center flex-1 transition-colors duration-200 text-xs font-semibold",
-                  compact ? 'py-2' : 'py-2.5',
+                  "relative z-10 flex items-center gap-1.5 justify-center flex-1 transition-colors duration-200 text-xs font-semibold",
+                  compact ? 'py-2.5' : 'py-3',
                   isActive ? "text-white" : "text-[#64748B]"
                 )}
               >
-                <Icon className={compact ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
+                <Icon className={compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -2772,17 +2795,17 @@ export default function Chat() {
               <div className="flex gap-2">
                 <button
                   onClick={() => setFindSubTab('suggestions')}
-                  className={cn("flex-1 h-10 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[13px] font-semibold transition-all active:scale-95")}
+                  className={cn("flex-1 h-11 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-semibold transition-all active:scale-95 active:bg-[#7C3AED]/90")}
                   style={findSubTab === 'suggestions' ? { background: '#7C3AED', color: 'white' } : { background: '#111827', border: '1px solid #1f2937', color: '#94A3B8' }}
                 >
-                  <Star className="w-3.5 h-3.5" /> Suggestions
+                  <Star className="w-4 h-4" /> Suggestions
                 </button>
                 <button
                   onClick={() => setFindSubTab('friends')}
-                  className={cn("flex-1 h-10 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[13px] font-semibold transition-all active:scale-95")}
+                  className={cn("flex-1 h-11 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-semibold transition-all active:scale-95 active:bg-[#7C3AED]/90")}
                   style={findSubTab === 'friends' ? { background: '#7C3AED', color: 'white' } : { background: '#111827', border: '1px solid #1f2937', color: '#94A3B8' }}
                 >
-                  <Users className="w-3.5 h-3.5" /> Friends
+                  <Users className="w-4 h-4" /> Friends
                 </button>
               </div>
               <div className="space-y-2">
@@ -2808,8 +2831,18 @@ export default function Chat() {
           `}</style>
         </div>
       ) : chatTab === 'hidden' && sortedConversations.length > 0 ? (
-        /* Hidden tab: Archived + Private conversations - Simple layout like Find */
-        <div ref={conversationsContainerRef} className="px-4 pt-2">
+        /* Hidden tab: Archived + Private conversations */
+        <>
+          {/* Hidden Tab Header Banner - Consistent with Find tab */}
+          <div className="px-4 pt-3 pb-2 space-y-3" style={{ background: '#0a0f1e' }}>
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <p className="text-[13px] font-semibold text-white/80">Archived & Private Chats</p>
+                <p className="text-[11px] text-[#64748B]">{sortedConversations.length} conversations</p>
+              </div>
+            </div>
+          </div>
+          <div ref={conversationsContainerRef} className="px-4 pt-2">
           {visibleConversations.map(conv => renderHiddenChatRow(conv))}
           {remainingConversations > 0 && (
             <div className="flex justify-center py-3">
@@ -2822,10 +2855,33 @@ export default function Chat() {
               </button>
             </div>
           )}
-        </div>
+          </div>
+        </>
       ) : sortedConversations.length > 0 ? (
-        /* Conversation Rows - Simple layout */
-        <div ref={conversationsContainerRef} className="pt-2">
+        /* Conversation Rows - Main/Market tabs */
+        <>
+          {/* Tab Header Banner - Consistent with Find tab */}
+          <div className="px-4 pt-3 pb-2 space-y-3" style={{ background: '#0a0f1e' }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[13px] font-semibold text-white/80">
+                  {chatTab === 'market' ? 'Marketplace Messages' : 'Messages'}
+                </p>
+                <p className="text-[11px] text-[#64748B]">{sortedConversations.length} chats</p>
+              </div>
+              {chatTab === 'main' && (
+                <button
+                  onClick={() => setShowComposeMenu(true)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
+                  style={{ background: '#7C3AED' }}
+                  aria-label="New message"
+                >
+                  <Plus className="w-4 h-4 text-white" />
+                </button>
+              )}
+            </div>
+          </div>
+          <div ref={conversationsContainerRef} className="pt-2">
           {visibleConversations.map(conv => {
             const isPinned = pinnedChats.has(conv.user_id);
             const isMuted = mutedChats.has(conv.user_id);
@@ -2973,7 +3029,8 @@ export default function Chat() {
               </button>
             </div>
           )}
-        </div>
+          </div>
+        </>
       ) : (
         /* Empty State */
         <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -3084,6 +3141,45 @@ export default function Chat() {
         @keyframes reaction-tray-in {
           0% { opacity: 0; transform: translateY(8px) scale(0.9); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Mobile chat optimizations for smooth scrolling */
+        .chat-messages {
+          -webkit-overflow-scrolling: touch;
+          scroll-behavior: smooth;
+          overscroll-behavior-y: contain;
+          transform: translateZ(0);
+          will-change: transform;
+        }
+
+        /* Prevent text size adjustment on orientation change */
+        @media screen and (max-width: 768px) {
+          .chat-protected {
+            -webkit-text-size-adjust: 100%;
+            touch-action: pan-y;
+          }
+        }
+
+        /* Hardware acceleration for chat elements */
+        .chat-protected * {
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Smooth transitions for interactive elements */
+        .chat-protected button,
+        .chat-protected [role="button"] {
+          touch-action: manipulation;
+          user-select: none;
+          -webkit-user-select: none;
+        }
+
+        /* Hide scrollbar but keep functionality */
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
       `}</style>
     </div>

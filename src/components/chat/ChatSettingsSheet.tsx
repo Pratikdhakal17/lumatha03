@@ -602,28 +602,16 @@ export function ChatSettingsSheet({
     <>
       <style>{`
         .chat-settings-shell {
-          --bg: #f2f2f7;
-          --card: #ffffff;
-          --text: #000000;
-          --text-muted: #6c6c70;
-          --separator: rgba(60, 60, 67, 0.12);
-          --icon-bg: rgba(0, 0, 0, 0.07);
-          --accent: #7c6af7;
-          --danger: #e24b4a;
+          /* Force dark mode for Lumatha chat settings */
+          --bg: #0a0f1e;
+          --card: #111827;
+          --text: #ffffff;
+          --text-muted: #94A3B8;
+          --separator: rgba(255, 255, 255, 0.08);
+          --icon-bg: rgba(124, 58, 237, 0.15);
+          --accent: #7C3AED;
+          --danger: #EF4444;
           color: var(--text);
-        }
-
-        @media (prefers-color-scheme: dark) {
-          .chat-settings-shell {
-            --bg: #000000;
-            --card: #1c1c1e;
-            --text: #ffffff;
-            --text-muted: #8e8e93;
-            --separator: rgba(255, 255, 255, 0.08);
-            --icon-bg: rgba(255, 255, 255, 0.08);
-            --accent: #7c6af7;
-            --danger: #e24b4a;
-          }
         }
 
         .chat-settings-shell .app-root {
