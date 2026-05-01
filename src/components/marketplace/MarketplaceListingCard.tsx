@@ -91,8 +91,8 @@ export function MarketplaceListingCard({
   return (
     <>
       <Card className={cn(
-        "overflow-hidden animate-fade-in backdrop-blur-sm border-2 border-black",
-        "bg-gradient-to-br", typeGradients[listing.type] || 'from-card/80 to-card/40'
+        "overflow-hidden animate-fade-in backdrop-blur-sm border-2 border-black mb-4",
+        "bg-gradient-to-br shadow-lg", typeGradients[listing.type] || 'from-card/80 to-card/40'
       )}>
         {/* Header: Profile pic, username, NPR, time, three dots */}
         <div className="flex items-center justify-between p-3">

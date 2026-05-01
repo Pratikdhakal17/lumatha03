@@ -939,14 +939,17 @@ export default function Profile() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-[1px]">
-                {profileVisiblePosts.map((post) => {
+              <div className="grid grid-cols-3 gap-[1px]" style={{ contentVisibility: 'auto' }}>
+                {profileVisiblePosts.map((post, index) => {
                   const urls = post.media_urls?.length ? post.media_urls : (post.file_url ? [post.file_url] : []);
                   const types = post.media_types?.length ? post.media_types : (post.file_type ? [post.file_type] : []);
                   const hasMedia = urls.some((url) => typeof url === 'string' && url.trim().length > 0);
                   const isVideo = types.some((type) => typeof type === 'string' && type.includes('video'));
 
                   if (!hasMedia) return null;
+
+                  // Preload first 9 images for instant display
+                  const shouldPreload = index < 9;
 
                   return (
                     <div
@@ -968,21 +971,24 @@ export default function Profile() {
                           index: idx >= 0 ? idx : 0
                         });
                       }}
-                      className="relative aspect-square bg-slate-900 overflow-hidden group cursor-pointer"
+                      className="relative aspect-square bg-slate-900 overflow-hidden group cursor-pointer will-change-transform"
                     >
                       {isVideo ? (
                          <video
                            src={urls[0]}
-                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                            muted
                            playsInline
+                           preload={shouldPreload ? "auto" : "metadata"}
                          />
                       ) : (
                         <img
                           src={urls[0]}
                           alt=""
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          loading="lazy"
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          loading={shouldPreload ? "eager" : "lazy"}
+                          decoding={shouldPreload ? "sync" : "async"}
+                          fetchpriority={shouldPreload ? "high" : "auto"}
                         />
                       )}
                       {isVideo && (

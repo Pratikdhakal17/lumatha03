@@ -108,15 +108,16 @@ const MessageItem = memo(function MessageItem({
             onLongPress(msg.id);
           }}
           onTouchStart={(e) => {
+            // Prevent default to avoid any ghost clicks or scroll interference
             const touch = e.touches[0];
             touchStartRef.current = { x: touch.clientX, y: touch.clientY };
             swipeHandledRef.current = false;
             clearLongPressTimer();
-            // Faster long-press for mobile (350ms vs 500ms)
+            // Stable long-press timing (500ms for better UX)
             longPressTimerRef.current = setTimeout(() => {
-              if (navigator.vibrate) navigator.vibrate(25);
+              if (navigator.vibrate) navigator.vibrate(30);
               onLongPress(msg.id);
-            }, 350);
+            }, 500);
           }}
           onTouchMove={(e) => {
             const start = touchStartRef.current;
@@ -126,8 +127,8 @@ const MessageItem = memo(function MessageItem({
             const deltaX = touch.clientX - start.x;
             const deltaY = touch.clientY - start.y;
 
-            // Cancel long-press on any significant movement (8px threshold)
-            if (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8) {
+            // Cancel long-press only on significant movement (16px threshold for stability)
+            if (Math.abs(deltaX) > 16 || Math.abs(deltaY) > 16) {
               clearLongPressTimer();
             }
 
@@ -137,19 +138,25 @@ const MessageItem = memo(function MessageItem({
             if (deltaX > swipeThresholdPx && horizontalIntent) {
               swipeHandledRef.current = true;
               clearLongPressTimer();
-              if (navigator.vibrate) navigator.vibrate(12);
+              if (navigator.vibrate) navigator.vibrate(15);
               onSwipeReply(msg.id);
             }
           }}
           onTouchEnd={(e) => {
-            clearLongPressTimer();
-            touchStartRef.current = null;
-            swipeHandledRef.current = false;
+            // Small delay to prevent accidental closes
+            setTimeout(() => {
+              clearLongPressTimer();
+              touchStartRef.current = null;
+              swipeHandledRef.current = false;
+            }, 50);
           }}
           onTouchCancel={() => {
-            clearLongPressTimer();
-            touchStartRef.current = null;
-            swipeHandledRef.current = false;
+            // Delay clearing to prevent menu from disappearing instantly
+            setTimeout(() => {
+              clearLongPressTimer();
+              touchStartRef.current = null;
+              swipeHandledRef.current = false;
+            }, 100);
           }}
         >
           {msg.is_forwarded && (

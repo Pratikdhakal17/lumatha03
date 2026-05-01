@@ -339,6 +339,7 @@ export function StoryCreatorV3({ open, onClose, onCreated, initialMode = 'media'
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[10000] bg-black"
+      style={{ willChange: 'transform', transform: 'translateZ(0)' }}
     >
       {/* Success Animation */}
       <AnimatePresence>
@@ -364,12 +365,13 @@ export function StoryCreatorV3({ open, onClose, onCreated, initialMode = 'media'
         )}
       </AnimatePresence>
 
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-50 p-4">
+      {/* Header - optimized for fast rendering */}
+      <div className="absolute top-0 left-0 right-0 z-50 p-4" style={{ willChange: 'transform' }}>
         <div className="flex items-center justify-between">
           <button
             onClick={handleClose}
-            className="w-10 h-10 rounded-full bg-black/40 backdrop-blur flex items-center justify-center text-white"
+            className="w-10 h-10 rounded-full bg-black/40 backdrop-blur flex items-center justify-center text-white active:scale-95 transition-transform"
+            style={{ willChange: 'transform' }}
           >
             <ChevronLeft size={22} />
           </button>
@@ -391,8 +393,8 @@ export function StoryCreatorV3({ open, onClose, onCreated, initialMode = 'media'
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="w-full h-full pt-20 pb-32">
+      {/* Main Content Area - GPU accelerated */}
+      <div className="w-full h-full pt-20 pb-32" style={{ willChange: 'transform', transform: 'translateZ(0)', backfaceVisibility: 'hidden' }}>
         {/* TEXT MODE */}
         {mode === 'text' && (
           <div className="w-full h-full flex flex-col">

@@ -7,6 +7,7 @@ interface LazyBlurImageProps {
   className?: string;
   placeholderClassName?: string;
   onClick?: () => void;
+  priority?: boolean;
 }
 
 // Generate a consistent blur placeholder gradient based on image seed
@@ -31,14 +32,28 @@ const LazyBlurImage: React.FC<LazyBlurImageProps> = ({
   alt,
   className = '',
   placeholderClassName = '',
-  onClick
+  onClick,
+  priority = false
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
+  const [isInView, setIsInView] = useState(priority);
   const [hasError, setHasError] = useState(false);
   const imgRef = useRef<HTMLDivElement>(null);
+  const imgPreloadRef = useRef<HTMLImageElement | null>(null);
+
+  // Preload image immediately if priority
+  useEffect(() => {
+    if (priority && src) {
+      setIsInView(true);
+      // Preload in background
+      imgPreloadRef.current = new Image();
+      imgPreloadRef.current.src = src;
+    }
+  }, [priority, src]);
 
   useEffect(() => {
+    if (priority) return; // Skip observer for priority images
+    
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -47,8 +62,8 @@ const LazyBlurImage: React.FC<LazyBlurImageProps> = ({
         }
       },
       {
-        rootMargin: '100px',
-        threshold: 0.1
+        rootMargin: '200px',
+        threshold: 0
       }
     );
 
@@ -57,7 +72,7 @@ const LazyBlurImage: React.FC<LazyBlurImageProps> = ({
     }
 
     return () => observer.disconnect();
-  }, []);
+  }, [priority]);
 
   const blurGradient = generateBlurPlaceholder(src);
 

@@ -1238,26 +1238,38 @@ export default function MusicAdventureFixed() {
         })}
       </div>
 
-      {/* Places Grid - Full Width Mobile, No Side Space - Smooth scroll enabled */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px px-0 pb-20 mt-0 w-full scroll-smooth">
-        {visiblePlaces.map((place) => {
+      {/* Places Grid - Full Width Mobile, No Side Space - Instant rendering with preloading */}
+      <div 
+        className="grid grid-cols-2 lg:grid-cols-4 gap-px px-0 pb-20 mt-0 w-full"
+        style={{ contentVisibility: 'auto', containIntrinsicSize: '200px' }}
+      >
+        {visiblePlaces.map((place, index) => {
           if (!place || !place.id) return null;
           const placeName = place.name?.trim() || 'Untitled Place';
           const placeCountry = place.country?.trim() || 'Unknown';
           const placeImage = place.image?.trim() || FALLBACK_PLACE_IMAGE;
+          // Preload first 12 images for instant display
+          const shouldPreload = index < 12;
 
           return (
             <div
               key={place.id}
               onClick={() => setSelectedPlace(place)}
-              className="group relative aspect-square overflow-hidden bg-slate-900 border-[0.5px] border-white/5 cursor-pointer shadow-2xl"
+              className="group relative aspect-square overflow-hidden bg-slate-900 border-[0.5px] border-white/5 cursor-pointer shadow-2xl will-change-transform"
             >
               <img 
                 src={placeImage} 
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                alt={placeName} 
-                loading="lazy"
-                onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_PLACE_IMAGE; }}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
+                alt={placeName}
+                loading={shouldPreload ? "eager" : "lazy"}
+                decoding={shouldPreload ? "sync" : "async"}
+                fetchpriority={shouldPreload ? "high" : "auto"}
+                onError={(e) => { 
+                  const target = e.target as HTMLImageElement;
+                  if (target.src !== FALLBACK_PLACE_IMAGE) {
+                    target.src = FALLBACK_PLACE_IMAGE;
+                  }
+                }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity" />
               {/* Clean cover - no icons overlay */}

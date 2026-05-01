@@ -1963,7 +1963,7 @@ export default function Chat() {
           </div>
         </div>
 
-        {/* Messages — Instagram-style: scrollable middle area */}
+        {/* Messages — Instagram-style: scrollable middle area with zero-lag scrolling */}
         <div
           ref={scrollContainerRef}
           className="flex-1 overflow-y-auto chat-messages scrollbar-hide w-full"
@@ -1973,7 +1973,10 @@ export default function Chat() {
             WebkitOverflowScrolling: 'touch',
             display: 'flex',
             flexDirection: 'column',
-            scrollBehavior: 'smooth'
+            scrollBehavior: 'smooth',
+            willChange: 'scroll-position',
+            transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden'
           }}
           onScroll={() => {
             const el = scrollContainerRef.current;
@@ -2694,7 +2697,7 @@ export default function Chat() {
     </button>
   );
 
-  // Subsection navigation component - tabs with icons (matches Learn section styling)
+  // Subsection navigation - consistent compact banner across ALL subsections (matches find subsection)
   const SubsectionNavigation = () => {
     const tabs = [
       { id: 'main', icon: MessageSquare, label: 'Chats' },
@@ -2704,14 +2707,9 @@ export default function Chat() {
     ];
     const activeIndex = tabs.findIndex(t => t.id === chatTab);
 
-    // Consistent medium/compact banner size for all subsections
-    const compact = true;
-
+    // ALL subsections use compact size matching find subsection exactly
     return (
-      <div className={cn(
-        "w-full shrink-0",
-        compact ? 'px-3 py-2.5' : 'px-4 py-3'
-      )} style={{ background: '#0a0f1e' }}>
+      <div className="w-full shrink-0 px-3 py-2" style={{ background: '#0a0f1e' }}>
         <div className="relative flex items-center rounded-xl overflow-hidden shrink-0" style={{ background: '#0d1220', border: '1px solid #1f2937' }}>
           <div
             className="absolute top-0 bottom-0 rounded-xl transition-all duration-200 ease-out"
@@ -2729,12 +2727,11 @@ export default function Chat() {
                 key={tab.id}
                 onClick={() => setChatTab(tab.id as any)}
                 className={cn(
-                  "relative z-10 flex items-center gap-1.5 justify-center flex-1 transition-colors duration-200 text-xs font-semibold",
-                  compact ? 'py-2.5' : 'py-3',
+                  "relative z-10 flex items-center gap-1.5 justify-center flex-1 transition-colors duration-200 text-xs font-semibold py-2",
                   isActive ? "text-white" : "text-[#64748B]"
                 )}
               >
-                <Icon className={compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
+                <Icon className="w-3.5 h-3.5" />
                 <span>{tab.label}</span>
               </button>
             );

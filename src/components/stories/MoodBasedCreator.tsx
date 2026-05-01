@@ -126,13 +126,6 @@ const STORY_TYPES: Array<{
     icon: StickyNote,
     gradient: 'from-amber-500/20 to-yellow-500/20'
   },
-  { 
-    id: 'voice', 
-    label: 'Voice', 
-    desc: 'Speak your mind',
-    icon: Music,
-    gradient: 'from-emerald-500/20 to-teal-500/20'
-  },
 ];
 
 // ============ AUDIENCE OPTIONS ============
@@ -240,17 +233,17 @@ export function MoodBasedCreator({ open, onClose, onCreateStory }: MoodBasedCrea
 
       {/* Content */}
       <div className="relative h-full flex flex-col">
-        {/* Header */}
+        {/* Header - compact sizing */}
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="flex items-center justify-between px-4 py-4"
+          className="flex items-center justify-between px-4 py-2"
         >
           <button
             onClick={step === 'mood' ? onClose : () => setStep('mood')}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
           >
-            <X className="w-5 h-5 text-white" />
+            <X className="w-4 h-4 text-white" />
           </button>
           
           <div className="flex items-center gap-2">
@@ -291,13 +284,13 @@ export function MoodBasedCreator({ open, onClose, onCreateStory }: MoodBasedCrea
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="h-full flex flex-col px-6 py-8"
+                className="h-full flex flex-col px-6 py-4"
               >
-                <div className="mb-8">
-                  <h2 className="text-3xl font-bold text-white mb-2">
+                <div className="mb-4">
+                  <h2 className="text-2xl font-bold text-white mb-1">
                     What are you feeling?
                   </h2>
-                  <p className="text-white/50">
+                  <p className="text-white/50 text-sm">
                     Your mood shapes the experience
                   </p>
                 </div>
@@ -314,7 +307,7 @@ export function MoodBasedCreator({ open, onClose, onCreateStory }: MoodBasedCrea
                         whileTap={{ scale: 0.98 }}
                         onClick={() => handleMoodSelect(moodKey)}
                         className={cn(
-                          "relative p-5 rounded-2xl text-left transition-all duration-300",
+                          "relative p-4 rounded-xl text-left transition-all duration-300",
                           "border border-white/10 hover:border-white/20",
                           isSelected 
                             ? "bg-white/10 ring-2 ring-white/30" 
@@ -323,15 +316,15 @@ export function MoodBasedCreator({ open, onClose, onCreateStory }: MoodBasedCrea
                       >
                         {/* Gradient Background */}
                         <div className={cn(
-                          "absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300",
+                          "absolute inset-0 rounded-xl opacity-0 transition-opacity duration-300",
                           "bg-gradient-to-br",
                           mood.gradient,
                           isSelected && "opacity-20"
                         )} />
                         
                         <div className="relative">
-                          <span className="text-4xl mb-3 block">{mood.emoji}</span>
-                          <h3 className="text-lg font-semibold text-white mb-1">
+                          <span className="text-3xl mb-2 block">{mood.emoji}</span>
+                          <h3 className="text-base font-semibold text-white mb-0.5">
                             {mood.label}
                           </h3>
                           <p className="text-xs text-white/50">
@@ -352,18 +345,18 @@ export function MoodBasedCreator({ open, onClose, onCreateStory }: MoodBasedCrea
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="h-full flex flex-col px-6 py-8"
+                className="h-full flex flex-col px-6 py-4"
               >
-                <div className="mb-8">
-                  <h2 className="text-3xl font-bold text-white mb-2">
+                <div className="mb-4">
+                  <h2 className="text-2xl font-bold text-white mb-1">
                     How do you want to express?
                   </h2>
-                  <p className="text-white/50">
+                  <p className="text-white/50 text-sm">
                     Choose your medium
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   {STORY_TYPES.map((type) => (
                     <motion.button
                       key={type.id}
@@ -371,21 +364,21 @@ export function MoodBasedCreator({ open, onClose, onCreateStory }: MoodBasedCrea
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleTypeSelect(type.id)}
                       className={cn(
-                        "relative p-6 rounded-2xl text-left transition-all",
+                        "relative p-4 rounded-xl text-left transition-all",
                         "border border-white/10 hover:border-white/20 bg-white/5"
                       )}
                     >
                       <div className={cn(
-                        "absolute inset-0 rounded-2xl opacity-30",
+                        "absolute inset-0 rounded-xl opacity-30",
                         "bg-gradient-to-br",
                         type.gradient
                       )} />
                       
                       <div className="relative">
-                        <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mb-4">
-                          <type.icon className="w-6 h-6 text-white" />
+                        <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center mb-2">
+                          <type.icon className="w-5 h-5 text-white" />
                         </div>
-                        <h3 className="text-lg font-semibold text-white mb-1">
+                        <h3 className="text-base font-semibold text-white mb-0.5">
                           {type.label}
                         </h3>
                         <p className="text-xs text-white/50">
