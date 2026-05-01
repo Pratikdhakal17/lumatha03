@@ -192,7 +192,7 @@ export default function Private() {
       </div>
 
       {/* Content */}
-      <div className="px-0 sm:px-2 space-y-3">
+      <div className="px-0 sm:px-2 space-y-3 md:max-w-[640px] md:mx-auto">
         <AnimatePresence mode="wait">
           {activeTab === 'own' && (
             <motion.div

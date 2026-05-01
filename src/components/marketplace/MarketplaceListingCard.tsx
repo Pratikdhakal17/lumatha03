@@ -91,7 +91,7 @@ export function MarketplaceListingCard({
   return (
     <>
       <Card className={cn(
-        "border-0 overflow-hidden animate-fade-in backdrop-blur-sm",
+        "overflow-hidden animate-fade-in backdrop-blur-sm border-2 border-black",
         "bg-gradient-to-br", typeGradients[listing.type] || 'from-card/80 to-card/40'
       )}>
         {/* Header: Profile pic, username, NPR, time, three dots */}

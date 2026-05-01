@@ -340,13 +340,12 @@ export default function Create() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <div className="sticky top-0 z-20 px-4 py-3 border-b" style={{ borderColor: 'var(--border-c)', background: 'var(--bg-base)' }}>
-        {/* Clean header - Cancel left, Title center, Share right */}
+        {/* Clean header - Back arrow left, Title center, Share right */}
         <div className="flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-slate-400 hover:text-slate-300 transition-all">
+          <button onClick={() => navigate(-1)} className="p-2 text-slate-400 hover:text-slate-300 transition-all rounded-lg hover:bg-white/5">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
-            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 15 }}>Cancel</span>
           </button>
           <h1 className="absolute left-1/2 -translate-x-1/2" style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text-1)' }}>
             {createTitle}

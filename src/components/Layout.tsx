@@ -573,11 +573,15 @@ function LayoutContent({ children }: LayoutProps) {
               ? 'Messages'
               : location.pathname.startsWith('/music-adventure')
                 ? 'Adventure'
-                : location.pathname.startsWith('/marketplace')
-                  ? 'Marketplace'
-                  : location.pathname.startsWith('/settings')
-                    ? 'Settings'
-                    : 'Home';
+                : location.pathname.startsWith('/random-connect')
+                  ? 'Random Connect'
+                  : location.pathname.startsWith('/funpun')
+                    ? 'FunPun'
+                    : location.pathname.startsWith('/marketplace')
+                      ? 'Marketplace'
+                      : location.pathname.startsWith('/settings')
+                        ? 'Settings'
+                        : 'Home';
   const feedScopes = [
     { id: 'global', icon: Globe, label: 'Global', desc: 'From every corner' },
     { id: 'regional', icon: Flag, label: 'Regional', desc: 'Regional feed' },

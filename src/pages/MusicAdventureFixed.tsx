@@ -8,7 +8,7 @@ import {
   Search, Globe, Heart, MessageCircle, Bookmark, Plus,
   UserCircle2, Compass, Map as MapIcon, Share2, MoreVertical,
   Flag, Filter, X, Edit3, Trash2, Lock, Sparkles, Users,
-  ChevronRight, Layers, CheckCircle,
+  ChevronRight, Layers, CheckCircle, Check,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -148,7 +148,7 @@ export default function MusicAdventureFixed() {
   const [showCategories, setShowCategories] = useState(false);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [customQuests, setCustomQuests] = useState<CustomQuest[]>([]);
-  const [questViewFilter, setQuestViewFilter] = useState<'system' | 'public' | 'private' | 'liked' | 'saved'>('system');
+  const [questViewFilter, setQuestViewFilter] = useState<'system' | 'public' | 'private' | 'liked' | 'saved' | 'done'>('system');
 
   // Points and gamification state
   const [userPoints, setUserPoints] = useState(0);
@@ -493,7 +493,9 @@ export default function MusicAdventureFixed() {
     });
     
     // Add custom quests based on filter
-    if (questViewFilter !== 'system') {
+    if (questViewFilter === 'done') {
+      challenges = challenges.filter(c => completedIds.has(c.id));
+    } else if (questViewFilter !== 'system') {
       const filteredCustom = customQuests.filter(q => {
         if (questViewFilter === 'private') return q.type === 'private' && q.createdBy === user?.id;
         if (questViewFilter === 'public') return q.type === 'public';
@@ -622,6 +624,10 @@ export default function MusicAdventureFixed() {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setQuestViewFilter('saved')} className="rounded-lg py-2.5 gap-3">
                 <Bookmark className="w-4 h-4 text-violet-500" /> <span className="font-bold text-xs uppercase">Saved</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-white/10" />
+              <DropdownMenuItem onClick={() => setQuestViewFilter('done')} className="rounded-lg py-2.5 gap-3">
+                <Check className="w-4 h-4 text-emerald-500" /> <span className="font-bold text-xs uppercase">Done Work</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
