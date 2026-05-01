@@ -1887,7 +1887,7 @@ export default function Chat() {
         {isBlurred && <BlurOverlay />}
 
         {/* Chat Header - Clean minimal header with back button */}
-        <div className="shrink-0 border-b border-white/10 px-3 md:px-4 py-2.5" style={{
+        <div className="shrink-0 sticky top-0 z-30 border-b border-white/10 px-3 md:px-4 py-2.5" style={{
           background: '#0B0D1F',
           paddingTop: 'max(0.625rem, env(safe-area-inset-top))',
           paddingLeft: 'max(0.75rem, env(safe-area-inset-left))',
@@ -2679,7 +2679,8 @@ export default function Chat() {
     ];
     const activeIndex = tabs.findIndex(t => t.id === chatTab);
 
-    const compact = chatTab !== 'main';
+    // Use medium/compact banner size for all subsections to match Find
+    const compact = true;
 
     return (
       <div className={compact ? 'px-3 py-2' : 'px-4 py-3'}>
