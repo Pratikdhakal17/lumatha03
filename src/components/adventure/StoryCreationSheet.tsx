@@ -463,7 +463,7 @@ export function StoryCreationSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[92vh] p-0 border-0 rounded-t-[24px] overflow-hidden shadow-2xl" style={{ background: '#0a0f1e' }}>
+      <SheetContent side="bottom" className="h-[92vh] p-0 border-0 rounded-t-[24px] overflow-hidden shadow-2xl [&>button]:hidden" style={{ background: '#0a0f1e' }}>
         <SheetTitle className="sr-only">Create travel story</SheetTitle>
         <SheetDescription className="sr-only">Write and publish a travel story with media, mood, and audience settings.</SheetDescription>
         {/* Drag handle */}
