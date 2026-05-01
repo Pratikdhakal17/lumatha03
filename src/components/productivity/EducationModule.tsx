@@ -122,15 +122,21 @@ export function EducationModule() {
       }
       
       // Load saved, liked, and commented info
+      // Some Supabase REST endpoints can reject the `not('document_id','is',null)` encoding
+      // in some environments; fetch plain and filter client-side for robustness.
       const [savedRes, likedRes, commentedRes] = await Promise.all([
-        supabase.from('saved').select('document_id').eq('user_id', user.id).not('document_id', 'is', null),
+        supabase.from('saved').select('document_id').eq('user_id', user.id).limit(500),
         supabase.from('document_reactions').select('document_id').eq('user_id', user.id).eq('reaction', 'heart'),
-        supabase.from('comments').select('document_id').eq('user_id', user.id).not('document_id', 'is', null)
+        supabase.from('comments').select('document_id').eq('user_id', user.id).limit(500)
       ]);
 
-      setSavedDocIds(new Set(savedRes.data?.map(s => s.document_id as string) || []));
-      setLikedDocIds(new Set(likedRes.data?.map(l => l.document_id as string) || []));
-      setCommentedDocIds(new Set(commentedRes.data?.map(c => c.document_id as string) || []));
+      const savedIds = (savedRes.data || []).map((s: any) => s.document_id).filter(Boolean) as string[];
+      const likedIds = (likedRes.data || []).map((l: any) => l.document_id).filter(Boolean) as string[];
+      const commentedIds = (commentedRes.data || []).map((c: any) => c.document_id).filter(Boolean) as string[];
+
+      setSavedDocIds(new Set(savedIds));
+      setLikedDocIds(new Set(likedIds));
+      setCommentedDocIds(new Set(commentedIds));
 
     } catch (error) {
       console.error('Failed to load education data:', error);
