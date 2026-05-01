@@ -454,19 +454,20 @@ function LayoutContent({ children }: LayoutProps) {
   const handleScroll = useCallback(() => {
     // Header behavior: 
     // 1. Active chat (/chat/:id): Header is completely hidden (chat has its own)
-    // 2. Chat list (/chat) and all other sections: Hide on scroll down, show on scroll up
-    // 3. Mobile: Same behavior as desktop
+    // 2. Chat list (/chat): Always show header - NO SCROLL HIDING
+    // 3. Other sections: Hide on scroll down, show on scroll up
     
-    // Active chat: App header is hidden, so no scroll handling needed
+    // Active chat: App header is hidden
     if (isInActiveChat) {
       setHeaderVisible(false);
       ticking.current = false;
       return;
     }
     
-    // Chat list view: Always show header
+    // Chat list view: FORCE header always visible - don't allow scroll to hide
     if (isChatListView) {
       setHeaderVisible(true);
+      lastScrollY.current = 0;
       ticking.current = false;
       return;
     }
@@ -488,13 +489,22 @@ function LayoutContent({ children }: LayoutProps) {
       lastScrollY.current = st <= 0 ? 0 : st;
       ticking.current = false;
     });
-  }, [location.pathname]);
+  }, [location.pathname, isChatListView, isInActiveChat]);
 
   useEffect(() => {
     // Always show header when switching sections.
     setHeaderVisible(true);
     lastScrollY.current = 0;
   }, [location.pathname]);
+
+  // Extra safety: Force header always visible for chat list view
+  useEffect(() => {
+    if (isChatListView) {
+      setHeaderVisible(true);
+      // Disable any scroll-based hiding by resetting scroll tracking
+      lastScrollY.current = 0;
+    }
+  }, [isChatListView]);
 
   useEffect(() => {
     // Attach scroll listener to feed container and window as a fallback.
