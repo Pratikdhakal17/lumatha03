@@ -926,26 +926,6 @@ export default function MusicAdventureFixed() {
           <p className="text-xs text-slate-600 mt-1">Try adjusting your filters or create your own quest</p>
         </div>
       )}
-
-      {/* Bottom Profile Bar with > icon */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0f1e]/95 backdrop-blur-xl border-t border-white/5 px-4 py-3">
-        <button 
-          onClick={() => window.location.href = '/settings'}
-          className="flex items-center justify-between w-full"
-        >
-          <div className="flex items-center gap-3">
-            <Avatar className="w-10 h-10 rounded-full border-2 border-primary/30">
-              <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
-              <AvatarFallback className="bg-slate-800 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
-            </Avatar>
-            <div className="text-left">
-              <p className="text-sm font-bold text-white">{profile?.name || 'Explorer'}</p>
-              <p className="text-xs text-slate-500">View your profile</p>
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-slate-500" />
-        </button>
-      </div>
     </div>
   );
 
@@ -1283,26 +1263,6 @@ export default function MusicAdventureFixed() {
           );
         })}
       </div>
-
-      {/* Bottom Profile Bar with > icon */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0f1e]/95 backdrop-blur-xl border-t border-white/5 px-4 py-3">
-        <button 
-          onClick={() => window.location.href = '/settings'}
-          className="flex items-center justify-between w-full"
-        >
-          <div className="flex items-center gap-3">
-            <Avatar className="w-10 h-10 rounded-full border-2 border-primary/30">
-              <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
-              <AvatarFallback className="bg-slate-800 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
-            </Avatar>
-            <div className="text-left">
-              <p className="text-sm font-bold text-white">{profile?.name || 'Explorer'}</p>
-              <p className="text-xs text-slate-500">View your profile</p>
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-slate-500" />
-        </button>
-      </div>
     </div>
   );
 
@@ -1420,26 +1380,6 @@ export default function MusicAdventureFixed() {
           </div>
         </div>
       )}
-
-      {/* Bottom Profile Bar with > icon */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0f1e]/95 backdrop-blur-xl border-t border-white/5 px-4 py-3">
-        <button 
-          onClick={() => window.location.href = '/settings'}
-          className="flex items-center justify-between w-full"
-        >
-          <div className="flex items-center gap-3">
-            <Avatar className="w-10 h-10 rounded-full border-2 border-primary/30">
-              <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
-              <AvatarFallback className="bg-slate-800 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
-            </Avatar>
-            <div className="text-left">
-              <p className="text-sm font-bold text-white">{profile?.name || 'Explorer'}</p>
-              <p className="text-xs text-slate-500">View your profile</p>
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-slate-500" />
-        </button>
-      </div>
     </div>
   );
 
