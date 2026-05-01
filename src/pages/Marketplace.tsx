@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Search, MapPin, ChevronRight, MessageCircle, X, ArrowLeft,
   ShoppingBag, Briefcase, Home as HomeIcon, Loader2, Sparkles, 
-  Share2, Bookmark, Heart, Phone, ChevronLeft, AlertTriangle, Star, ImagePlus, Check, MoreVertical, Edit3, Trash2, Clock, ChevronDown, SearchX, Menu } from 'lucide-react';
+  Share2, Bookmark, Heart, Phone, ChevronLeft, AlertTriangle, Star, ImagePlus, Check, MoreVertical, Edit3, Trash2, Clock, SearchX, Menu } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -380,7 +380,6 @@ export default function Marketplace() {
                 {user?.user_metadata?.name?.[0] || 'U'}
               </AvatarFallback>
             </Avatar>
-            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
           </button>
 
           <div className="flex-1 relative group">

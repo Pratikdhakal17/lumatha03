@@ -463,7 +463,7 @@ export function StoryCreationSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[99vh] p-0 border-0 rounded-t-[32px] overflow-hidden shadow-2xl" style={{ background: '#0a0f1e' }}>
+      <SheetContent side="bottom" className="h-[92vh] p-0 border-0 rounded-t-[24px] overflow-hidden shadow-2xl" style={{ background: '#0a0f1e' }}>
         <SheetTitle className="sr-only">Create travel story</SheetTitle>
         <SheetDescription className="sr-only">Write and publish a travel story with media, mood, and audience settings.</SheetDescription>
         {/* Drag handle */}
@@ -471,7 +471,7 @@ export function StoryCreationSheet({
           <div className="w-12 h-1.5 rounded-full" style={{ background: '#1e293b' }} />
         </div>
 
-        <div className="h-[calc(99vh-24px)] flex flex-col">
+        <div className="h-[calc(92vh-24px)] flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-900/50">
             <button onClick={() => onOpenChange(false)} className="p-1">

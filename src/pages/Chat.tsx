@@ -2658,7 +2658,7 @@ export default function Chat() {
 
   // Top banner component - shows "Messages" label only (no Lumatha branding - main Layout header handles it)
   const TopBanner = () => (
-    <div className="bg-[#0a0f1e]/95 backdrop-blur-xl border-b border-white/5 px-4 py-2 min-h-12">
+    <div className="sticky top-0 z-30 bg-[#0a0f1e]/98 backdrop-blur-xl border-b border-white/5 px-4 py-2 min-h-12">
       <div className="flex items-center justify-between">
         <span className="text-lg md:text-base font-black text-white tracking-wide">Messages</span>
         <div className="flex items-center gap-2">
@@ -2678,7 +2678,7 @@ export default function Chat() {
 
   // Subsection navigation component - tabs with icons
   const SubsectionNavigation = () => (
-    <div className="bg-[#0a0f1e]/95 backdrop-blur-md border-b border-white/5 px-2 py-2">
+    <div className="sticky top-12 z-30 bg-[#0a0f1e]/98 backdrop-blur-md border-b border-white/5 px-2 py-2">
       <div className="flex items-center justify-between w-full gap-1">
         {[
           { id: 'main', icon: MessageSquare, label: 'Chats' },
@@ -2716,7 +2716,7 @@ export default function Chat() {
 
   return (
     <div className={cn("pb-6 md:pb-20", isMobile ? "min-h-full" : "min-h-[calc(100vh-56px)]")} style={{ background: '#0a0f1e' }}>
-      <div className="bg-[#0B0D1F]/95 backdrop-blur-md border-b border-white/5">
+      <div className="sticky top-0 z-30 bg-[#0B0D1F]/95 backdrop-blur-md border-b border-white/5">
         {/* Top Banner */}
         <TopBanner />
 

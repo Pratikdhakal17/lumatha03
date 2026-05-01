@@ -145,7 +145,7 @@ export function CreateListingSheet({ editListing, defaultDetectedLocation, onClo
     <Sheet open={true} onOpenChange={(open) => !open && onClose()}>
       <SheetContent 
         side="bottom" 
-        className="h-[92vh] p-0 border-0 flex flex-col bg-[#0B0D1F] rounded-t-[32px] overflow-hidden"
+        className="h-[92vh] p-0 border-0 flex flex-col bg-[#0B0D1F] rounded-t-[32px] overflow-hidden [&>button]:hidden"
       >
         <SheetHeader className="px-4 py-3 border-b border-white/5 flex-shrink-0 flex-row items-center justify-between space-y-0">
           <div className="flex items-center gap-2">

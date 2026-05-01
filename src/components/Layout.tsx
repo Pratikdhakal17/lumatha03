@@ -638,7 +638,7 @@ function LayoutContent({ children }: LayoutProps) {
                 // Chat list: Just show Messages title (chat list has its own sub-nav)
                 <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
               ) : isFeedPage ? (
-                // Feed page: Hamburger menu
+                // Feed page: Hamburger menu (mobile only)
                 <>
                   {isMobile && (
                     <button 
@@ -663,14 +663,16 @@ function LayoutContent({ children }: LayoutProps) {
                       <ArrowLeft className="w-5 h-5 text-blue-500" strokeWidth={2} />
                     </button>
                   ) : (
-                    // Other sections: Sidebar icon
-                    <button 
-                      onClick={handleMobileLeadingAction} 
-                      className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5"
-                      aria-label="Menu"
-                    >
-                      <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
-                    </button>
+                    // Other sections: Sidebar icon (mobile only, desktop has visible sidebar)
+                    isMobile && (
+                      <button 
+                        onClick={handleMobileLeadingAction} 
+                        className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5"
+                        aria-label="Menu"
+                      >
+                        <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
+                      </button>
+                    )
                   )}
                   <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
                 </>
