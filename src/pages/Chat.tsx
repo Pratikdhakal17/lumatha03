@@ -2656,24 +2656,16 @@ export default function Chat() {
     });
   };
 
-  // Top banner component - simplified for stability (matches Learn section)
-  const TopBanner = () => (
-    <div className="px-4 py-2 border-b border-white/5" style={{ background: '#0B0D1F' }}>
-      <div className="flex items-center justify-between">
-        <span className="text-base font-black text-white tracking-wide">Messages</span>
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] uppercase tracking-[0.12em] text-slate-500 font-semibold mr-2">{sectionLabelByTab[chatTab]}</span>
-          <button
-            onClick={toggleMainSearch}
-            className="w-9 h-9 rounded-full flex items-center justify-center transition-colors hover:bg-white/5"
-            aria-label="Search messages"
-            title="Search"
-          >
-            <Search className="w-4 h-4" style={{ color: chatTab === 'main' ? '#94A3B8' : '#475569' }} />
-          </button>
-        </div>
-      </div>
-    </div>
+  // Search button component for top right
+  const SearchButton = () => (
+    <button
+      onClick={toggleMainSearch}
+      className="w-9 h-9 rounded-full flex items-center justify-center transition-colors hover:bg-white/5"
+      aria-label="Search messages"
+      title="Search"
+    >
+      <Search className="w-4 h-4" style={{ color: chatTab === 'main' ? '#94A3B8' : '#475569' }} />
+    </button>
   );
 
   // Subsection navigation component - tabs with icons (matches Learn section styling)
@@ -2687,7 +2679,7 @@ export default function Chat() {
     const activeIndex = tabs.findIndex(t => t.id === chatTab);
 
     return (
-      <div className="px-3 py-2">
+      <div className="px-4 py-3">
         <div className="relative flex items-center rounded-xl overflow-hidden shrink-0" style={{ background: '#0d1220', border: '1px solid #1f2937' }}>
           <div
             className="absolute top-0 bottom-0 rounded-xl transition-all duration-200 ease-out"
@@ -2720,14 +2712,9 @@ export default function Chat() {
   };
 
   return (
-    <div className={cn("min-h-screen flex flex-col pb-6 md:pb-20")} style={{ background: '#0a0f1e' }}>
-      {/* Header Container - consistent with Learn section */}
-      <div className="w-full" style={{ background: '#0a0f1e' }}>
-        {/* Top Banner */}
-        <TopBanner />
-
-        {/* Subsection Navigation */}
-        <SubsectionNavigation />
+    <div className={cn("w-full")} style={{ background: '#0a0f1e' }}>
+      {/* Subsection Navigation - Layout handles the top header */}
+      <SubsectionNavigation />
 
         {/* Search Bar - Only show when in main tab and search is enabled */}
         {chatTab === 'main' && showSearch && (
@@ -2748,7 +2735,6 @@ export default function Chat() {
             </div>
           </div>
         )}
-      </div>
 
       {/* Main / Archived content */}
       {chatTab === 'find' ? (

@@ -636,8 +636,18 @@ function LayoutContent({ children }: LayoutProps) {
             {/* Left side - menu/back button and branding */}
             <div className="flex items-center gap-1 min-w-0">
               {isChatListView ? (
-                // Chat list: Just show Messages title (chat list has its own sub-nav)
-                <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
+                // Chat list: Show hamburger + LUMATHA like other sections for consistency
+                <>
+                  {isMobile && (
+                    <button 
+                      onClick={handleMobileLeadingAction} 
+                      className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5"
+                    >
+                      <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
+                    </button>
+                  )}
+                  <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
+                </>
               ) : isFeedPage ? (
                 // Feed page: Hamburger menu (mobile only)
                 <>
