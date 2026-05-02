@@ -340,7 +340,7 @@ export function FeedGrid({
 
       {/* Comments Dialog - Full width like Facebook */}
       <Dialog open={!!showComments} onOpenChange={() => { setShowComments(null); setReplyTo(null); }}>
-        <DialogContent className="max-w-lg w-[95vw] glass-card animate-scale-in max-h-[90vh] flex flex-col p-0">
+        <DialogContent className="max-w-lg w-[95vw] glass-card animate-scale-in max-h-[90vh] flex flex-col p-0" aria-describedby={undefined}>
           <div className="flex items-center justify-between p-4 border-b border-border/50">
             <h3 className="font-semibold text-lg">Comments</h3>
             <Button variant="ghost" size="icon" onClick={() => setShowComments(null)}>
@@ -452,7 +452,7 @@ export function FeedGrid({
 
       {/* Fullscreen Media Dialog */}
       <Dialog open={!!selectedPost} onOpenChange={() => setSelectedPost(null)}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-none animate-scale-in">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-none animate-scale-in" aria-describedby={undefined}>
           <Button
             variant="ghost"
             size="icon"

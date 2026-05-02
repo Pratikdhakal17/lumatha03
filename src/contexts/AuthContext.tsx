@@ -29,6 +29,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
+let authBootstrapPromise: Promise<void> | null = null;
 
 const parseStoredSessions = (): StoredAccountSession[] => {
   try {
@@ -105,6 +106,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    if (!authBootstrapPromise) {
+      authBootstrapPromise = Promise.resolve().then(() => undefined);
+    }
+
     // Dev bypass: allow setting a localStorage flag to simulate a logged-in user
     // for local testing without valid Supabase sessions.
     try {
@@ -125,23 +130,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         upsertStoredAccount(fakeSession, { id: fakeUser.id, name: 'Dev User', avatar_url: '' });
       } else {
         // Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        authBootstrapPromise = authBootstrapPromise.then(() =>
+          supabase.auth.getSession().then(({ data: { session } }) => {
           setUser(session?.user ?? null);
           if (session?.user) {
             loadProfile(session.user.id);
             upsertStoredAccount(session);
           }
-        });
+          })
+        );
       }
     } catch (e) {
       // fall back to normal behavior
-      supabase.auth.getSession().then(({ data: { session } }) => {
+      authBootstrapPromise = authBootstrapPromise?.then(() =>
+        supabase.auth.getSession().then(({ data: { session } }) => {
         setUser(session?.user ?? null);
         if (session?.user) {
           loadProfile(session.user.id);
           upsertStoredAccount(session);
         }
-      });
+        })
+      ) || null;
     }
 
     // Listen for auth changes
