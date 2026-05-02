@@ -1989,6 +1989,7 @@ export default function Chat() {
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
                 title="Chat options"
                 onClick={() => setShowSettings(true)}
+                onPointerUp={(e) => { (e as any).stopPropagation(); setShowSettings(true); }}
                 aria-label="Chat options"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
@@ -2989,6 +2990,7 @@ export default function Chat() {
                   {/* Three-dot menu button - positioned outside SwipeableChatCard inner button */}
                   <button
                     onClick={(e) => { e.stopPropagation(); e.preventDefault(); openConversationOptions(conv.user_id); }}
+                    onPointerUp={(e) => { e.stopPropagation(); e.preventDefault(); openConversationOptions(conv.user_id); }}
                     className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all z-10"
                     aria-label="Chat options"
                     style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -3055,6 +3057,7 @@ export default function Chat() {
                   {/* Three-dot menu button */}
                   <button
                     onClick={(e) => { e.stopPropagation(); e.preventDefault(); openConversationOptions(conv.user_id); }}
+                    onPointerUp={(e) => { e.stopPropagation(); e.preventDefault(); openConversationOptions(conv.user_id); }}
                     className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all z-10"
                     aria-label="Chat options"
                     style={{ WebkitTapHighlightColor: 'transparent' }}

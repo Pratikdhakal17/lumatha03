@@ -1,3 +1,4 @@
+import React, { useRef } from 'react';
 import { cn } from '@/lib/utils';
 
 interface ChatImageGridProps {
@@ -17,6 +18,8 @@ interface ChatImageGridProps {
  */
 export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGridProps) {
   if (!urls.length) return null;
+
+  const touchHandledRef = useRef(false);
 
   const count = urls.length;
   const displayUrls = urls.slice(0, 4);
@@ -42,11 +45,15 @@ export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGrid
   const handleImageTap = (url: string) => {
     // Haptic feedback for mobile
     if (navigator.vibrate) navigator.vibrate(15);
+    // Prevent double-invocation when pointer/touch events both fire
+    if (touchHandledRef.current) return;
+    touchHandledRef.current = true;
     onImageTap?.(url);
   };
   const handleTouchStart = (e: React.TouchEvent) => {
     // Prevent default touch behavior to ensure click fires properly
     e.stopPropagation();
+    touchHandledRef.current = false;
   };
 
   return (
@@ -59,7 +66,7 @@ export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGrid
             'active:scale-[0.98] transition-transform duration-100',
             getImageStyle(i)
           )}
-          onClick={() => handleImageTap(url)}
+          onPointerUp={(e) => { (e as any).stopPropagation(); handleImageTap(url); }}
           onTouchStart={handleTouchStart}
           style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
           aria-label={`Image ${i + 1} of ${count}`}
