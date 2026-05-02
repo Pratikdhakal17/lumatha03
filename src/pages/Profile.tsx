@@ -577,11 +577,23 @@ export default function Profile() {
   // Extra data can live in DB JSON fields or local fallback storage for schema compatibility
   const profileVisibilitySource = (profile as any).profile_visibility || {};
   const storedExtras = loadProfileExtras(userId);
-  const dbExtras = (profile.section_order as any)?.extra_data || profileVisibilitySource.extra_data || {};
+  const dbExtras = {
+    school_name: profile.school_name || '',
+    hobbies: profile.hobbies || '',
+    contact_email: profile.contact_email || '',
+    favorite_club: profile.favorite_club || '',
+    favorite_show_movie_song: profile.favorite_show_movie_song || '',
+    favorite_actor_athlete_person: profile.favorite_actor_athlete_person || '',
+    games: profile.games || '',
+    contact_phone: profile.contact_phone || '',
+    relationship: profile.relationship || '',
+    occupation: profile.occupation || '',
+    profile_visibility: profile.profile_visibility || profileVisibilitySource.extra_data?.profile_visibility || {},
+  };
   const extraData = {
     ...DEFAULT_PROFILE_EXTRAS,
     ...storedExtras,
-    ...(dbExtras && typeof dbExtras === 'object' ? dbExtras : {}),
+    ...dbExtras,
   };
   const profileVisibility = {
     ...(profileVisibilitySource && typeof profileVisibilitySource === 'object' ? profileVisibilitySource : {}),

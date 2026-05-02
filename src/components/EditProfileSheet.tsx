@@ -96,11 +96,30 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
     if (!open) return;
 
     const storedExtras = loadProfileExtras(storageUserId);
-    const profileExtras = (profile.section_order as any)?.extra_data;
+    const normalizeVisibility = (value: unknown): Record<string, boolean> => {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+      return Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).map(([key, raw]) => [key, raw === false ? false : true])
+      );
+    };
+
+    const profileExtras: ProfileExtras = {
+      school_name: profile.school_name || '',
+      hobbies: profile.hobbies || '',
+      contact_email: profile.contact_email || '',
+      favorite_club: profile.favorite_club || '',
+      favorite_show_movie_song: profile.favorite_show_movie_song || '',
+      favorite_actor_athlete_person: profile.favorite_actor_athlete_person || '',
+      games: profile.games || '',
+      contact_phone: profile.contact_phone || '',
+      relationship: profile.relationship || '',
+      occupation: profile.occupation || '',
+      profile_visibility: normalizeVisibility(profile.profile_visibility as unknown) as Record<string, boolean>,
+    };
     const resolvedExtras: ProfileExtras = {
       ...DEFAULT_PROFILE_EXTRAS,
       ...storedExtras,
-      ...(profileExtras && typeof profileExtras === 'object' ? profileExtras : {}),
+      ...profileExtras,
     };
 
     const toArray = (value: string) =>
@@ -213,9 +232,9 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
 
       saveProfileExtras(storageUserId, nextExtras);
 
-      // Build update data - ONLY fields that exist in database schema
-      // Focus on core profile fields first
-      const updateData: any = {
+      // Build update data for core profile fields and extended profile fields.
+      // If the live schema rejects the extended columns, we fall back to core-only.
+      const coreUpdateData: any = {
         name: name.trim(),
         username: nextUsername || null,
         bio: bio.trim() || null,
@@ -229,10 +248,33 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
         updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
+      const extendedUpdateData: any = {
+        ...coreUpdateData,
+        school_name: nextExtras.school_name || null,
+        hobbies: nextExtras.hobbies || null,
+        contact_email: nextExtras.contact_email || null,
+        favorite_club: nextExtras.favorite_club || null,
+        favorite_show_movie_song: nextExtras.favorite_show_movie_song || null,
+        favorite_actor_athlete_person: nextExtras.favorite_actor_athlete_person || null,
+        games: nextExtras.games || null,
+        contact_phone: nextExtras.contact_phone || null,
+        relationship: nextExtras.relationship || null,
+        occupation: nextExtras.occupation || null,
+        profile_visibility: nextExtras.profile_visibility,
+      };
+
+      let { error } = await supabase
         .from('profiles')
-        .update(updateData)
+        .update(extendedUpdateData)
         .eq('id', user.id);
+
+      if (error && /section_order|profile_visibility|school_name|hobbies|favorite_club|favorite_show_movie_song|favorite_actor_athlete_person|games|contact_email|contact_phone|relationship|occupation|schema cache/i.test(error.message || '')) {
+        console.warn('Extended profile columns unavailable, falling back to core profile save only', error);
+        ({ error } = await supabase
+          .from('profiles')
+          .update(coreUpdateData)
+          .eq('id', user.id));
+      }
 
       if (error) {
         console.error('Supabase update error:', error);

@@ -1458,15 +1458,26 @@ export type Database = {
           cover_url: string | null
           created_at: string | null
           detected_city: string | null
+          contact_email: string | null
+          contact_phone: string | null
           first_name: string | null
+          favorite_actor_athlete_person: string | null
+          favorite_club: string | null
+          favorite_show_movie_song: string | null
           gender: string | null
           id: string
           is_private: boolean | null
+          hobbies: string | null
+          games: string | null
           last_name: string | null
           location: string | null
           name: string
+          occupation: string | null
           primary_interest: string | null
+          profile_visibility: Json | null
+          school_name: string | null
           section_order: Json | null
+          relationship: string | null
           timezone: string | null
           total_followers: number | null
           total_following: number | null
@@ -1484,15 +1495,26 @@ export type Database = {
           cover_url?: string | null
           created_at?: string | null
           detected_city?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
           first_name?: string | null
+          favorite_actor_athlete_person?: string | null
+          favorite_club?: string | null
+          favorite_show_movie_song?: string | null
           gender?: string | null
           id: string
           is_private?: boolean | null
+          hobbies?: string | null
+          games?: string | null
           last_name?: string | null
           location?: string | null
           name: string
+          occupation?: string | null
           primary_interest?: string | null
+          profile_visibility?: Json | null
+          school_name?: string | null
           section_order?: Json | null
+          relationship?: string | null
           timezone?: string | null
           total_followers?: number | null
           total_following?: number | null
@@ -1510,15 +1532,26 @@ export type Database = {
           cover_url?: string | null
           created_at?: string | null
           detected_city?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
           first_name?: string | null
+          favorite_actor_athlete_person?: string | null
+          favorite_club?: string | null
+          favorite_show_movie_song?: string | null
           gender?: string | null
           id?: string
           is_private?: boolean | null
+          hobbies?: string | null
+          games?: string | null
           last_name?: string | null
           location?: string | null
           name?: string
+          occupation?: string | null
           primary_interest?: string | null
+          profile_visibility?: Json | null
+          school_name?: string | null
           section_order?: Json | null
+          relationship?: string | null
           timezone?: string | null
           total_followers?: number | null
           total_following?: number | null
