@@ -701,6 +701,7 @@ export function ChatSettingsSheet({
               paddingTop: 'env(safe-area-inset-top, 0px)',
               transform: `translateX(${dragX}px)`,
               transition: dragTransition,
+              pointerEvents: 'auto',
             }}
           >
             <div
@@ -738,7 +739,7 @@ export function ChatSettingsSheet({
             >
               <div className="scroll-content">
                 <div className="px-0 py-2">
-                  <section className="flex flex-col items-center justify-center" style={{ minHeight: 164 }}>
+                  <section className="flex flex-col items-center justify-center" style={{ minHeight: 164 }} data-no-swipe="true">
                     <button onClick={() => setShowAvatarViewer(true)} className="rounded-full" aria-label="Open profile photo">
                       <Avatar className="w-[76px] h-[76px] sm:w-24 sm:h-24 lg:w-[104px] lg:h-[104px]" style={{ border: `2.5px solid ${getThemeColor(theme)}` }}>
                         <AvatarImage src={chatUserAvatar} />
@@ -751,7 +752,7 @@ export function ChatSettingsSheet({
                     <p className="mt-3 text-base sm:text-lg md:text-2xl font-semibold text-center truncate max-w-[90%]" style={{ color: 'var(--text)' }}>{chatUserName}</p>
                     {nickname ? <p className="mt-0.5 text-xs sm:text-sm md:text-base text-center" style={{ color: 'var(--text-muted)' }}>{nickname}</p> : null}
 
-                    <div className="mt-4 w-full max-w-[220px] sm:max-w-xs grid grid-cols-3 gap-1.5 sm:gap-2">
+                    <div className="mt-4 w-full max-w-[220px] sm:max-w-xs grid grid-cols-3 gap-1.5 sm:gap-2" data-no-swipe="true">
                       <ActionPill icon={<User className="w-5 h-5 sm:w-6 sm:h-6" />} label="Profile" onClick={onViewProfile} />
                       <ActionPill icon={<Palette className="w-5 h-5 sm:w-6 sm:h-6" />} label="Theme" onClick={() => setShowThemePicker(true)} />
                       <ActionPill
@@ -1337,28 +1338,33 @@ function CardGroup({ children }: { children: React.ReactNode }) {
   );
 }
 
-function ActionPill({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+const ActionPill = React.memo(function ActionPill({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+  const handleClick = React.useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClick();
+  }, [onClick]);
+
   return (
     <button
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onClick();
-      }}
-      className="w-[60px] h-[54px] rounded-xl flex flex-col items-center justify-center active:scale-95 transition-transform"
+      onClick={handleClick}
+      className="w-[60px] h-[54px] rounded-xl flex flex-col items-center justify-center active:scale-95 transition-all"
       style={{ 
         background: 'var(--card)', 
         border: '0.5px solid var(--separator)',
         pointerEvents: 'auto',
         touchAction: 'manipulation',
-        WebkitTapHighlightColor: 'transparent'
+        WebkitTapHighlightColor: 'transparent',
+        cursor: 'pointer',
+        position: 'relative',
+        zIndex: 10
       }}
     >
       {icon}
       <span className="mt-0.5 text-[11px] font-medium text-center" style={{ color: 'var(--text)' }}>{label}</span>
     </button>
   );
-}
+});
 
 function ListRow({
   icon,
