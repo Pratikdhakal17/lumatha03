@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef, useTransition, memo } from 'react';
+import { FixedSizeGrid as Grid } from 'react-window';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -506,6 +507,60 @@ export default function MusicAdventureFixed() {
       </div>
     );
   });
+
+  // Virtualized grid for places using react-window
+  const VirtualizedPlacesGrid = () => {
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const [containerWidth, setContainerWidth] = useState<number>(typeof window !== 'undefined' ? Math.min(window.innerWidth, 1200) : 800);
+    const [columns, setColumns] = useState<number>(typeof window !== 'undefined' && window.innerWidth >= 1024 ? 4 : 2);
+
+    useEffect(() => {
+      const measure = () => {
+        const w = containerRef.current?.clientWidth || window.innerWidth || 800;
+        setContainerWidth(w);
+        setColumns(window.innerWidth >= 1024 ? 4 : 2);
+      };
+      measure();
+      const ro = new ResizeObserver(measure);
+      if (containerRef.current) ro.observe(containerRef.current);
+      window.addEventListener('resize', measure);
+      return () => {
+        ro.disconnect();
+        window.removeEventListener('resize', measure);
+      };
+    }, []);
+
+    const itemSize = Math.floor(containerWidth / columns);
+    const rowCount = Math.ceil(visiblePlaces.length / columns);
+    const height = Math.min(800, Math.max(400, Math.floor((window.innerHeight || 800) * 0.7)));
+
+    const Cell = ({ columnIndex, rowIndex, style, data }: any) => {
+      const idx = rowIndex * columns + columnIndex;
+      const place = data[idx];
+      if (!place) return <div style={style} />;
+      return (
+        <div style={style} className="p-0">
+          <PlaceCard place={place} index={idx} />
+        </div>
+      );
+    };
+
+    return (
+      <div ref={containerRef} className="w-full">
+        <Grid
+          columnCount={columns}
+          columnWidth={itemSize}
+          height={height}
+          rowCount={rowCount}
+          rowHeight={itemSize}
+          width={containerWidth}
+          itemData={visiblePlaces}
+        >
+          {Cell}
+        </Grid>
+      </div>
+    );
+  };
 
   const filteredTravelStories = useMemo(() => {
     return travelStories.filter((s) => {
@@ -1275,27 +1330,9 @@ export default function MusicAdventureFixed() {
       </div>
 
       {/* Places Grid - Full Width Mobile, No Side Space - Instant rendering with preloading */}
-      <div
-        className="grid grid-cols-2 lg:grid-cols-4 gap-px px-0 pb-6 mt-0 w-full"
-        style={{ contentVisibility: 'auto', containIntrinsicSize: '200px' }}
-      >
-        {visiblePlaces.map((place, index) => (
-          <PlaceCard key={place?.id || index} place={place} index={index} />
-        ))}
+      <div className="px-0 pb-6 mt-0 w-full" style={{ contentVisibility: 'auto', containIntrinsicSize: '200px' }}>
+        <VirtualizedPlacesGrid />
       </div>
-
-      {/* Load more control to avoid rendering entire dataset at once */}
-      {filteredPlaces.length > visiblePlaceCount && (
-        <div className="w-full flex items-center justify-center py-3">
-          <button
-            onClick={() => startTransition(() => setVisiblePlaceCount(c => c + (isMobile ? 36 : 72)))}
-            className="px-6 py-2 rounded-xl bg-primary text-white font-bold shadow-lg"
-            aria-label="Load more places"
-          >
-            {isPending ? 'Loading…' : `Load more (${Math.min(visiblePlaceCount + (isMobile ? 36 : 72), filteredPlaces.length)} / ${filteredPlaces.length})`}
-          </button>
-        </div>
-      )}
     </div>
   );
 
