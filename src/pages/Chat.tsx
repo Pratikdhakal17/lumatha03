@@ -2035,7 +2035,7 @@ export default function Chat() {
 
         {/* Message long-press action menu with enhanced animations and safe areas */}
         <AnimatePresence>
-          {longPressTarget && messages.some((m) => m.id === longPressTarget) && (
+          {longPressTarget && longPressMenuPos && messages.some((m) => m.id === longPressTarget) && (
             <motion.div
               id="chat-message-action-menu"
               initial={{ opacity: 0, scale: 0.9, y: 10 }}

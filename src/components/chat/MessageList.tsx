@@ -98,8 +98,7 @@ const MessageItem = memo(function MessageItem({
 
         <div
           className={cn(
-            'relative group select-none',
-            isSharedPost ? 'max-w-[94%] md:max-w-[88%] xl:max-w-[80%]' : 'max-w-[82%] md:max-w-[72%] xl:max-w-[68%]'
+            'relative group select-none max-w-[82%] md:max-w-[72%] xl:max-w-[68%]'
           )}
           onDoubleClick={() => onReact(msg.id, '❤️')}
           onContextMenu={e => {
