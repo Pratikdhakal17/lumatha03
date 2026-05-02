@@ -206,6 +206,8 @@ export function ChatSettingsSheet({
   const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragTransition, setDragTransition] = useState('transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)');
+  const rafRef = useRef<number | null>(null);
+  const pendingDragXRef = useRef<number | null>(null);
 
   const momentumSwipeCooldownMs = 110;
   const swipeIntentThresholdPx = 10;
@@ -270,6 +272,17 @@ export function ChatSettingsSheet({
     window.addEventListener('keydown', onEsc);
     return () => window.removeEventListener('keydown', onEsc);
   }, [open, onOpenChange]);
+
+  useEffect(() => {
+    return () => {
+      // cleanup RAF when unmounting
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+        pendingDragXRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     setMediaLoading(true);
@@ -383,7 +396,16 @@ export function ChatSettingsSheet({
     }
 
     const next = Math.max(0, Math.min(window.innerWidth, dragBaseXRef.current + delta));
-    setDragX(next);
+
+    // Throttle updates to once per animation frame to avoid excessive re-renders
+    pendingDragXRef.current = next;
+    if (rafRef.current === null) {
+      rafRef.current = requestAnimationFrame(() => {
+        setDragX(pendingDragXRef.current ?? 0);
+        pendingDragXRef.current = null;
+        rafRef.current = null;
+      });
+    }
   };
 
   const finishDrag = () => {
@@ -421,6 +443,12 @@ export function ChatSettingsSheet({
     dragLastTsRef.current = null;
     dragVelocityXRef.current = 0;
     setIsDragging(false);
+    // Cancel any pending RAF update
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+      pendingDragXRef.current = null;
+    }
   };
 
   const renderMediaSkeleton = () => (

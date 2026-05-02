@@ -195,6 +195,19 @@ export default function Chat() {
     const mem = typeof navigator !== 'undefined' && 'deviceMemory' in navigator ? Number((navigator as Navigator & { deviceMemory?: number }).deviceMemory || 4) : 4;
     return isAndroid && (cpu <= 8 || mem <= 4);
   }, [isMobile, isAndroid]);
+
+  // Expose a safe global fallback for legacy callers that still invoke `openChat(userId)`
+  // This prevents ReferenceError exceptions from stray event handlers or stale bundles.
+  useEffect(() => {
+    (window as any).openChat = (id: string) => {
+      try {
+        navigate(`/chat/${id}`);
+      } catch {
+        // no-op
+      }
+    };
+    return () => { try { delete (window as any).openChat; } catch {} };
+  }, [navigate]);
   
   // Track route performance for Chat page
   useRouteLoadTrace('Chat', 250);
@@ -1892,7 +1905,7 @@ export default function Chat() {
     setLongPressTarget(userId);
   }, []);
 
-  const handleConversationRowClick = useCallback((event: React.MouseEvent<HTMLButtonElement>, userId: string) => {
+  const handleConversationRowClick = useCallback((event: React.MouseEvent<Element>, userId: string) => {
     if (Date.now() < suppressConversationRowClickUntilRef.current) {
       event.preventDefault();
       event.stopPropagation();
@@ -1989,7 +2002,8 @@ export default function Chat() {
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
                 title="Chat options"
                 onClick={() => setShowSettings(true)}
-                onPointerUp={(e) => { (e as any).stopPropagation(); setShowSettings(true); }}
+                onPointerDown={(e) => { (e as any).stopPropagation(); setShowSettings(true); }}
+                onPointerUp={(e) => { (e as any).stopPropagation(); }}
                 aria-label="Chat options"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
@@ -2399,7 +2413,7 @@ export default function Chat() {
         </Suspense>
 
         {/* Settings Sheet */}
-        <Suspense fallback={null}>
+        <Suspense fallback={<div aria-hidden style={{width:0,height:0}}/>}>
           <LazyChatSettingsSheet
             open={showSettings}
             onOpenChange={setShowSettings}
@@ -2942,7 +2956,7 @@ export default function Chat() {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      openChat(conv.user_id);
+                      navigate(`/chat/${conv.user_id}`);
                     }
                   }}
                   onContextMenu={(e) => { e.preventDefault(); openConversationOptions(conv.user_id); }}
@@ -3020,7 +3034,7 @@ export default function Chat() {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      openChat(conv.user_id);
+                      navigate(`/chat/${conv.user_id}`);
                     }
                   }}
                   onContextMenu={(e) => { e.preventDefault(); openConversationOptions(conv.user_id); }}

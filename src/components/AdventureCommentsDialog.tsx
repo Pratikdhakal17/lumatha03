@@ -289,7 +289,7 @@ export function AdventureCommentsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full h-full max-w-full m-0 p-0 border-0 rounded-none bg-[#0a0f1e] flex flex-col overflow-hidden" aria-describedby={undefined}>
+      <DialogContent className="w-full h-full max-w-full m-0 p-0 border-0 rounded-none bg-[#0a0f1e] flex flex-col overflow-hidden">
         <DialogHeader className="px-4 py-4 border-b border-white/5 flex flex-row items-center justify-between sticky top-0 bg-[#0a0f1e]/80 backdrop-blur-xl z-20">
           <div className="flex items-center gap-3">
             <button onClick={() => onOpenChange(false)} className="p-1 hover:bg-white/5 rounded-full text-slate-400"><X className="w-6 h-6" /></button>
