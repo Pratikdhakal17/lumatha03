@@ -114,7 +114,7 @@ export default function Profile() {
   const [likesCount, setLikesCount] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [showSkeleton, setShowSkeleton] = useState(false);
-  const skeletonTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const skeletonTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [activeTab, setActiveTab] = useState('posts');
   const [savedStories, setSavedStories] = useState<SavedTravelStory[]>([]);
   const [marketplaceListings, setMarketplaceListings] = useState<any[]>([]);
@@ -125,7 +125,7 @@ export default function Profile() {
   const [editOpen, setEditOpen] = useState(false);
   const [profileStories, setProfileStories] = useState<SavedTravelStory[]>([]);
   const [profileMediaViewer, setProfileMediaViewer] = useState<{ open: boolean; urls: string[]; types: string[]; index: number }>({ open: false, urls: [], types: [], index: 0 });
-  const [postFilter, setPostFilter] = useState<'all' | 'pictures' | 'videos' | 'thoughts'>('all');
+  const [postFilter, setPostFilter] = useState<'all' | 'pictures' | 'videos' | 'thoughts' | 'travel_stories' | 'documents'>('all');
   const [postSort, setPostSort] = useState<'latest' | 'oldest' | 'popular'>('latest');
   const [mediaFilter, setMediaFilter] = useState<'all' | 'pictures' | 'videos'>('all');
   const [mediaSort, setMediaSort] = useState<'latest' | 'oldest' | 'popular'>('latest');
@@ -989,7 +989,7 @@ export default function Profile() {
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                           loading={shouldPreload ? "eager" : "lazy"}
                           decoding={shouldPreload ? "sync" : "async"}
-                          fetchpriority={shouldPreload ? "high" : "auto"}
+                          fetchPriority={shouldPreload ? "high" : "auto"}
                         />
                       )}
                       {isVideo && (
