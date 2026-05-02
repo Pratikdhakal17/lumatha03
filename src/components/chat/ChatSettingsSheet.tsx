@@ -1338,33 +1338,26 @@ function CardGroup({ children }: { children: React.ReactNode }) {
   );
 }
 
-const ActionPill = React.memo(function ActionPill({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
-  const handleClick = React.useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onClick();
-  }, [onClick]);
-
+function ActionPill({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
   return (
     <button
-      onClick={handleClick}
+      onClick={onClick}
       className="w-[60px] h-[54px] rounded-xl flex flex-col items-center justify-center active:scale-95 transition-all"
       style={{ 
         background: 'var(--card)', 
         border: '0.5px solid var(--separator)',
-        pointerEvents: 'auto',
         touchAction: 'manipulation',
         WebkitTapHighlightColor: 'transparent',
         cursor: 'pointer',
         position: 'relative',
-        zIndex: 10
+        zIndex: 1
       }}
     >
       {icon}
       <span className="mt-0.5 text-[11px] font-medium text-center" style={{ color: 'var(--text)' }}>{label}</span>
     </button>
   );
-});
+}
 
 function ListRow({
   icon,

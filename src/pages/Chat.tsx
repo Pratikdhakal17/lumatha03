@@ -3116,11 +3116,11 @@ export default function Chat() {
         const targetAvatar = targetConv?.user_avatar;
         const hasNickname = Boolean(chatNicknames[longPressTarget || '']);
         return (
-        <div className="fixed inset-0 z-50" style={{ touchAction: 'none' }}>
+        <div className="fixed inset-0 z-50">
           <div
             className="absolute inset-0 bg-black/55"
             onClick={handleConversationBackdropClose}
-            style={{ cursor: 'pointer', touchAction: 'none' }}
+            style={{ cursor: 'pointer' }}
             aria-label="Close conversation options"
           />
           <div className="absolute bottom-0 left-0 right-0 mx-auto w-full max-w-[420px] rounded-t-3xl border border-white/10" style={{ background: '#111827', animation: 'slideUp 0.25s ease-out' }} onClick={(e) => e.stopPropagation()}>
