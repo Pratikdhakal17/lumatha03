@@ -401,7 +401,7 @@ export default function DocumentCard({ doc, onDelete, onDownload, onOpenInBrowse
 
       {/* Comments Dialog */}
       <Dialog open={showComments} onOpenChange={setShowComments}>
-        <DialogContent className="glass-card max-w-md mx-4 max-h-[80vh] flex flex-col">
+        <DialogContent className="glass-card max-w-md mx-4 max-h-[80vh] flex flex-col" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="text-sm">Comments</DialogTitle>
           </DialogHeader>
@@ -447,7 +447,7 @@ export default function DocumentCard({ doc, onDelete, onDownload, onOpenInBrowse
 
       {/* Edit Document Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="glass-card max-w-sm mx-4">
+        <DialogContent className="glass-card max-w-sm mx-4" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="text-sm">Edit Document</DialogTitle>
           </DialogHeader>

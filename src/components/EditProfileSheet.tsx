@@ -184,9 +184,12 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
         throw error;
       }
       
+      // Wait a moment to ensure data persistence before closing
       toast.success('Profile updated successfully');
-      onSaved();
-      onOpenChange(false);
+      setTimeout(() => {
+        onSaved();
+        onOpenChange(false);
+      }, 500);
     } catch (err: any) {
       console.error('Save error:', err);
       toast.error(err.message || 'Failed to save profile');

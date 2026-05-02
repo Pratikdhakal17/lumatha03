@@ -194,26 +194,33 @@ export default function MarketplaceEditProfile() {
         show_phone_to: data.showPhoneTo,
         allow_reviews: data.allowReviews,
         is_phone_verified: data.isPhoneVerified,
+        username: data.displayName || profile?.name || '',
       };
 
       const saveProfile = async (payload: any) => {
         if (mpProfile) {
-          return supabase.from('marketplace_profiles').update(payload).eq('user_id', user.id);
+          const { id, created_at, updated_at, ...updatePayload } = payload;
+          return supabase.from('marketplace_profiles').update(updatePayload).eq('user_id', user.id);
         }
         return supabase.from('marketplace_profiles').insert(payload);
       };
 
-      let result = await saveProfile({ ...basePayload, username: data.displayName });
-
-      if (result.error) {
-        const msg = String(result.error.message || '').toLowerCase();
-        if (msg.includes('username')) {
-          result = await saveProfile({ ...basePayload, display_name: data.displayName });
-        }
-      }
+      let result = await saveProfile(basePayload);
 
       if (result.error) {
         throw result.error;
+      }
+
+      // Verify data was saved before navigating
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const { data: verify, error: verifyError } = await supabase
+        .from('marketplace_profiles')
+        .select('selling_categories, availability, payment_methods')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (verifyError || !verify) {
+        console.warn('Verification fetch failed, proceeding anyway');
       }
 
       toast.success('Seller profile saved! 🎉');

@@ -118,6 +118,15 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState('posts');
   const [savedStories, setSavedStories] = useState<SavedTravelStory[]>([]);
   const [marketplaceListings, setMarketplaceListings] = useState<any[]>([]);
+
+  // Cleanup timers on unmount to prevent lock warnings
+  useEffect(() => {
+    return () => {
+      if (skeletonTimerRef.current) {
+        clearTimeout(skeletonTimerRef.current);
+      }
+    };
+  }, []);
   const [marketplaceProfile, setMarketplaceProfile] = useState<any | null>(null);
   const [mutualFriendsCount, setMutualFriendsCount] = useState(0);
   const [isBlocked, setIsBlocked] = useState(false);
