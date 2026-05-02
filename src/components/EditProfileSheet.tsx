@@ -147,6 +147,22 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
     if (!user || !name.trim()) { toast.error('Name is required'); return; }
     setSaving(true);
     try {
+      const nextUsername = username.trim();
+
+      if (nextUsername && nextUsername !== profile.username) {
+        const { data: existingUsername } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', nextUsername)
+          .neq('id', user.id)
+          .maybeSingle();
+
+        if (existingUsername) {
+          toast.error('That username is already taken');
+          return;
+        }
+      }
+
       let newAvatarUrl = profile.avatar_url;
 
       // Upload avatar if changed
@@ -181,7 +197,7 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
       // Build update data - ONLY fields that exist in database schema
       const updateData: any = {
         name: name.trim(),
-        username: username.trim() || null,
+        username: nextUsername || null,
         bio: bio.trim() || null,
         location: location.trim() || null,
         country: country.trim() || null,
