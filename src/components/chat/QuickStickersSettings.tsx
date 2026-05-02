@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Heart, Plus, Trash2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const PRESET_STICKERS = ['👍', '❤️', '😂', '🔥', '😍', '🎉', '🚀', '✨', '💯', '🙌', '😢', '😡', '👏', '🔔', '⭐', '💬'];
 
@@ -69,6 +69,7 @@ export function QuickStickersSettings({
       <DialogContent className="max-w-[500px] border-0 rounded-3xl" style={{ background: '#111827' }}>
         <DialogHeader>
           <DialogTitle className="text-white">Quick Stickers</DialogTitle>
+          <DialogDescription className="sr-only">Customize the emoji reactions shown in quick stickers.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

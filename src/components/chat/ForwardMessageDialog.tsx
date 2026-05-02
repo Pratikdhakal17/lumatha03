@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -84,6 +84,7 @@ export function ForwardMessageDialog({ open, onOpenChange, messageContent, media
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle className="text-base">Forward Message</DialogTitle>
+          <DialogDescription className="sr-only">Select one or more friends to forward this message.</DialogDescription>
         </DialogHeader>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

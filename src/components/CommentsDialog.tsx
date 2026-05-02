@@ -258,7 +258,7 @@ export function CommentsDialog({ postId, postTitle, type = 'post', open, onOpenC
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg p-0 bg-[#0d1117] border-white/5 overflow-hidden rounded-[28px] h-[85vh] flex flex-col shadow-2xl" aria-describedby={undefined}>
+      <DialogContent className="max-w-lg p-0 bg-[#0d1117] border-white/5 overflow-hidden rounded-[28px] h-[85vh] flex flex-col shadow-2xl">
         <DialogHeader className="p-4 border-b border-white/5 flex flex-row items-center justify-between space-y-0">
           <div>
             <DialogTitle className="text-lg font-black uppercase tracking-wider text-white">Comments</DialogTitle>

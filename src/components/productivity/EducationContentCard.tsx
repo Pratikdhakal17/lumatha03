@@ -160,7 +160,7 @@ export function EducationDocCard({
 
       {/* Preview Dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-4xl w-[95vw] h-[85vh] p-0 overflow-hidden" aria-describedby={undefined}>
+        <DialogContent className="max-w-4xl w-[95vw] h-[85vh] p-0 overflow-hidden">
           <DialogTitle className="sr-only">{doc.title}</DialogTitle>
           <div className="flex flex-col h-full">
             <div className="flex items-center justify-between p-3 border-b border-border">
@@ -398,7 +398,7 @@ export function EducationVideoCard({
 
       {/* Fullscreen Video */}
       <Dialog open={fullscreen} onOpenChange={setFullscreen}>
-        <DialogContent className="max-w-[100vw] w-screen h-screen p-0 border-0 bg-black rounded-none [&>button]:hidden" aria-describedby={undefined}>
+        <DialogContent className="max-w-[100vw] w-screen h-screen p-0 border-0 bg-black rounded-none [&>button]:hidden">
           <DialogTitle className="sr-only">Video Player</DialogTitle>
           <div className="relative w-full h-full flex items-center justify-center" onClick={togglePlay}>
             {videoUrl && (

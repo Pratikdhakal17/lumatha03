@@ -129,7 +129,7 @@ export function DesktopMessagesPanel() {
                 <Plus className="w-4 h-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="glass-card max-w-sm" aria-describedby={undefined}>
+            <DialogContent className="glass-card max-w-sm">
               <DialogHeader>
                 <DialogTitle className="text-sm">New Message</DialogTitle>
               </DialogHeader>

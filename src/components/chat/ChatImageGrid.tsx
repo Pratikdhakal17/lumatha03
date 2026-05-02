@@ -32,7 +32,7 @@ export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGrid
     count >= 3 && 'grid-cols-2'
   );
 
-  const getImageStyle = (index: number): string => {
+    const touchHandledRef = useRef(false);
     if (count === 1) return 'aspect-[4/3] w-full max-h-[320px]';
     if (count === 2) return 'aspect-[3/4] max-h-[280px]';
     if (count === 3) {
@@ -70,6 +70,12 @@ export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGrid
           onTouchStart={handleTouchStart}
           onTouchEnd={(e) => { (e as any).stopPropagation(); handleImageTap(url); }}
           onClick={(e) => { (e as any).stopPropagation(); handleImageTap(url); }}
+    const guardAndRun = (fn: () => void) => {
+      if (touchHandledRef.current) return;
+      touchHandledRef.current = true;
+      window.setTimeout(() => (touchHandledRef.current = false), 500);
+      fn();
+    };
           style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
           aria-label={`Image ${i + 1} of ${count}`}
         >
@@ -81,10 +87,10 @@ export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGrid
             draggable={false}
             decoding="async"
           />
-          {i === 3 && extraCount > 0 && (
+            onPointerUp={(e) => { (e as any).stopPropagation(); guardAndRun(() => handleImageTap(url)); }}
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-              <span className="text-white text-2xl font-bold">+{extraCount}</span>
-            </div>
+            onTouchEnd={(e) => { (e as any).stopPropagation(); guardAndRun(() => handleImageTap(url)); }}
+            onClick={(e) => { (e as any).stopPropagation(); if (e.detail !== 0) guardAndRun(() => handleImageTap(url)); }}
           )}
         </button>
       ))}

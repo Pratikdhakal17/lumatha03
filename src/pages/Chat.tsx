@@ -2930,13 +2930,21 @@ export default function Chat() {
                 leftLabel="Hide"
                 rightLabel="Remove"
               >
-                <button
+                <div
+                  role="button"
+                  tabIndex={0}
                   className={cn(
                     "w-full flex items-center gap-3 px-4 md:px-5 active:bg-[rgba(124,58,237,0.05)]",
                     isMobile ? "transition-none" : ""
                   )}
                   style={{ height: isMobile ? 72 : 84, borderBottom: '1px solid #1f2937' }}
                   onClick={(e) => handleConversationRowClick(e, conv.user_id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      openChat(conv.user_id);
+                    }
+                  }}
                   onContextMenu={(e) => { e.preventDefault(); openConversationOptions(conv.user_id); }}
                   onTouchStart={(e) => {
                     const timer = setTimeout(() => {
@@ -2997,16 +3005,24 @@ export default function Chat() {
                   >
                     <MoreVertical className="w-5 h-5" style={{ color: '#64748B' }} />
                   </button>
-                </button>
+                </div>
               </SwipeableChatCard>
               ) : (
-                <button
+                <div
+                  role="button"
+                  tabIndex={0}
                   className={cn(
                     "w-full flex items-center gap-3 px-4 md:px-5 active:bg-[rgba(124,58,237,0.05)]",
                     isMobile ? "transition-none" : ""
                   )}
                   style={{ height: isMobile ? 72 : 84, borderBottom: '1px solid #1f2937' }}
                   onClick={(e) => handleConversationRowClick(e, conv.user_id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      openChat(conv.user_id);
+                    }
+                  }}
                   onContextMenu={(e) => { e.preventDefault(); openConversationOptions(conv.user_id); }}
                   onTouchStart={(e) => {
                     const timer = setTimeout(() => {
@@ -3064,7 +3080,7 @@ export default function Chat() {
                   >
                     <MoreVertical className="w-5 h-5" style={{ color: '#64748B' }} />
                   </button>
-                </button>
+                </div>
               )}
               </div>
             );

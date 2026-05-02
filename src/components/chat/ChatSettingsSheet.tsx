@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertTriangle,
   Archive,
@@ -693,8 +693,12 @@ export function ChatSettingsSheet({
         <DialogContent
           className="chat-settings-shell w-screen h-[100dvh] max-w-none max-h-none rounded-none border-0 p-0 bg-transparent !gap-0 [&>button]:hidden"
           style={{ top: 0, left: 0, transform: 'none' }}
-          aria-describedby={undefined}
+          
         >
+          <DialogHeader className="sr-only">
+            <DialogTitle>Chat details</DialogTitle>
+            <DialogDescription>Manage chat privacy, media, quick reactions, and conversation settings.</DialogDescription>
+          </DialogHeader>
           <div
             className="app-root"
             style={{
@@ -1041,6 +1045,7 @@ export function ChatSettingsSheet({
         <DialogContent className="w-[calc(100vw-24px)] max-w-sm sm:max-w-[400px] rounded-2xl border-0 p-0" style={{ background: '#111827' }}>
           <DialogHeader className="px-4 py-3" style={{ borderBottom: '0.5px solid #1f2937' }}>
             <DialogTitle className="text-white text-base sm:text-lg font-semibold">Theme</DialogTitle>
+            <DialogDescription className="sr-only">Choose a conversation theme.</DialogDescription>
           </DialogHeader>
           <div className="p-3 sm:p-4 grid grid-cols-4 gap-2 sm:gap-3">
             {CHAT_THEMES.map((item) => (
@@ -1068,6 +1073,7 @@ export function ChatSettingsSheet({
         <DialogContent className="w-[calc(100vw-24px)] max-w-sm sm:max-w-[400px] rounded-2xl border-0 p-0" style={{ background: '#111827' }}>
           <DialogHeader className="px-4 py-3" style={{ borderBottom: '0.5px solid #1f2937' }}>
             <DialogTitle className="text-white text-base sm:text-lg font-semibold">Pick reaction</DialogTitle>
+            <DialogDescription className="sr-only">Pick a quick reaction to send.</DialogDescription>
           </DialogHeader>
           <div className="p-3 sm:p-4 grid grid-cols-6 sm:grid-cols-7 gap-2 sm:gap-3">
             {EXTRA_EMOJIS.map((emoji) => (
@@ -1088,6 +1094,10 @@ export function ChatSettingsSheet({
 
       <Dialog open={showAvatarViewer} onOpenChange={setShowAvatarViewer}>
         <DialogContent className="w-screen h-[100dvh] max-w-none max-h-none rounded-none border-0 p-0 [&>button]:hidden" style={{ background: '#020617' }}>
+          <DialogHeader className="sr-only">
+            <DialogTitle>Profile photo</DialogTitle>
+            <DialogDescription>View the profile photo in full screen.</DialogDescription>
+          </DialogHeader>
           <button
             onClick={() => setShowAvatarViewer(false)}
             className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full flex items-center justify-center"
@@ -1119,6 +1129,7 @@ export function ChatSettingsSheet({
         <DialogContent className="w-[calc(100vw-24px)] max-w-[360px] rounded-2xl border-0 p-0" style={{ background: '#111827' }}>
           <DialogHeader className="px-4 py-3" style={{ borderBottom: '0.5px solid #1f2937' }}>
             <DialogTitle className="text-white text-[17px] font-semibold">Disappearing messages</DialogTitle>
+            <DialogDescription className="sr-only">Choose how long messages should remain visible.</DialogDescription>
           </DialogHeader>
           <div>
             {DISAPPEAR_OPTIONS.map((option) => (
@@ -1141,6 +1152,10 @@ export function ChatSettingsSheet({
 
       <Dialog open={showArchiveConfirm} onOpenChange={setShowArchiveConfirm}>
         <DialogContent className="w-[calc(100vw-24px)] max-w-[340px] rounded-2xl border-0 p-4 sm:p-5" style={{ background: '#111827' }}>
+          <DialogHeader className="sr-only">
+            <DialogTitle>{isArchived ? 'Unarchive conversation' : 'Archive conversation'}</DialogTitle>
+            <DialogDescription>Confirm whether to change archive status for this chat.</DialogDescription>
+          </DialogHeader>
           <h3 className="text-[17px] font-semibold text-white">{isArchived ? 'Unarchive conversation?' : 'Archive this conversation?'}</h3>
           <p className="text-[13px] mt-2" style={{ color: '#94A3B8' }}>
             {isArchived ? 'Move this chat back to your main inbox.' : 'This chat will move to your Archive folder.'}
@@ -1163,6 +1178,10 @@ export function ChatSettingsSheet({
 
       <Dialog open={showPrivateConfirm} onOpenChange={setShowPrivateConfirm}>
         <DialogContent className="w-[calc(100vw-24px)] max-w-[340px] rounded-2xl border-0 p-4 sm:p-5" style={{ background: '#111827' }}>
+          <DialogHeader className="sr-only">
+            <DialogTitle>{isPrivate ? 'Remove private lock' : 'Enable private lock'}</DialogTitle>
+            <DialogDescription>Confirm privacy lock status for this conversation.</DialogDescription>
+          </DialogHeader>
           <h3 className="text-[17px] font-semibold text-white">{isPrivate ? 'Remove private lock?' : 'Enable private lock?'}</h3>
           <p className="text-[13px] mt-2" style={{ color: '#94A3B8' }}>
             {isPrivate
@@ -1187,6 +1206,10 @@ export function ChatSettingsSheet({
 
       <Dialog open={showPremiumPrompt} onOpenChange={setShowPremiumPrompt}>
         <DialogContent className="w-[calc(100vw-24px)] max-w-[340px] rounded-2xl border-0 p-4 sm:p-5" style={{ background: '#111827' }}>
+          <DialogHeader className="sr-only">
+            <DialogTitle>Premium required</DialogTitle>
+            <DialogDescription>Upgrade prompt for premium-only privacy features.</DialogDescription>
+          </DialogHeader>
           <h3 className="text-[17px] font-semibold text-white">Premium required</h3>
           <p className="text-[13px] mt-2" style={{ color: '#94A3B8' }}>
             Upgrade to Premium to enable this protection feature.
@@ -1209,6 +1232,10 @@ export function ChatSettingsSheet({
 
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent className="w-[calc(100vw-24px)] max-w-[340px] rounded-2xl border-0 p-4 sm:p-5" style={{ background: '#111827' }}>
+          <DialogHeader className="sr-only">
+            <DialogTitle>Delete conversation</DialogTitle>
+            <DialogDescription>Confirm deleting this conversation from your inbox.</DialogDescription>
+          </DialogHeader>
           <h3 className="text-[17px] font-semibold text-white">Delete conversation?</h3>
           <p className="text-[13px] mt-2" style={{ color: '#94A3B8' }}>
             This removes the conversation only from your side.
@@ -1231,6 +1258,10 @@ export function ChatSettingsSheet({
 
       <Dialog open={showUnsendAllConfirm} onOpenChange={setShowUnsendAllConfirm}>
         <DialogContent className="w-[calc(100vw-24px)] max-w-[340px] rounded-2xl border-0 p-4 sm:p-5" style={{ background: '#111827' }}>
+          <DialogHeader className="sr-only">
+            <DialogTitle>Unsend all messages</DialogTitle>
+            <DialogDescription>Confirm removing all your sent messages from both sides.</DialogDescription>
+          </DialogHeader>
           <h3 className="text-[17px] font-semibold text-white">Unsend all your messages?</h3>
           <p className="text-[13px] mt-2" style={{ color: '#94A3B8' }}>
             Neither you nor {chatUserName} will see the messages you sent.
@@ -1253,6 +1284,10 @@ export function ChatSettingsSheet({
 
       <Dialog open={showBlockConfirm} onOpenChange={setShowBlockConfirm}>
         <DialogContent className="w-[calc(100vw-24px)] max-w-[340px] rounded-2xl border-0 p-4 sm:p-5" style={{ background: '#111827' }}>
+          <DialogHeader className="sr-only">
+            <DialogTitle>Block user</DialogTitle>
+            <DialogDescription>Confirm blocking this user from messaging you.</DialogDescription>
+          </DialogHeader>
           <h3 className="text-[17px] font-semibold text-white">Block {chatUserName}?</h3>
           <p className="text-[13px] mt-2" style={{ color: '#94A3B8' }}>
             They cannot message you or view your profile.
@@ -1277,6 +1312,7 @@ export function ChatSettingsSheet({
         <DialogContent className="w-[calc(100vw-24px)] max-w-[360px] rounded-2xl border-0 p-0" style={{ background: '#111827' }}>
           <DialogHeader className="px-4 py-3" style={{ borderBottom: '0.5px solid #1f2937' }}>
             <DialogTitle className="text-white text-[17px] font-semibold">Report {chatUserName}</DialogTitle>
+            <DialogDescription className="sr-only">Select a reason and submit your report.</DialogDescription>
           </DialogHeader>
           <div className="p-3 space-y-2">
             {REPORT_REASONS.map((reason) => (

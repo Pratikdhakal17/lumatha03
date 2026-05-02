@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -370,6 +370,7 @@ export function EmojiStickerPanel({
         <DialogContent className="w-[calc(100vw-20px)] max-w-[520px] border-0 rounded-3xl p-0" style={{ background: '#111827' }}>
           <DialogHeader className="px-4 pt-4 pb-2">
             <DialogTitle className="text-white text-base font-semibold">Emoji & Stickers</DialogTitle>
+            <DialogDescription className="sr-only">Send emoji reactions, stickers, and set a primary sticker.</DialogDescription>
           </DialogHeader>
 
           <div className="px-4 pb-4">
@@ -592,6 +593,7 @@ export function EmojiStickerPanel({
               <Sticker className="w-5 h-5 text-primary" />
               Sticker Pack Manager
             </DialogTitle>
+            <DialogDescription className="sr-only">Import, organize, and manage custom sticker packs.</DialogDescription>
           </DialogHeader>
           <div className="px-4 pb-4 space-y-4">
             {/* Import Section */}

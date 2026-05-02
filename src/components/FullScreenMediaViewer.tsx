@@ -551,7 +551,7 @@ export function FullScreenMediaViewer({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="w-screen h-screen max-w-none max-h-none p-0 m-0 bg-black border-none rounded-none [&>button]:hidden fixed inset-0 translate-x-0 translate-y-0 top-0 left-0"
-        aria-describedby={undefined}
+        
       >
         <DialogTitle className="sr-only">Media Viewer</DialogTitle>
 

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Music, Play, Pause, X, SkipForward, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
@@ -62,6 +62,7 @@ export function SharedMusicPlayer({ isOpen, onClose, partnerName }: SharedMusicP
             <Music className="w-4 h-4 text-primary" />
             Shared Sound
           </DialogTitle>
+          <DialogDescription className="sr-only">Choose ambient tracks and invite your chat partner to listen together.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">

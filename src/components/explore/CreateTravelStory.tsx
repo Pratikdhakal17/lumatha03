@@ -120,7 +120,7 @@ export function CreateTravelStory({ open, onOpenChange, onSubmit }: CreateTravel
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl border-border/50 bg-card text-foreground" aria-describedby={undefined}>
+      <DialogContent className="max-w-xl border-border/50 bg-card text-foreground">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold">Share Travel Story</DialogTitle>
         </DialogHeader>
