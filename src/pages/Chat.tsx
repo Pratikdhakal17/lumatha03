@@ -2986,14 +2986,14 @@ export default function Chat() {
                       {preview}
                     </p>
                   </div>
-                  {/* Three-dot menu button */}
+                  {/* Three-dot menu button - positioned outside SwipeableChatCard inner button */}
                   <button
-                    onClick={(e) => { e.stopPropagation(); openConversationOptions(conv.user_id); }}
-                    className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
+                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); openConversationOptions(conv.user_id); }}
+                    className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all z-10"
                     aria-label="Chat options"
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                   >
-                    <MoreVertical className="w-4 h-4" style={{ color: '#64748B' }} />
+                    <MoreVertical className="w-5 h-5" style={{ color: '#64748B' }} />
                   </button>
                 </button>
               </SwipeableChatCard>
@@ -3054,12 +3054,12 @@ export default function Chat() {
                   </div>
                   {/* Three-dot menu button */}
                   <button
-                    onClick={(e) => { e.stopPropagation(); openConversationOptions(conv.user_id); }}
-                    className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
+                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); openConversationOptions(conv.user_id); }}
+                    className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all z-10"
                     aria-label="Chat options"
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                   >
-                    <MoreVertical className="w-4 h-4" style={{ color: '#64748B' }} />
+                    <MoreVertical className="w-5 h-5" style={{ color: '#64748B' }} />
                   </button>
                 </button>
               )}
@@ -3117,7 +3117,11 @@ export default function Chat() {
           />
           <div className="absolute bottom-0 left-0 right-0 mx-auto w-full max-w-[420px] rounded-t-3xl border border-white/10 animate-in slide-in-from-bottom-2 duration-300" style={{ background: '#111827' }} onClick={(e) => e.stopPropagation()}>
             {/* User Profile Header */}
-            <div className="flex items-center gap-4 px-5 py-4" style={{ borderBottom: '1px solid #1f2937' }}>
+            <div 
+              className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-white/[0.02] transition-colors" 
+              style={{ borderBottom: '1px solid #1f2937' }}
+              onClick={() => { closeConversationOptions(); navigate(`/profile/${longPressTarget}`); }}
+            >
               <Avatar className="w-14 h-14 ring-2 ring-[#7C3AED]/30">
                 <AvatarImage src={targetAvatar || undefined} />
                 <AvatarFallback style={{ background: 'rgba(124,58,237,0.2)', color: '#A78BFA', fontSize: 20, fontWeight: 700 }}>
@@ -3126,11 +3130,11 @@ export default function Chat() {
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-[17px] font-bold text-white truncate" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{targetName}</p>
-                <p className="text-[13px] text-[#64748B] truncate">{hasNickname ? targetConv?.user_name : '@user'}</p>
+                <p className="text-[13px] text-[#64748B] truncate">{hasNickname ? targetConv?.user_name : 'Tap to view profile'}</p>
               </div>
               <button
                 type="button"
-                onClick={closeConversationOptions}
+                onClick={(e) => { e.stopPropagation(); closeConversationOptions(); }}
                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/5"
                 aria-label="Close options"
               >
@@ -3139,7 +3143,7 @@ export default function Chat() {
             </div>
             <div className="py-2 max-h-[58vh] overflow-y-auto">
               {[
-                { icon: <User className="w-5 h-5" />, label: 'View Profile', action: () => { navigate(`/profile/${longPressTarget}`); }, color: '#94A3B8' },
+                { icon: <User className="w-5 h-5" />, label: 'View Profile', action: () => { closeConversationOptions(); navigate(`/profile/${longPressTarget}`); }, color: '#94A3B8' },
                 { icon: <Tag className="w-5 h-5" />, label: hasNickname ? 'Edit Nickname' : 'Set Nickname', action: () => { 
                   const newNickname = prompt(hasNickname ? 'Edit nickname:' : 'Set a nickname:', chatNicknames[longPressTarget || ''] || '');
                   if (newNickname !== null) saveNicknameForUser(longPressTarget || '', newNickname.trim());
