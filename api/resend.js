@@ -33,11 +33,18 @@ async function requireAuth(req) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
   try {
-    await requireAuth(req);
+    // Allow unauthenticated requests only for reset type to support forgot-password flows.
     const { type, email, name, link } = req.body || {};
     if (!email) return res.status(400).json({ error: 'email required' });
+
     const key = process.env.RESEND_API_KEY;
-    if (!key) return res.status(500).json({ error: 'Resend API key not configured' });
+    if (!key) return res.status(500).json({ error: 'Resend API key not configured on server' });
+
+    // If request is not reset, require auth
+    if (type !== 'reset') {
+      await requireAuth(req);
+    }
+
     const resend = new Resend(key);
 
     let subject = 'Message from Lumatha';

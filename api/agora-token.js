@@ -33,7 +33,10 @@ export default async function handler(req, res) {
     if (!channel) return res.status(400).json({ error: 'channel required' });
     const appId = process.env.AGORA_APP_ID;
     const appCertificate = process.env.AGORA_APP_CERTIFICATE;
-    if (!appId || !appCertificate) return res.status(500).json({ error: 'Agora credentials not configured' });
+    if (!appId || !appCertificate) {
+      console.error('Missing Agora config', { appId: !!appId, appCertificate: !!appCertificate });
+      return res.status(500).json({ error: 'Agora credentials not configured on server' });
+    }
 
     const role = RtcRole.PUBLISHER;
     // token valid for 1 hour

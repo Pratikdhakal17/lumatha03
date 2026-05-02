@@ -1991,22 +1991,22 @@ export default function Chat() {
             {/* Action buttons */}
             <div className="shrink-0 flex items-center gap-0.5" style={{ touchAction: 'manipulation' }}>
               <button
-                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
+                className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
                 title="Start video call"
                 onClick={() => setCallState({ open: true, isVideo: true })}
                 aria-label="Start video call"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                <VideoIcon className="w-5 h-5 text-white/80" strokeWidth={2} />
+                <VideoIcon className="w-5 h-5 text-white/90" strokeWidth={2} />
               </button>
               <button
-                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
+                className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
                 title="Start voice call"
                 onClick={() => setCallState({ open: true, isVideo: false })}
                 aria-label="Start voice call"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                <Phone className="w-5 h-5 text-white/80" strokeWidth={2} />
+                <Phone className="w-5 h-5 text-white/90" strokeWidth={2} />
               </button>
               <button
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"

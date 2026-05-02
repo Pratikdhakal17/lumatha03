@@ -196,10 +196,15 @@ export default function Auth() {
     if (!forgotEmail.trim()) { setForgotError('Please enter your email'); return; }
     setForgotLoading(true); setForgotError('');
     try {
-      // Look up user by email in profiles table (email now stored there)
-      const { data, error } = await supabase.from('profiles').select('id, name, avatar_url, email').eq('email', forgotEmail.trim().toLowerCase()).maybeSingle();
-      if (error || !data) { setForgotError('Email not found in our system'); setForgotLoading(false); return; }
-      setForgotUserData(data);
+      // Look up user by email in profiles table for friendly info.
+      // Do NOT block the reset flow if a profiles row is missing — some accounts
+      // may exist only in the auth schema. Proceed to confirmation and let
+      // Supabase return a clear error when attempting a password reset.
+      const { data, error } = await supabase.from('profiles').select('id, name, avatar_url').eq('email', forgotEmail.trim().toLowerCase()).maybeSingle();
+      if (error) {
+        console.warn('Profile lookup error during forgot-password:', error);
+      }
+      setForgotUserData(data || null);
       setForgotStep(2);
     } catch (error: any) { setForgotError(error.message || 'Error verifying email'); }
     finally { setForgotLoading(false); }
@@ -213,17 +218,37 @@ export default function Auth() {
   const sendResetCode = async () => {
     setForgotLoading(true); setForgotError(''); setForgotSuccess('');
     try {
-      // Send password reset email via Supabase auth
-      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim().toLowerCase(), { 
-        redirectTo: `${window.location.origin}/auth?reset=true&email=${encodeURIComponent(forgotEmail.trim().toLowerCase())}` 
-      });
-      if (error) {
-        if (error.message?.includes('User not found')) {
-          setForgotError('Email not found in our system');
+      // Attempt to send password reset. Use server `/api/request-reset` as a
+      // fallback to ensure unauthenticated users can request resets.
+      let resetResult: any = null;
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim().toLowerCase(), { 
+          redirectTo: `${window.location.origin}/auth?reset=true&email=${encodeURIComponent(forgotEmail.trim().toLowerCase())}` 
+        });
+        if (error) throw error;
+        resetResult = { ok: true };
+      } catch (err: any) {
+        // If Supabase returns user-not-found, try server-side admin reset as fallback.
+        const message = err?.message || String(err);
+        if (message.includes('User not found')) {
+          // Try server admin endpoint which returns 404 if user truly missing
+          const resp = await fetch('/api/request-reset', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: forgotEmail.trim().toLowerCase() })
+          });
+          if (!resp.ok) {
+            const body = await resp.json().catch(() => ({}));
+            if (resp.status === 404) {
+              setForgotError('Email not found in our system');
+            } else {
+              setForgotError(body.error || 'Failed to send reset email. Please try again later.');
+            }
+            return;
+          }
+          resetResult = { ok: true };
         } else {
-          throw error;
+          throw err;
         }
-        return;
       }
       setCodeSentEmail(forgotEmail);
       setForgotCodeSent(true);

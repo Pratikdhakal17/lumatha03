@@ -238,6 +238,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  if (!context) {
+    // During HMR or rare render races components may mount outside the provider.
+    // Return a safe fallback to avoid throwing and breaking the entire app while
+    // still logging a single helpful error for developers to investigate.
+    if (typeof window !== 'undefined' && !(window as any).__lumatha_auth_warning_shown) {
+      console.error('useAuth was called outside of AuthProvider — rendering with safe fallback.');
+      (window as any).__lumatha_auth_warning_shown = true;
+    }
+
+    const fallback: AuthContextType = {
+      user: null,
+      profile: null,
+      accountSessions: [],
+      activeAccountId: null,
+      canAddAccount: false,
+      switchAccount: async () => false,
+      removeAccount: async () => false,
+      logout: async () => {},
+    };
+    return fallback;
+  }
   return context;
 };
