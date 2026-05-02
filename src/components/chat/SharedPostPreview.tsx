@@ -112,7 +112,7 @@ export function SharedPostPreview({ postId, className }: SharedPostPreviewProps)
         className="block w-full overflow-hidden bg-transparent transition-all text-left relative group"
       >
         {thumbnail && (
-          <div className="relative w-full aspect-square overflow-hidden bg-[#0f172a]">
+          <div className="relative w-full aspect-[4/3] max-h-[320px] overflow-hidden bg-[#0f172a]">
             {isVideo ? (
               <>
                 <video

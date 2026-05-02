@@ -185,8 +185,8 @@ export function useChat() {
         .eq('is_read', false);
 
       window.dispatchEvent(new CustomEvent('chat-messages-read'));
-    } catch {
-      // Silent fail
+    } catch (error) {
+      console.error('[useChat] fetchMessages error:', error);
     } finally {
       setLoading(false);
     }
