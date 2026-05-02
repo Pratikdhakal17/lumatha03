@@ -3143,23 +3143,12 @@ export default function Chat() {
             </div>
             <div className="py-2 max-h-[58vh] overflow-y-auto">
               {[
-                { icon: <User className="w-5 h-5" />, label: 'View Profile', action: () => { closeConversationOptions(); navigate(`/profile/${longPressTarget}`); }, color: '#94A3B8' },
-                { icon: <Tag className="w-5 h-5" />, label: hasNickname ? 'Edit Nickname' : 'Set Nickname', action: () => { 
-                  const newNickname = prompt(hasNickname ? 'Edit nickname:' : 'Set a nickname:', chatNicknames[longPressTarget || ''] || '');
-                  if (newNickname !== null) saveNicknameForUser(longPressTarget || '', newNickname.trim());
-                }, color: '#C4B5FD' },
                 ...(chatTab !== 'hidden' ? [
                   { icon: <Pin className="w-5 h-5" />, label: pinnedChats.has(longPressTarget || '') ? 'Unpin Chat' : 'Pin Chat', action: () => longPressTarget && togglePinChat(longPressTarget), color: '#94A3B8' },
                 ] : []),
-                { icon: <BellOff className="w-5 h-5" />, label: mutedChats.has(longPressTarget || '') ? 'Unmute Notifications' : 'Mute Notifications', action: () => longPressTarget && toggleInSet('mutedChats', longPressTarget, mutedChats, setMutedChats), color: '#94A3B8' },
                 { icon: <Archive className="w-5 h-5" />, label: chatTab === 'hidden' ? (archivedChats.has(longPressTarget || '') ? 'Unarchive Chat' : 'Archive Chat') : 'Archive Chat', action: () => { if (longPressTarget) toggleInSet('archivedChats', longPressTarget, archivedChats, setArchivedChats); }, color: '#94A3B8' },
                 { icon: <Lock className="w-5 h-5" />, label: privateChats.has(longPressTarget || '') ? 'Remove from Private' : 'Add to Private', action: () => { if (longPressTarget) toggleInSet('privateChats', longPressTarget, privateChats, setPrivateChats); }, color: '#C4B5FD' },
-                { icon: <Ban className="w-5 h-5" />, label: 'Block User', action: () => { 
-                  if (longPressTarget && confirm('Block this user? They won\'t be able to message you.')) {
-                    blockUserById(longPressTarget);
-                  }
-                }, color: '#EF4444' },
-                { icon: <Trash2 className="w-5 h-5" />, label: 'Delete Chat', action: () => { if (longPressTarget) deleteEntireChat(longPressTarget); }, color: '#EF4444' },
+                { icon: <Users className="w-5 h-5" />, label: 'Create Group', action: () => { setShowGroupCreation(true); }, color: '#94A3B8' },
               ].map((item, i) => (
                 <button
                   key={i}
