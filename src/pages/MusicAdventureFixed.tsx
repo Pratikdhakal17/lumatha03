@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, useTransition, memo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -115,6 +115,7 @@ export default function MusicAdventureFixed() {
   
 
   const [places, setPlaces] = useState<any[]>([]);
+  const [visiblePlaceCount, setVisiblePlaceCount] = useState<number>(typeof window !== 'undefined' && window.innerWidth < 768 ? 36 : 72);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [exploreSearchFilter, setExploreSearchFilter] = useState('all');
@@ -292,16 +293,19 @@ export default function MusicAdventureFixed() {
         .eq('is_deleted', false)
         .order('created_at', { ascending: false });
       if (!error && data) {
-        const storiesWithState = (await Promise.all(data.map(async (s: any) => {
-          if (!s || !s.id) return null;
-          if (!user) return { ...s, is_liked: false, is_saved: false };
-          const [{ data: like }, { data: save }] = await Promise.all([
-            supabase.from('travel_story_likes' as any).select('id').eq('story_id', s.id).eq('user_id', user.id).maybeSingle(),
-            supabase.from('travel_story_saves' as any).select('id').eq('story_id', s.id).eq('user_id', user.id).maybeSingle(),
-          ]);
-          return { ...s, is_liked: !!like, is_saved: !!save };
-        }))).filter(Boolean);
-        setTravelStories(storiesWithState);
+        // Batch-fetch like/save state for the current user to avoid N+1 queries
+        const stories = data.filter(Boolean);
+        if (!user) {
+          setTravelStories(stories.map((s: any) => ({ ...s, is_liked: false, is_saved: false })));
+        } else {
+          const ids = stories.map((s: any) => s.id).filter(Boolean);
+          const { data: likes } = await supabase.from('travel_story_likes' as any).select('story_id').in('story_id', ids).eq('user_id', user.id);
+          const { data: saves } = await supabase.from('travel_story_saves' as any).select('story_id').in('story_id', ids).eq('user_id', user.id);
+          const likeSet = new Set((likes || []).map((l: any) => l.story_id));
+          const saveSetActual = new Set((saves || []).map((r: any) => r.story_id));
+          const storiesWithState = stories.map((s: any) => ({ ...s, is_liked: likeSet.has(s.id), is_saved: saveSetActual.has(s.id) }));
+          setTravelStories(storiesWithState);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -457,8 +461,51 @@ export default function MusicAdventureFixed() {
     });
   }, [places, searchQuery, exploreSearchFilter, profileViewFilter, visitedPlaceIds, savedPlaceIds, lovedPlaceIds]);
 
-  // Show ALL places - no limit for proper exploration
-  const visiblePlaces = filteredPlaces;
+  // Limit visible places to avoid rendering hundreds of items at once
+  const visiblePlaces = filteredPlaces.slice(0, visiblePlaceCount);
+
+  // Reset visible count when filters/search change to avoid showing a huge list
+  useEffect(() => {
+    setVisiblePlaceCount(typeof window !== 'undefined' && window.innerWidth < 768 ? 36 : 72);
+  }, [searchQuery, exploreSearchFilter, profileViewFilter]);
+
+  const [isPending, startTransition] = useTransition();
+
+  // Memoized place card to avoid re-rendering each item when unrelated state changes
+  const PlaceCard = memo(function PlaceCard({ place, index }: { place: any; index: number }) {
+    if (!place || !place.id) return null;
+    const placeName = place.name?.trim() || 'Untitled Place';
+    const placeCountry = place.country?.trim() || 'Unknown';
+    const placeImage = place.image?.trim() || FALLBACK_PLACE_IMAGE;
+    const shouldPreload = index < 12;
+    return (
+      <div
+        key={place.id}
+        onClick={() => setSelectedPlace(place)}
+        className="group relative aspect-square overflow-hidden bg-slate-900 border-[0.5px] border-white/5 cursor-pointer shadow-2xl will-change-transform"
+      >
+        <img
+          src={placeImage}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          alt={placeName}
+          loading={shouldPreload ? 'eager' : 'lazy'}
+          decoding={shouldPreload ? 'sync' : 'async'}
+          fetchpriority={shouldPreload ? 'high' : 'auto'}
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            if (target.src !== FALLBACK_PLACE_IMAGE) {
+              target.src = FALLBACK_PLACE_IMAGE;
+            }
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity" />
+        <div className="absolute bottom-3 left-3 right-3">
+          <p className="text-[7px] font-black text-primary uppercase tracking-[0.2em] mb-0.5">{placeCountry}</p>
+          <h3 className="text-white font-bold text-[10px] truncate leading-tight uppercase tracking-wider">{placeName}</h3>
+        </div>
+      </div>
+    );
+  });
 
   const filteredTravelStories = useMemo(() => {
     return travelStories.filter((s) => {
@@ -1228,48 +1275,27 @@ export default function MusicAdventureFixed() {
       </div>
 
       {/* Places Grid - Full Width Mobile, No Side Space - Instant rendering with preloading */}
-      <div 
-        className="grid grid-cols-2 lg:grid-cols-4 gap-px px-0 pb-20 mt-0 w-full"
+      <div
+        className="grid grid-cols-2 lg:grid-cols-4 gap-px px-0 pb-6 mt-0 w-full"
         style={{ contentVisibility: 'auto', containIntrinsicSize: '200px' }}
       >
-        {visiblePlaces.map((place, index) => {
-          if (!place || !place.id) return null;
-          const placeName = place.name?.trim() || 'Untitled Place';
-          const placeCountry = place.country?.trim() || 'Unknown';
-          const placeImage = place.image?.trim() || FALLBACK_PLACE_IMAGE;
-          // Preload first 12 images for instant display
-          const shouldPreload = index < 12;
-
-          return (
-            <div
-              key={place.id}
-              onClick={() => setSelectedPlace(place)}
-              className="group relative aspect-square overflow-hidden bg-slate-900 border-[0.5px] border-white/5 cursor-pointer shadow-2xl will-change-transform"
-            >
-              <img 
-                src={placeImage} 
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
-                alt={placeName}
-                loading={shouldPreload ? "eager" : "lazy"}
-                decoding={shouldPreload ? "sync" : "async"}
-                fetchpriority={shouldPreload ? "high" : "auto"}
-                onError={(e) => { 
-                  const target = e.target as HTMLImageElement;
-                  if (target.src !== FALLBACK_PLACE_IMAGE) {
-                    target.src = FALLBACK_PLACE_IMAGE;
-                  }
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity" />
-              {/* Clean cover - no icons overlay */}
-              <div className="absolute bottom-3 left-3 right-3">
-                <p className="text-[7px] font-black text-primary uppercase tracking-[0.2em] mb-0.5">{placeCountry}</p>
-                <h3 className="text-white font-bold text-[10px] truncate leading-tight uppercase tracking-wider">{placeName}</h3>
-              </div>
-            </div>
-          );
-        })}
+        {visiblePlaces.map((place, index) => (
+          <PlaceCard key={place?.id || index} place={place} index={index} />
+        ))}
       </div>
+
+      {/* Load more control to avoid rendering entire dataset at once */}
+      {filteredPlaces.length > visiblePlaceCount && (
+        <div className="w-full flex items-center justify-center py-3">
+          <button
+            onClick={() => startTransition(() => setVisiblePlaceCount(c => c + (isMobile ? 36 : 72)))}
+            className="px-6 py-2 rounded-xl bg-primary text-white font-bold shadow-lg"
+            aria-label="Load more places"
+          >
+            {isPending ? 'Loading…' : `Load more (${Math.min(visiblePlaceCount + (isMobile ? 36 : 72), filteredPlaces.length)} / ${filteredPlaces.length})`}
+          </button>
+        </div>
+      )}
     </div>
   );
 
