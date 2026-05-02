@@ -72,6 +72,7 @@ const QUICK_REACTIONS = ['👍', '❤️', '😂', '🔥'];
 const CHAT_FX_SETTINGS_KEY = 'lumatha_chat_fx_settings_v1';
 const PRIMARY_STICKER_ID_KEY = 'lumatha_primary_sticker_id';
 const REACTION_USAGE_KEY = 'lumatha_reaction_usage_v1';
+const FIND_DATA_STALE_MS = 30000;
 
 // Premium notification types with popup framework
 const NOTIFICATION_TYPES = {
@@ -322,6 +323,8 @@ export default function Chat() {
   const conversationMenuOpenedAtRef = useRef<number>(0);
   const suppressConversationRowClickUntilRef = useRef<number>(0);
   const wasInActiveChatRef = useRef(false);
+  const findDataLoadingRef = useRef(false);
+  const findDataLoadedAtRef = useRef(0);
 
   const currentTheme = React.useMemo(() => THEME_MAP[chatTheme] || THEME_MAP.default, [chatTheme]);
 
@@ -587,14 +590,16 @@ export default function Chat() {
     }
   }, [userId]);
 
-  // Find tab
-  useEffect(() => { if (chatTab === 'find') loadFindData(); }, [chatTab, user]);
-
-  const loadFindData = async () => {
+  const loadFindData = useCallback(async (force = false) => {
     if (!user) return;
+    const now = Date.now();
+    if (findDataLoadingRef.current) return;
+    if (!force && now - findDataLoadedAtRef.current < FIND_DATA_STALE_MS) return;
+
+    findDataLoadingRef.current = true;
     const [latestProfiles, following, friends] = await Promise.all([
-      supabase.from('profiles').select('*').neq('id', user.id).order('created_at', { ascending: false }).limit(40),
-      supabase.from('follows').select('following_id, profiles:following_id(*)').eq('follower_id', user.id).limit(100),
+      supabase.from('profiles').select('id, name, username, avatar_url, country, created_at').neq('id', user.id).order('created_at', { ascending: false }).limit(40),
+      supabase.from('follows').select('following_id, profiles:following_id(id, name, username, avatar_url, country, created_at)').eq('follower_id', user.id).limit(100),
       supabase.from('friend_requests').select('sender_id, receiver_id').eq('status', 'accepted').or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
     ]);
 
@@ -614,7 +619,7 @@ export default function Chat() {
     following.data?.forEach((f: any) => { if (f.profiles?.id) fUsers.push(f.profiles); });
     const fIds = friends.data?.map(f => f.sender_id === user.id ? f.receiver_id : f.sender_id) || [];
     if (fIds.length > 0) {
-      const { data: fp } = await supabase.from('profiles').select('*').in('id', fIds);
+      const { data: fp } = await supabase.from('profiles').select('id, name, username, avatar_url, country, created_at').in('id', fIds);
       const all = [...(fp || []), ...fUsers];
       setNetworkUsers(
         all
@@ -626,7 +631,12 @@ export default function Chat() {
         fUsers.sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
       );
     }
-  };
+    findDataLoadedAtRef.current = now;
+    findDataLoadingRef.current = false;
+  }, [profile?.country, user]);
+
+  // Find tab
+  useEffect(() => { if (chatTab === 'find') loadFindData(); }, [chatTab, loadFindData]);
 
   // Open chat: fetch messages + auto-clear notifications from this user
   useEffect(() => {
@@ -782,7 +792,7 @@ export default function Chat() {
     const channel = supabase
       .channel('chat-find-profiles')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' }, () => {
-        loadFindData();
+        loadFindData(true);
       })
       .subscribe();
 
