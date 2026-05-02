@@ -196,15 +196,10 @@ export default function Auth() {
     if (!forgotEmail.trim()) { setForgotError('Please enter your email'); return; }
     setForgotLoading(true); setForgotError('');
     try {
-      // Look up user by email in profiles table for friendly info.
-      // Do NOT block the reset flow if a profiles row is missing — some accounts
-      // may exist only in the auth schema. Proceed to confirmation and let
-      // Supabase return a clear error when attempting a password reset.
-      const { data, error } = await supabase.from('profiles').select('id, name, avatar_url').eq('email', forgotEmail.trim().toLowerCase()).maybeSingle();
-      if (error) {
-        console.warn('Profile lookup error during forgot-password:', error);
-      }
-      setForgotUserData(data || null);
+      // Skip profile lookup — the email column doesn't exist in profiles table.
+      // Password reset doesn't depend on having profile data, so we proceed directly
+      // to the confirmation step. The server will validate email during reset.
+      setForgotUserData(null);
       setForgotStep(2);
     } catch (error: any) { setForgotError(error.message || 'Error verifying email'); }
     finally { setForgotLoading(false); }
