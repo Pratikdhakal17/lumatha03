@@ -1968,20 +1968,28 @@ export default function Chat() {
             {/* Action buttons */}
             <div className="shrink-0 flex items-center gap-0.5">
               <button
-                className="w-10 h-10 flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 rounded-full transition-all"
+                className="w-10 h-10 flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 rounded-full transition-all z-10"
                 title="Start video call"
-                onClick={() => setCallState({ open: true, isVideo: true })}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setCallState({ open: true, isVideo: true });
+                }}
                 aria-label="Start video call"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
+                style={{ WebkitTapHighlightColor: 'transparent', pointerEvents: 'auto', touchAction: 'manipulation' }}
               >
                 <VideoIcon className="w-5 h-5 text-white/80" strokeWidth={2} />
               </button>
               <button
-                className="w-10 h-10 flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 rounded-full transition-all"
+                className="w-10 h-10 flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 rounded-full transition-all z-10"
                 title="Start voice call"
-                onClick={() => setCallState({ open: true, isVideo: false })}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setCallState({ open: true, isVideo: false });
+                }}
                 aria-label="Start voice call"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
+                style={{ WebkitTapHighlightColor: 'transparent', pointerEvents: 'auto', touchAction: 'manipulation' }}
               >
                 <Phone className="w-5 h-5 text-white/80" strokeWidth={2} />
               </button>

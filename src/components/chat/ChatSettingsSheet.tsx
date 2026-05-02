@@ -1340,9 +1340,19 @@ function CardGroup({ children }: { children: React.ReactNode }) {
 function ActionPill({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
   return (
     <button
-      onClick={onClick}
-      className="w-[60px] h-[54px] rounded-xl flex flex-col items-center justify-center touch-target-44"
-      style={{ background: 'var(--card)', border: '0.5px solid var(--separator)' }}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onClick();
+      }}
+      className="w-[60px] h-[54px] rounded-xl flex flex-col items-center justify-center active:scale-95 transition-transform"
+      style={{ 
+        background: 'var(--card)', 
+        border: '0.5px solid var(--separator)',
+        pointerEvents: 'auto',
+        touchAction: 'manipulation',
+        WebkitTapHighlightColor: 'transparent'
+      }}
     >
       {icon}
       <span className="mt-0.5 text-[11px] font-medium text-center" style={{ color: 'var(--text)' }}>{label}</span>
