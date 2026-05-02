@@ -20,7 +20,6 @@ export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGrid
   if (!urls.length) return null;
 
   const touchHandledRef = useRef(false);
-
   const count = urls.length;
   const displayUrls = urls.slice(0, 4);
   const extraCount = count > 4 ? count - 4 : 0;
@@ -32,7 +31,7 @@ export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGrid
     count >= 3 && 'grid-cols-2'
   );
 
-    const touchHandledRef = useRef(false);
+  const getImageStyle = (index: number) => {
     if (count === 1) return 'aspect-[4/3] w-full max-h-[320px]';
     if (count === 2) return 'aspect-[3/4] max-h-[280px]';
     if (count === 3) {
@@ -42,18 +41,17 @@ export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGrid
     return 'aspect-square max-h-[180px]';
   };
 
+  const guardAndRun = (fn: () => void) => {
+    if (touchHandledRef.current) return;
+    touchHandledRef.current = true;
+    window.setTimeout(() => (touchHandledRef.current = false), 500);
+    fn();
+  };
+
   const handleImageTap = (url: string) => {
     // Haptic feedback for mobile
     if (navigator.vibrate) navigator.vibrate(15);
-    // Prevent double-invocation when multiple events fire
-    if (touchHandledRef.current) return;
-    touchHandledRef.current = true;
     onImageTap?.(url);
-  };
-  const handleTouchStart = (e: React.TouchEvent) => {
-    // Prevent default touch behavior to ensure click fires properly
-    e.stopPropagation();
-    touchHandledRef.current = false;
   };
 
   return (
@@ -66,16 +64,18 @@ export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGrid
             'active:scale-[0.98] transition-transform duration-100',
             getImageStyle(i)
           )}
-          onPointerUp={(e) => { (e as any).stopPropagation(); handleImageTap(url); }}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={(e) => { (e as any).stopPropagation(); handleImageTap(url); }}
-          onClick={(e) => { (e as any).stopPropagation(); handleImageTap(url); }}
-    const guardAndRun = (fn: () => void) => {
-      if (touchHandledRef.current) return;
-      touchHandledRef.current = true;
-      window.setTimeout(() => (touchHandledRef.current = false), 500);
-      fn();
-    };
+          onPointerUp={(e) => {
+            (e as any).stopPropagation();
+            guardAndRun(() => handleImageTap(url));
+          }}
+          onTouchEnd={(e) => {
+            (e as any).stopPropagation();
+            guardAndRun(() => handleImageTap(url));
+          }}
+          onClick={(e) => {
+            (e as any).stopPropagation();
+            guardAndRun(() => handleImageTap(url));
+          }}
           style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
           aria-label={`Image ${i + 1} of ${count}`}
         >
@@ -83,14 +83,14 @@ export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGrid
             src={url}
             alt=""
             className="w-full h-full object-cover pointer-events-none select-none"
-            loading="eager" // Load immediately for better perceived performance
+            loading="eager"
             draggable={false}
             decoding="async"
           />
-            onPointerUp={(e) => { (e as any).stopPropagation(); guardAndRun(() => handleImageTap(url)); }}
+          {extraCount > 0 && i === 3 && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            onTouchEnd={(e) => { (e as any).stopPropagation(); guardAndRun(() => handleImageTap(url)); }}
-            onClick={(e) => { (e as any).stopPropagation(); if (e.detail !== 0) guardAndRun(() => handleImageTap(url)); }}
+              <span className="text-lg font-bold text-white">+{extraCount}</span>
+            </div>
           )}
         </button>
       ))}
