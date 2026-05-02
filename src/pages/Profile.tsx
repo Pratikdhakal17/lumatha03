@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { EditProfileSheet } from '@/components/EditProfileSheet';
 import { StoriesBar } from '@/components/stories/StoriesBar';
 import { useVisibleTabContent } from '@/hooks/useProfileOptimization';
+import { DEFAULT_PROFILE_EXTRAS, loadProfileExtras } from '@/lib/profileExtras';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Post = Database['public']['Tables']['posts']['Row'] & { profiles?: Profile };
@@ -573,10 +574,19 @@ export default function Profile() {
       !/dicebear|ui-avatars|avatar\.vercel|placeholder/i.test(profile.avatar_url),
   );
 
-  // Extra data can live in section_order or profile_visibility for schema compatibility
+  // Extra data can live in DB JSON fields or local fallback storage for schema compatibility
   const profileVisibilitySource = (profile as any).profile_visibility || {};
-  const extraData = (profile.section_order as any)?.extra_data || profileVisibilitySource.extra_data || {};
-  const profileVisibility = profileVisibilitySource || extraData.profile_visibility || {};
+  const storedExtras = loadProfileExtras(userId);
+  const dbExtras = (profile.section_order as any)?.extra_data || profileVisibilitySource.extra_data || {};
+  const extraData = {
+    ...DEFAULT_PROFILE_EXTRAS,
+    ...storedExtras,
+    ...(dbExtras && typeof dbExtras === 'object' ? dbExtras : {}),
+  };
+  const profileVisibility = {
+    ...(profileVisibilitySource && typeof profileVisibilitySource === 'object' ? profileVisibilitySource : {}),
+    ...(extraData.profile_visibility || {}),
+  };
   const canShowProfileField = (field: string) => isOwnProfile || profileVisibility[field] !== false;
 
   const profileVisiblePosts = [...posts]

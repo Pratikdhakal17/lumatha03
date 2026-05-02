@@ -40,35 +40,37 @@ export default function MarketplaceEditProfile() {
     if (!user) return;
     setAvatarUrl(profile?.avatar_url || '');
     const { data: mp } = await supabase.from('marketplace_profiles').select('*').eq('user_id', user.id).maybeSingle();
+    const stored = loadSellerProfile(user.id);
     setMpProfile(mp);
-    if (mp) {
-      setVerifiedPhone((mp as any).is_phone_verified ? ((mp as any).phone || '') : '');
-      setData({
-        displayName: (mp as any).username || (mp as any).display_name || profile?.first_name || profile?.name || '',
-        sellerType: (mp as any).seller_type || 'individual',
-        bio: mp.bio || '',
-        qualification: mp.qualification || '',
-        phone: (mp as any).phone || '',
-        whatsappSame: (mp as any).whatsapp_same ?? true,
-        whatsapp: (mp as any).whatsapp || '',
-        location: mp.location || profile?.location || '',
-        area: (mp as any).area || '',
-        paymentMethods: (mp as any).payment_methods || ['💵 Cash'],
-        responseTime: (mp as any).response_time || 'few_hours',
-        availability: (mp as any).availability || [],
-        sellingCategories: (mp as any).selling_categories || [],
-        showPhoneTo: (mp as any).show_phone_to || 'Everyone',
-        allowReviews: (mp as any).allow_reviews ?? true,
-        isPhoneVerified: (mp as any).is_phone_verified ?? false,
-      });
-    } else {
-      setVerifiedPhone('');
-      setData({
-        ...DEFAULT_SELLER,
-        displayName: profile?.first_name || profile?.name || '',
-        location: profile?.location || '',
-      });
-    }
+    const next = mp
+      ? {
+          ...stored,
+          displayName: (mp as any).username || (mp as any).display_name || profile?.first_name || profile?.name || stored.displayName,
+          sellerType: (mp as any).seller_type || stored.sellerType,
+          bio: mp.bio || stored.bio,
+          qualification: mp.qualification || stored.qualification,
+          phone: (mp as any).phone || stored.phone,
+          whatsappSame: (mp as any).whatsapp_same ?? stored.whatsappSame,
+          whatsapp: (mp as any).whatsapp || stored.whatsapp,
+          location: mp.location || profile?.location || stored.location,
+          area: (mp as any).area || stored.area,
+          paymentMethods: (mp as any).payment_methods || stored.paymentMethods,
+          responseTime: (mp as any).response_time || stored.responseTime,
+          availability: (mp as any).availability || stored.availability,
+          sellingCategories: (mp as any).selling_categories || stored.sellingCategories,
+          showPhoneTo: (mp as any).show_phone_to || stored.showPhoneTo,
+          allowReviews: (mp as any).allow_reviews ?? stored.allowReviews,
+          isPhoneVerified: (mp as any).is_phone_verified ?? stored.isPhoneVerified,
+        }
+      : {
+          ...stored,
+          displayName: profile?.first_name || profile?.name || stored.displayName,
+          location: profile?.location || stored.location,
+        };
+
+    setVerifiedPhone(next.isPhoneVerified ? next.phone : '');
+    setData(next);
+    saveSellerProfile(user.id, next);
   };
 
   const update = <K extends keyof SellerProfile>(key: K, value: SellerProfile[K]) => {
@@ -210,6 +212,12 @@ export default function MarketplaceEditProfile() {
       if (result.error) {
         throw result.error;
       }
+
+      saveSellerProfile(user.id, {
+        ...data,
+        displayName: data.displayName || profile?.name || '',
+        location: data.location || profile?.location || '',
+      });
 
       // Verify data was saved before navigating
       await new Promise(resolve => setTimeout(resolve, 300));

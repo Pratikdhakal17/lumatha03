@@ -10,6 +10,7 @@ import { Camera, Sparkles, Loader2, Pencil, Lock, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Database } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
+import { DEFAULT_PROFILE_EXTRAS, loadProfileExtras, saveProfileExtras, type ProfileExtras } from '@/lib/profileExtras';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -28,6 +29,7 @@ interface EditProfileSheetProps {
 export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditProfileSheetProps) {
   const { user } = useAuth();
   const avatarRef = useRef<HTMLInputElement>(null);
+  const storageUserId = user?.id || profile.id;
 
   const [name, setName] = useState(profile.name || '');
   const [username, setUsername] = useState(profile.username || '');
@@ -40,9 +42,6 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
   const [selectedInterests, setSelectedInterests] = useState<string[]>(
     profile.primary_interest ? profile.primary_interest.split(',').map(s => s.trim()) : []
   );
-  
-  // Extra fields - initialize safely without depending on missing columns
-  const extraData = {} as any;
   const [schools, setSchools] = useState<string[]>(['']);
   const [hobbiesList, setHobbiesList] = useState<string[]>(['']);
   const [emails, setEmails] = useState<string[]>(['']);
@@ -92,6 +91,45 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
     }, 500);
     return () => clearTimeout(timer);
   }, [username, profile.username, user?.id]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const storedExtras = loadProfileExtras(storageUserId);
+    const profileExtras = (profile.section_order as any)?.extra_data;
+    const resolvedExtras: ProfileExtras = {
+      ...DEFAULT_PROFILE_EXTRAS,
+      ...storedExtras,
+      ...(profileExtras && typeof profileExtras === 'object' ? profileExtras : {}),
+    };
+
+    const toArray = (value: string) =>
+      value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+    setName(profile.name || '');
+    setUsername(profile.username || '');
+    setBio(profile.bio || '');
+    setLocation(profile.location || '');
+    setCountry(profile.country || '');
+    setAgeGroup(profile.age_group || '');
+    setGender(profile.gender || '');
+    setWebsite(profile.website || '');
+    setSelectedInterests(profile.primary_interest ? profile.primary_interest.split(',').map((s) => s.trim()) : []);
+    setSchools(toArray(resolvedExtras.school_name).length > 0 ? toArray(resolvedExtras.school_name) : ['']);
+    setHobbiesList(toArray(resolvedExtras.hobbies).length > 0 ? toArray(resolvedExtras.hobbies) : ['']);
+    setEmails(toArray(resolvedExtras.contact_email).length > 0 ? toArray(resolvedExtras.contact_email) : ['']);
+    setFavoriteClub(resolvedExtras.favorite_club || '');
+    setFavoriteShowMovieSong(resolvedExtras.favorite_show_movie_song || '');
+    setFavoriteActorAthletePerson(resolvedExtras.favorite_actor_athlete_person || '');
+    setGames(resolvedExtras.games || '');
+    setContactPhone(resolvedExtras.contact_phone || '');
+    setRelationship(resolvedExtras.relationship || '');
+    setOccupation(resolvedExtras.occupation || '');
+    setPrivateFields(new Set(Object.entries(resolvedExtras.profile_visibility || {}).filter(([, visible]) => visible === false).map(([field]) => field)));
+  }, [open, profile, storageUserId]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -158,8 +196,25 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
         newAvatarUrl = urlData.publicUrl + '?t=' + Date.now();
       }
 
+      const nextExtras: ProfileExtras = {
+        ...DEFAULT_PROFILE_EXTRAS,
+        school_name: schools.filter(Boolean).join(', '),
+        hobbies: hobbiesList.filter(Boolean).join(', '),
+        contact_email: emails.filter(Boolean).join(', '),
+        favorite_club: favoriteClub.trim(),
+        favorite_show_movie_song: favoriteShowMovieSong.trim(),
+        favorite_actor_athlete_person: favoriteActorAthletePerson.trim(),
+        games: games.trim(),
+        contact_phone: contactPhone.trim(),
+        relationship: relationship.trim(),
+        occupation: occupation.trim(),
+        profile_visibility: Object.fromEntries(Array.from(privateFields).map((field) => [field, false])),
+      };
+
+      saveProfileExtras(storageUserId, nextExtras);
+
       // Build update data - ONLY fields that exist in database schema
-      // Focus on core profile fields first (section_order has schema cache sync issues)
+      // Focus on core profile fields first
       const updateData: any = {
         name: name.trim(),
         username: nextUsername || null,
@@ -183,13 +238,15 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
         console.error('Supabase update error:', error);
         throw error;
       }
+
+      saveProfileExtras(storageUserId, nextExtras);
       
       // Wait a moment to ensure data persistence before closing
       toast.success('Profile updated successfully');
       setTimeout(() => {
         onSaved();
         onOpenChange(false);
-      }, 500);
+      }, 150);
     } catch (err: any) {
       console.error('Save error:', err);
       toast.error(err.message || 'Failed to save profile');
