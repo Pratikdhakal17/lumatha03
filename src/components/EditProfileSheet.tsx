@@ -41,31 +41,19 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
     profile.primary_interest ? profile.primary_interest.split(',').map(s => s.trim()) : []
   );
   
-  // Extra fields are stored in profile_visibility.extra_data with a section_order fallback
-  const profileVisibilityData = (profile as any).profile_visibility || {};
-  const extraData = (profile.section_order as any)?.extra_data || profileVisibilityData.extra_data || {};
-  const [schools, setSchools] = useState<string[]>(
-    (extraData.school_name || '').split(',').map((s: string) => s.trim()).filter(Boolean).length > 0 
-      ? (extraData.school_name || '').split(',').map((s: string) => s.trim()).filter(Boolean)
-      : ['']
-  );
-  const [hobbiesList, setHobbiesList] = useState<string[]>(
-    (extraData.hobbies || '').split(',').map((s: string) => s.trim()).filter(Boolean).length > 0
-      ? (extraData.hobbies || '').split(',').map((s: string) => s.trim()).filter(Boolean)
-      : ['']
-  );
-  const [emails, setEmails] = useState<string[]>(
-    (extraData.contact_email || '').split(',').map((s: string) => s.trim()).filter(Boolean).length > 0
-      ? (extraData.contact_email || '').split(',').map((s: string) => s.trim()).filter(Boolean)
-      : ['']
-  );
-  const [favoriteClub, setFavoriteClub] = useState(extraData.favorite_club || '');
-  const [favoriteShowMovieSong, setFavoriteShowMovieSong] = useState(extraData.favorite_show_movie_song || '');
-  const [favoriteActorAthletePerson, setFavoriteActorAthletePerson] = useState(extraData.favorite_actor_athlete_person || '');
-  const [games, setGames] = useState(extraData.games || '');
-  const [contactPhone, setContactPhone] = useState(extraData.contact_phone || '');
-  const [relationship, setRelationship] = useState(extraData.relationship || '');
-  const [occupation, setOccupation] = useState(extraData.occupation || '');
+  // Extra fields - initialize safely without depending on missing columns
+  const extraData = {} as any;
+  const [schools, setSchools] = useState<string[]>(['']);
+  const [hobbiesList, setHobbiesList] = useState<string[]>(['']);
+  const [emails, setEmails] = useState<string[]>(['']);
+  const [favoriteClub, setFavoriteClub] = useState('');
+  const [favoriteShowMovieSong, setFavoriteShowMovieSong] = useState('');
+  const [favoriteActorAthletePerson, setFavoriteActorAthletePerson] = useState('');
+  const [games, setGames] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [relationship, setRelationship] = useState('');
+  const [occupation, setOccupation] = useState('');
+  
   
   const [avatarPreview, setAvatarPreview] = useState(profile.avatar_url || '');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -74,14 +62,8 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
   
-  const [privateFields, setPrivateFields] = useState<Set<string>>(() => {
-    const visibility = (profile as any).profile_visibility || {};
-    const privates = new Set<string>();
-    Object.entries(visibility).forEach(([field, isPublic]) => {
-      if (isPublic === false) privates.add(field);
-    });
-    return privates;
-  });
+  const [privateFields, setPrivateFields] = useState<Set<string>>(new Set());
+
 
   const isPrivate = (field: string) => privateFields.has(field);
   const togglePrivacy = (field: string) => {
@@ -176,26 +158,8 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
         newAvatarUrl = urlData.publicUrl + '?t=' + Date.now();
       }
 
-      // Build extra_data for section_order storage
-      const extra_data = {
-        school_name: schools.filter(Boolean).join(', ') || null,
-        hobbies: hobbiesList.filter(Boolean).join(', ') || null,
-        contact_email: emails.filter(Boolean).join(', ') || null,
-        favorite_club: favoriteClub.trim() || null,
-        favorite_show_movie_song: favoriteShowMovieSong.trim() || null,
-        favorite_actor_athlete_person: favoriteActorAthletePerson.trim() || null,
-        games: games.trim() || null,
-        contact_phone: contactPhone.trim() || null,
-        relationship: relationship.trim() || null,
-        occupation: occupation.trim() || null,
-      };
-
-      // Keep privacy flags inside section_order.extra_data so we do not depend on a missing column
-      const profile_visibility = Object.fromEntries(
-        Array.from(privateFields).map(field => [field, false])
-      ) as Record<string, boolean>;
-
       // Build update data - ONLY fields that exist in database schema
+      // Focus on core profile fields first (section_order has schema cache sync issues)
       const updateData: any = {
         name: name.trim(),
         username: nextUsername || null,
@@ -207,7 +171,6 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
         website: website.trim() || null,
         primary_interest: selectedInterests.join(', ') || null,
         avatar_url: newAvatarUrl,
-        section_order: { ...(profile.section_order as Record<string, any> || {}), extra_data: { ...extra_data, profile_visibility } },
         updated_at: new Date().toISOString(),
       };
 
