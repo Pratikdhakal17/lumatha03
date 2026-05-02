@@ -7,7 +7,8 @@ import {
   Image, Users, UserSearch, MessageCircle, Star, Video as VideoIcon,
   Palette, Eye, Pin, Forward, Copy, Phone,
   Bell, BellOff, CornerUpLeft, Pencil, Lock, Plus, Camera,
-  MessageSquare, ShoppingCart, Menu, Heart, ArrowLeft
+  MessageSquare, ShoppingCart, Menu, Heart, ArrowLeft,
+  User, Ban, Tag
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1410,6 +1411,40 @@ export default function Chat() {
   const reportCurrentChatUser = useCallback(() => {
     toast.success('Report submitted. Moderation will review this account.');
   }, []);
+
+  const saveNicknameForUser = useCallback(async (targetUserId: string, name: string) => {
+    if (!targetUserId || !user) return;
+    const updated = { ...chatNicknames, [targetUserId]: name };
+    if (!name) delete updated[targetUserId];
+    setChatNicknames(updated);
+    localStorage.setItem('chatNicknames', JSON.stringify(updated));
+    try {
+      await supabase.from('chat_settings').upsert({
+        user_id: user.id,
+        chat_user_id: targetUserId,
+        nickname: name || null,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id,chat_user_id' });
+      toast.success(name ? 'Nickname saved' : 'Nickname removed');
+    } catch (err) {
+      console.error('Failed to save nickname:', err);
+    }
+  }, [user, chatNicknames]);
+
+  const blockUserById = useCallback(async (targetUserId: string) => {
+    if (!user || !targetUserId) return;
+    try {
+      const { error } = await supabase.from('blocks').insert({ blocker_id: user.id, blocked_id: targetUserId });
+      if (error && !String(error.message || '').toLowerCase().includes('duplicate')) {
+        throw error;
+      }
+      toast.success('User blocked');
+      deleteEntireChat(targetUserId);
+    } catch (error) {
+      console.error('Failed to block user:', error);
+      toast.error('Failed to block user');
+    }
+  }, [user]);
 
   const unsendAllForCurrentChat = useCallback(() => {
     if (!currentChatUser) return;
@@ -2951,6 +2986,15 @@ export default function Chat() {
                       {preview}
                     </p>
                   </div>
+                  {/* Three-dot menu button */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openConversationOptions(conv.user_id); }}
+                    className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
+                    aria-label="Chat options"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
+                    <MoreVertical className="w-4 h-4" style={{ color: '#64748B' }} />
+                  </button>
                 </button>
               </SwipeableChatCard>
               ) : (
@@ -3008,6 +3052,15 @@ export default function Chat() {
                       {preview}
                     </p>
                   </div>
+                  {/* Three-dot menu button */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openConversationOptions(conv.user_id); }}
+                    className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
+                    aria-label="Chat options"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
+                    <MoreVertical className="w-4 h-4" style={{ color: '#64748B' }} />
+                  </button>
                 </button>
               )}
               </div>
@@ -3049,7 +3102,12 @@ export default function Chat() {
       )}
 
       {/* Conversation Options Sheet (sticky, no accidental auto-close) */}
-      {longPressTarget && !currentChatUser && (
+      {longPressTarget && !currentChatUser && (() => {
+        const targetConv = sortedConversations.find(c => c.user_id === longPressTarget);
+        const targetName = chatNicknames[longPressTarget || ''] || targetConv?.user_name || 'User';
+        const targetAvatar = targetConv?.user_avatar;
+        const hasNickname = Boolean(chatNicknames[longPressTarget || '']);
+        return (
         <div className="fixed inset-0 z-50">
           <button
             type="button"
@@ -3058,8 +3116,18 @@ export default function Chat() {
             aria-label="Close conversation options"
           />
           <div className="absolute bottom-0 left-0 right-0 mx-auto w-full max-w-[420px] rounded-t-3xl border border-white/10 animate-in slide-in-from-bottom-2 duration-300" style={{ background: '#111827' }} onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-4 py-4" style={{ borderBottom: '1px solid #1f2937' }}>
-              <p className="text-[15px] font-bold text-white tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Conversation Options</p>
+            {/* User Profile Header */}
+            <div className="flex items-center gap-4 px-5 py-4" style={{ borderBottom: '1px solid #1f2937' }}>
+              <Avatar className="w-14 h-14 ring-2 ring-[#7C3AED]/30">
+                <AvatarImage src={targetAvatar || undefined} />
+                <AvatarFallback style={{ background: 'rgba(124,58,237,0.2)', color: '#A78BFA', fontSize: 20, fontWeight: 700 }}>
+                  {targetName.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-[17px] font-bold text-white truncate" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{targetName}</p>
+                <p className="text-[13px] text-[#64748B] truncate">{hasNickname ? targetConv?.user_name : '@user'}</p>
+              </div>
               <button
                 type="button"
                 onClick={closeConversationOptions}
@@ -3071,13 +3139,23 @@ export default function Chat() {
             </div>
             <div className="py-2 max-h-[58vh] overflow-y-auto">
               {[
+                { icon: <User className="w-5 h-5" />, label: 'View Profile', action: () => { navigate(`/profile/${longPressTarget}`); }, color: '#94A3B8' },
+                { icon: <Tag className="w-5 h-5" />, label: hasNickname ? 'Edit Nickname' : 'Set Nickname', action: () => { 
+                  const newNickname = prompt(hasNickname ? 'Edit nickname:' : 'Set a nickname:', chatNicknames[longPressTarget || ''] || '');
+                  if (newNickname !== null) saveNicknameForUser(longPressTarget || '', newNickname.trim());
+                }, color: '#C4B5FD' },
                 ...(chatTab !== 'hidden' ? [
-                  { icon: <Pin className="w-5 h-5" />, label: pinnedChats.has(longPressTarget || '') ? 'Unpin' : 'Pin', action: () => longPressTarget && togglePinChat(longPressTarget), color: '#94A3B8' },
+                  { icon: <Pin className="w-5 h-5" />, label: pinnedChats.has(longPressTarget || '') ? 'Unpin Chat' : 'Pin Chat', action: () => longPressTarget && togglePinChat(longPressTarget), color: '#94A3B8' },
                 ] : []),
-                { icon: <BellOff className="w-5 h-5" />, label: mutedChats.has(longPressTarget || '') ? 'Unmute' : 'Mute', action: () => longPressTarget && toggleInSet('mutedChats', longPressTarget, mutedChats, setMutedChats), color: '#94A3B8' },
-                { icon: <Archive className="w-5 h-5" />, label: chatTab === 'hidden' ? (archivedChats.has(longPressTarget || '') ? 'Unarchive' : 'Archive') : 'Archive', action: () => { if (longPressTarget) toggleInSet('archivedChats', longPressTarget, archivedChats, setArchivedChats); }, color: '#94A3B8' },
-                { icon: <Lock className="w-5 h-5" />, label: privateChats.has(longPressTarget || '') ? 'Remove private' : 'Add to private', action: () => { if (longPressTarget) toggleInSet('privateChats', longPressTarget, privateChats, setPrivateChats); }, color: '#C4B5FD' },
-                { icon: <Trash2 className="w-5 h-5" />, label: 'Delete', action: () => { if (longPressTarget) deleteEntireChat(longPressTarget); }, color: '#EF4444' },
+                { icon: <BellOff className="w-5 h-5" />, label: mutedChats.has(longPressTarget || '') ? 'Unmute Notifications' : 'Mute Notifications', action: () => longPressTarget && toggleInSet('mutedChats', longPressTarget, mutedChats, setMutedChats), color: '#94A3B8' },
+                { icon: <Archive className="w-5 h-5" />, label: chatTab === 'hidden' ? (archivedChats.has(longPressTarget || '') ? 'Unarchive Chat' : 'Archive Chat') : 'Archive Chat', action: () => { if (longPressTarget) toggleInSet('archivedChats', longPressTarget, archivedChats, setArchivedChats); }, color: '#94A3B8' },
+                { icon: <Lock className="w-5 h-5" />, label: privateChats.has(longPressTarget || '') ? 'Remove from Private' : 'Add to Private', action: () => { if (longPressTarget) toggleInSet('privateChats', longPressTarget, privateChats, setPrivateChats); }, color: '#C4B5FD' },
+                { icon: <Ban className="w-5 h-5" />, label: 'Block User', action: () => { 
+                  if (longPressTarget && confirm('Block this user? They won\'t be able to message you.')) {
+                    blockUserById(longPressTarget);
+                  }
+                }, color: '#EF4444' },
+                { icon: <Trash2 className="w-5 h-5" />, label: 'Delete Chat', action: () => { if (longPressTarget) deleteEntireChat(longPressTarget); }, color: '#EF4444' },
               ].map((item, i) => (
                 <button
                   key={i}
@@ -3091,7 +3169,8 @@ export default function Chat() {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Compose Menu */}
       <Dialog open={showComposeMenu} onOpenChange={setShowComposeMenu}>
