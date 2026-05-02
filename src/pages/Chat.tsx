@@ -3116,14 +3116,14 @@ export default function Chat() {
         const targetAvatar = targetConv?.user_avatar;
         const hasNickname = Boolean(chatNicknames[longPressTarget || '']);
         return (
-        <div className="fixed inset-0 z-50">
-          <button
-            type="button"
+        <div className="fixed inset-0 z-50" style={{ touchAction: 'none' }}>
+          <div
             className="absolute inset-0 bg-black/55"
             onClick={handleConversationBackdropClose}
+            style={{ cursor: 'pointer', touchAction: 'none' }}
             aria-label="Close conversation options"
           />
-          <div className="absolute bottom-0 left-0 right-0 mx-auto w-full max-w-[420px] rounded-t-3xl border border-white/10 animate-in slide-in-from-bottom-2 duration-300" style={{ background: '#111827' }} onClick={(e) => e.stopPropagation()}>
+          <div className="absolute bottom-0 left-0 right-0 mx-auto w-full max-w-[420px] rounded-t-3xl border border-white/10" style={{ background: '#111827', animation: 'slideUp 0.25s ease-out' }} onClick={(e) => e.stopPropagation()}>
             {/* User Profile Header */}
             <div 
               className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-white/[0.02] transition-colors" 
@@ -3227,6 +3227,11 @@ export default function Chat() {
         @keyframes reaction-tray-in {
           0% { opacity: 0; transform: translateY(8px) scale(0.9); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes slideUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
         }
 
         /* Mobile chat optimizations for smooth scrolling */
