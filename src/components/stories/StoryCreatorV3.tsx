@@ -61,7 +61,7 @@ export function StoryCreatorV3({ open, onClose, onCreated, initialMode = 'media'
   const [caption, setCaption] = useState('');
   const [textContent, setTextContent] = useState('');
   const [textBg, setTextBg] = useState(BG_COLORS[0]);
-  const [visibility, setVisibility] = useState<'public' | 'friends' | 'following'>('public');
+  const [visibility, setVisibility] = useState<'public' | 'friends' | 'private'>('public');
   const [duration, setDuration] = useState(24);
   
   // Settings
@@ -290,7 +290,6 @@ export function StoryCreatorV3({ open, onClose, onCreated, initialMode = 'media'
     switch (visibility) {
       case 'public': return <Globe size={16} />;
       case 'friends': return <Users size={16} />;
-      case 'following': return <Users size={16} />;
       default: return <Lock size={16} />;
     }
   };
@@ -299,7 +298,6 @@ export function StoryCreatorV3({ open, onClose, onCreated, initialMode = 'media'
     switch (visibility) {
       case 'public': return 'Everyone';
       case 'friends': return 'Friends';
-      case 'following': return 'Following';
       default: return 'Only Me';
     }
   };

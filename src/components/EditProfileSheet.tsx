@@ -41,8 +41,9 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
     profile.primary_interest ? profile.primary_interest.split(',').map(s => s.trim()) : []
   );
   
-  // Extra fields stored in section_order JSON
-  const extraData = (profile.section_order as any)?.extra_data || {};
+  // Extra fields are stored in profile_visibility.extra_data with a section_order fallback
+  const profileVisibilityData = (profile as any).profile_visibility || {};
+  const extraData = (profile.section_order as any)?.extra_data || profileVisibilityData.extra_data || {};
   const [schools, setSchools] = useState<string[]>(
     (extraData.school_name || '').split(',').map((s: string) => s.trim()).filter(Boolean).length > 0 
       ? (extraData.school_name || '').split(',').map((s: string) => s.trim()).filter(Boolean)
@@ -175,7 +176,7 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
         newAvatarUrl = urlData.publicUrl + '?t=' + Date.now();
       }
 
-      // Build extra_data for section_order
+      // Build extra_data for profile_visibility fallback storage
       const extra_data = {
         school_name: schools.filter(Boolean).join(', ') || null,
         hobbies: hobbiesList.filter(Boolean).join(', ') || null,
@@ -189,10 +190,10 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
         occupation: occupation.trim() || null,
       };
 
-      // Build profile_visibility at top level
+      // Build profile_visibility at top level and keep extra_data nested inside it
       const profile_visibility = Object.fromEntries(
         Array.from(privateFields).map(field => [field, false])
-      );
+      ) as Record<string, boolean>;
 
       // Build update data - ONLY fields that exist in database schema
       const updateData: any = {
@@ -206,14 +207,13 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
         website: website.trim() || null,
         primary_interest: selectedInterests.join(', ') || null,
         avatar_url: newAvatarUrl,
-        section_order: { ...(profile.section_order as Record<string, any> || {}), extra_data },
         updated_at: new Date().toISOString(),
       };
 
-      // Add profile_visibility if there are private fields
-      if (Object.keys(profile_visibility).length > 0) {
-        updateData.profile_visibility = profile_visibility;
-      }
+      updateData.profile_visibility = {
+        ...profile_visibility,
+        extra_data,
+      };
 
       const { error } = await supabase
         .from('profiles')

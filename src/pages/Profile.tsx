@@ -564,9 +564,10 @@ export default function Profile() {
       !/dicebear|ui-avatars|avatar\.vercel|placeholder/i.test(profile.avatar_url),
   );
 
-  // Extra data stored in section_order JSON
-  const extraData = (profile.section_order as any)?.extra_data || {};
-  const profileVisibility = (profile as any).profile_visibility || extraData.profile_visibility || {};
+  // Extra data can live in section_order or profile_visibility for schema compatibility
+  const profileVisibilitySource = (profile as any).profile_visibility || {};
+  const extraData = (profile.section_order as any)?.extra_data || profileVisibilitySource.extra_data || {};
+  const profileVisibility = profileVisibilitySource || extraData.profile_visibility || {};
   const canShowProfileField = (field: string) => isOwnProfile || profileVisibility[field] !== false;
 
   const profileVisiblePosts = [...posts]
