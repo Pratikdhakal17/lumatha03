@@ -1966,35 +1966,27 @@ export default function Chat() {
             </div>
 
             {/* Action buttons */}
-            <div className="shrink-0 flex items-center gap-0.5">
+            <div className="shrink-0 flex items-center gap-0.5" style={{ touchAction: 'manipulation' }}>
               <button
-                className="w-10 h-10 flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 rounded-full transition-all z-10"
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
                 title="Start video call"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setCallState({ open: true, isVideo: true });
-                }}
+                onClick={() => setCallState({ open: true, isVideo: true })}
                 aria-label="Start video call"
-                style={{ WebkitTapHighlightColor: 'transparent', pointerEvents: 'auto', touchAction: 'manipulation' }}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <VideoIcon className="w-5 h-5 text-white/80" strokeWidth={2} />
               </button>
               <button
-                className="w-10 h-10 flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 rounded-full transition-all z-10"
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
                 title="Start voice call"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setCallState({ open: true, isVideo: false });
-                }}
+                onClick={() => setCallState({ open: true, isVideo: false })}
                 aria-label="Start voice call"
-                style={{ WebkitTapHighlightColor: 'transparent', pointerEvents: 'auto', touchAction: 'manipulation' }}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <Phone className="w-5 h-5 text-white/80" strokeWidth={2} />
               </button>
               <button
-                className="w-10 h-10 flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 rounded-full transition-all"
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
                 title="Chat options"
                 onClick={() => setShowSettings(true)}
                 aria-label="Chat options"
