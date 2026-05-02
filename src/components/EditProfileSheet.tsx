@@ -176,7 +176,7 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
         newAvatarUrl = urlData.publicUrl + '?t=' + Date.now();
       }
 
-      // Build extra_data for profile_visibility fallback storage
+      // Build extra_data for section_order storage
       const extra_data = {
         school_name: schools.filter(Boolean).join(', ') || null,
         hobbies: hobbiesList.filter(Boolean).join(', ') || null,
@@ -190,7 +190,7 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
         occupation: occupation.trim() || null,
       };
 
-      // Build profile_visibility at top level and keep extra_data nested inside it
+      // Keep privacy flags inside section_order.extra_data so we do not depend on a missing column
       const profile_visibility = Object.fromEntries(
         Array.from(privateFields).map(field => [field, false])
       ) as Record<string, boolean>;
@@ -207,12 +207,8 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
         website: website.trim() || null,
         primary_interest: selectedInterests.join(', ') || null,
         avatar_url: newAvatarUrl,
+        section_order: { ...(profile.section_order as Record<string, any> || {}), extra_data: { ...extra_data, profile_visibility } },
         updated_at: new Date().toISOString(),
-      };
-
-      updateData.profile_visibility = {
-        ...profile_visibility,
-        extra_data,
       };
 
       const { error } = await supabase

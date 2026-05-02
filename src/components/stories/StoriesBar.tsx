@@ -394,7 +394,7 @@ export function StoriesBar({ followingOnly = false }: StoriesBarProps) {
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 24);
 
-      const visibility = data.audience === 'public' ? 'public' : data.audience === 'close' ? 'friends' : 'following';
+      const visibility = data.audience === 'public' ? 'public' : data.audience === 'close' ? 'friends' : 'private';
       const caption = [data.content, `#${data.mood}`].filter(Boolean).join(' ').trim();
 
       const { error } = await supabase.from('stories').insert({
@@ -403,7 +403,6 @@ export function StoriesBar({ followingOnly = false }: StoriesBarProps) {
         media_type: mediaType,
         caption,
         visibility,
-        duration: data.duration || 15, // Use selected duration or default 15s
         expires_at: expiresAt.toISOString(),
       });
 

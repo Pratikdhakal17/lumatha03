@@ -51,7 +51,7 @@ export function StoryCreatorV2({ open, onClose, onCreated, initialMode = 'media'
   const [caption, setCaption] = useState('');
   const [textContent, setTextContent] = useState('');
   const [textBg, setTextBg] = useState(BG_COLORS[0]);
-  const [visibility, setVisibility] = useState<'public' | 'friends' | 'following'>('public');
+  const [visibility, setVisibility] = useState<'public' | 'friends' | 'private'>('public');
   
   // UI state
   const [publishing, setPublishing] = useState(false);
@@ -547,7 +547,7 @@ export function StoryCreatorV2({ open, onClose, onCreated, initialMode = 'media'
                 {[
                   { id: 'public', label: 'Public', icon: Globe, desc: 'Everyone can see' },
                   { id: 'friends', label: 'Followers', icon: Users, desc: 'Only your followers' },
-                  { id: 'following', label: 'Following', icon: Lock, desc: 'People you follow' }
+                  { id: 'private', label: 'Private', icon: Lock, desc: 'Only you can see' }
                 ].map((item) => (
                   <button
                     key={item.id}

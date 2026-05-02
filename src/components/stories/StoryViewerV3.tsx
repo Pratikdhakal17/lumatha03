@@ -344,11 +344,7 @@ export function StoryViewerV3({ groups, startGroupIndex, onClose, onDeleteStory 
     const { error } = await supabase
       .from('stories')
       .update({
-        visibility: storySettings.visibility,
-        allow_comments: storySettings.allowComments,
-        allow_download: storySettings.allowDownload,
-        allow_share: storySettings.allowShare,
-        duration_hours: storySettings.duration
+        visibility: storySettings.visibility === 'following' ? 'private' : storySettings.visibility,
       })
       .eq('id', currentStory.id);
 
