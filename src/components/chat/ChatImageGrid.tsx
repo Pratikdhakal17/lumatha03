@@ -45,7 +45,7 @@ export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGrid
   const handleImageTap = (url: string) => {
     // Haptic feedback for mobile
     if (navigator.vibrate) navigator.vibrate(15);
-    // Prevent double-invocation when pointer/touch events both fire
+    // Prevent double-invocation when multiple events fire
     if (touchHandledRef.current) return;
     touchHandledRef.current = true;
     onImageTap?.(url);
@@ -68,6 +68,8 @@ export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGrid
           )}
           onPointerUp={(e) => { (e as any).stopPropagation(); handleImageTap(url); }}
           onTouchStart={handleTouchStart}
+          onTouchEnd={(e) => { (e as any).stopPropagation(); handleImageTap(url); }}
+          onClick={(e) => { (e as any).stopPropagation(); handleImageTap(url); }}
           style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
           aria-label={`Image ${i + 1} of ${count}`}
         >
