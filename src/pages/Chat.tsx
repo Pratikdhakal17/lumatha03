@@ -1299,7 +1299,7 @@ export default function Chat() {
         className="shrink-0 h-10 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all active:scale-95"
         style={findFollowing.has(u.id)
           ? { background: 'rgba(15,23,42,0.9)', border: '1px solid rgba(71,85,105,0.8)', color: '#94A3B8' }
-          : { background: 'linear-gradient(135deg, #7C3AED, #6366F1)', color: 'white' }}
+          : { background: 'linear-gradient(135deg, #F58529, #DD2A7B, #8134AF)', color: 'white' }}
       >
         {findFollowing.has(u.id) ? 'Following' : 'Follow'}
       </button>

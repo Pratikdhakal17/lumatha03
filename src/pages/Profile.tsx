@@ -521,11 +521,11 @@ export default function Profile() {
                 {currentUser && person.id !== currentUser.id && (
                   <button
                     onClick={() => toggleListFollow(person.id)}
-                    className="shrink-0 text-xs font-bold py-1.5 px-4 rounded-full transition-colors duration-200 active:scale-95 hover:text-orange-600"
+                    className="shrink-0 text-xs font-bold py-1.5 px-4 rounded-full transition-all duration-200 active:scale-95"
                     style={{
-                      color: localFollowing.has(person.id) ? '#94A3B8' : '#ff8c42',
-                      background: 'transparent',
-                      border: localFollowing.has(person.id) ? '1.5px solid #374151' : 'none',
+                      background: localFollowing.has(person.id) ? 'rgba(15, 23, 42, 0.9)' : 'linear-gradient(135deg, #F58529, #DD2A7B, #8134AF)',
+                      color: localFollowing.has(person.id) ? '#94A3B8' : 'white',
+                      border: localFollowing.has(person.id) ? '1px solid rgba(71, 85, 105, 0.8)' : 'none',
                     }}
                   >
                     {localFollowing.has(person.id) ? 'Following' : 'Follow'}
@@ -699,7 +699,7 @@ export default function Profile() {
                     onClick={handleFollow}
                     className={cn(
                       "px-6 py-2 rounded-full text-xs font-bold transition-all duration-300 active:scale-95 border shadow-lg",
-                      isFollowing ? "bg-slate-800 text-white border-white/20" : "bg-gradient-to-r from-purple-600 to-purple-500 text-white border-white/20"
+                      isFollowing ? "bg-slate-800 text-white border-white/20" : "bg-gradient-to-r from-blue-600 to-violet-600 text-white border-white/20"
                     )}
                   >
                     {isFollowing ? 'Following' : 'Follow'}

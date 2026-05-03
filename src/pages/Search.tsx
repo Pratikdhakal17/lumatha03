@@ -922,7 +922,7 @@ export default function Search() {
                           onClick={(e) => { e.stopPropagation(); toggleFollow(profile.id); }}
                           className="shrink-0 text-white transition-all active:scale-95"
                           style={{
-                            background: following.has(profile.id) ? 'transparent' : 'linear-gradient(135deg, #7C3AED, #6366F1)',
+                            background: following.has(profile.id) ? 'transparent' : 'linear-gradient(135deg, #F58529, #DD2A7B, #8134AF)',
                             border: following.has(profile.id) ? '1px solid #374151' : 'none',
                             borderRadius: 100,
                             padding: '6px 14px',

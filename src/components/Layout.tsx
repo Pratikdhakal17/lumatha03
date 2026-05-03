@@ -42,12 +42,12 @@ interface MenuItemConfig {
   managedKey?: ManagedSectionKey;
 }
 
-// Optimized menu order - Messages before Adventure for better flow
+// Optimized menu order - Learn, Messages, Adventure
 const menuItems: MenuItemConfig[] = [
   { title: 'Home', url: '/', icon: Home, desc: 'Social + Explore', managedKey: 'home' },
+  { title: 'Learn', url: '/education', icon: BookOpen, desc: 'Docs, Images, Videos', managedKey: 'learn' },
   { title: 'Messages', url: '/chat', icon: MessageSquare, desc: 'Chat + VC + Groups', managedKey: 'messages' },
   { title: 'Adventure', url: '/music-adventure', icon: Mountain, desc: 'Challenges + Discover', managedKey: 'adventure' },
-  { title: 'Learn', url: '/education', icon: BookOpen, desc: 'Docs, Images, Videos', managedKey: 'learn' },
   { title: 'Random Connect', url: '/random-connect', icon: Heart, desc: 'Share a moment', managedKey: 'randomConnect' },
   { title: 'Marketplace', url: '/marketplace', icon: ShoppingCart, desc: 'Buy/Sell/Local', managedKey: 'marketplace' },
   { title: 'FunPun', url: '/funpun', icon: Gamepad2, desc: 'Old 90s Games' },

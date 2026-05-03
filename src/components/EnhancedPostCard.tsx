@@ -1036,21 +1036,6 @@ export function EnhancedPostCard({
                 >
                   {isFollowing ? 'Following' : 'Follow'}
                 </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/chat/${post.user_id}`);
-                  }}
-                  className="px-3 py-1 text-[11px] font-bold rounded-full transition-all active:scale-95 shadow-sm flex items-center gap-1"
-                  style={{
-                    background: '#7C3AED',
-                    color: '#ffffff',
-                  }}
-                  aria-label="Message"
-                >
-                  <MessageCircle className="w-3 h-3" />
-                  Message
-                </button>
               </div>
             )}
           </div>
