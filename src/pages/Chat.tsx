@@ -26,7 +26,6 @@ import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { useChatProtection, WatermarkOverlay, BlurOverlay } from '@/components/chat/ChatProtection';
 import { EmojiReactionPicker } from '@/components/chat/EmojiReactionPicker';
-import { SwipeableChatCard } from '@/components/chat/SwipeableChatCard';
 import { UploadProgressBar } from '@/components/chat/UploadProgressBar';
 import { MessageList } from '@/components/chat/MessageList';
 import { useRateLimit } from '@/hooks/useRateLimit';
@@ -684,6 +683,21 @@ export default function Chat() {
     setReplyTo(null);
     setEditingMsg(null);
   }, [userId, setCurrentChatUser]);
+
+  // Safety: restore body pointer-events when chat settings dialog closes
+  // (Radix Dialog sometimes leaves pointer-events:none stuck on body)
+  useEffect(() => {
+    if (!showSettings) {
+      // Small delay to let Radix Dialog clean up first
+      const timer = setTimeout(() => {
+        document.body.style.pointerEvents = '';
+        document.body.style.overflow = '';
+        // Remove any Radix scroll lock attributes
+        document.body.removeAttribute('data-scroll-locked');
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [showSettings]);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
