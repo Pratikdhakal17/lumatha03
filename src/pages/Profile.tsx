@@ -699,7 +699,7 @@ export default function Profile() {
                     onClick={handleFollow}
                     className={cn(
                       "px-6 py-2 rounded-full text-xs font-bold transition-all duration-300 active:scale-95 border shadow-lg",
-                      isFollowing ? "bg-slate-800 text-white border-white/20" : "bg-orange-500 text-white border-white"
+                      isFollowing ? "bg-slate-800 text-white border-white/20" : "bg-gradient-to-r from-purple-600 to-purple-500 text-white border-white/20"
                     )}
                   >
                     {isFollowing ? 'Following' : 'Follow'}

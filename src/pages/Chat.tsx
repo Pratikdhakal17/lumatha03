@@ -1500,14 +1500,6 @@ export default function Chat() {
     const hasUnread = conv.unread_count > 0;
     const preview = conv.last_message || '';
     const isArchived = archivedChats.has(conv.user_id);
-    const isPrivate = privateChats.has(conv.user_id);
-    const swipeRight = () => {
-      if (isPrivate) {
-        toggleInSet('privateChats', conv.user_id, privateChats, setPrivateChats);
-        return;
-      }
-      toggleInSet('archivedChats', conv.user_id, archivedChats, setArchivedChats);
-    };
 
     const rowContent = (
       <div className="flex items-center gap-3 px-4" style={HIDDEN_ROW_STYLE}>
@@ -1522,7 +1514,6 @@ export default function Chat() {
             <p className="text-[15px] truncate" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
               {chatNicknames[conv.user_id] || conv.user_name}
             </p>
-            {isPrivate && <Lock className="w-3 h-3 shrink-0" style={{ color: '#C4B5FD' }} />}
           </div>
           <p className="text-[13px] truncate" style={{ color: '#6B7280' }}>{preview}</p>
         </div>
@@ -1535,16 +1526,13 @@ export default function Chat() {
       </div>
     );
 
-    // Swipeable on ALL devices - left to hide/archive, right to unarchive/unhide
+    // Swipeable on ALL devices - left to hide/archive only
     return (
       <SwipeableChatCard 
         key={conv.user_id} 
         onSwipeLeft={() => toggleInSet('archivedChats', conv.user_id, archivedChats, setArchivedChats)}
-        onSwipeRight={swipeRight} 
         leftLabel={isArchived ? "Unarchive" : "Hide"}
-        rightLabel={isPrivate ? "Unprivate" : "Unarchive"}
         leftColor={isArchived ? "bg-emerald-500" : "bg-orange-500"}
-        rightColor={isPrivate ? "bg-purple-500" : "bg-emerald-500"}
       >
         <button
           className="w-full flex items-center gap-3 px-4 active:bg-[rgba(124,58,237,0.05)] transition-colors"
