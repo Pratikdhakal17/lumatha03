@@ -2888,9 +2888,9 @@ export default function Chat() {
         /* Hidden tab: Archived + Private conversations */
         <>
           {/* Hidden Tab Header Banner - Consistent with Find tab */}
-          <div className="px-4 pt-3 pb-2 space-y-3" style={{ background: '#0a0f1e' }}>
-            <div className="flex items-center gap-2">
-              <div className="flex-1">
+          <div className="px-4 pt-3 pb-2" style={{ background: '#0a0f1e' }}>
+            <div className="flex items-center justify-between mb-3">
+              <div>
                 <p className="text-[13px] font-semibold text-white/80">Archived & Private Chats</p>
                 <p className="text-[11px] text-[#64748B]">{sortedConversations.length} conversations</p>
               </div>
@@ -2915,24 +2915,14 @@ export default function Chat() {
         /* Conversation Rows - Main/Market tabs */
         <>
           {/* Tab Header Banner - Consistent with Find tab */}
-          <div className="px-4 pt-3 pb-2 space-y-3" style={{ background: '#0a0f1e' }}>
-            <div className="flex items-center justify-between">
+          <div className="px-4 pt-3 pb-2" style={{ background: '#0a0f1e' }}>
+            <div className="flex items-center justify-between mb-3">
               <div>
                 <p className="text-[13px] font-semibold text-white/80">
                   {chatTab === 'market' ? 'Marketplace Messages' : 'Messages'}
                 </p>
                 <p className="text-[11px] text-[#64748B]">{sortedConversations.length} chats</p>
               </div>
-              {chatTab === 'main' && (
-                <button
-                  onClick={() => setShowComposeMenu(true)}
-                  className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
-                  style={{ background: '#7C3AED' }}
-                  aria-label="New message"
-                >
-                  <Plus className="w-4 h-4 text-white" />
-                </button>
-              )}
             </div>
           </div>
           <div ref={conversationsContainerRef} className="pt-2">

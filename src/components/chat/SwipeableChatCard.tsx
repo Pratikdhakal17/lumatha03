@@ -143,21 +143,12 @@ export function SwipeableChatCard({
 
   return (
     <div ref={containerRef} className="relative overflow-hidden rounded-xl">
-      {/* Background action indicator */}
+      {/* Background action indicator - clean color only */}
       {offsetX !== 0 && (
         <div className={cn(
-          "absolute inset-0 flex items-center px-5 rounded-xl transition-colors",
+          "absolute inset-0 rounded-xl transition-colors",
           isLeft ? leftColor : rightColor,
-          isLeft ? 'justify-end' : 'justify-start',
-        )} style={{ opacity: 0.15 + progress * 0.85 }}>
-          <div className={cn(
-            "flex items-center gap-2 text-white font-medium text-sm",
-            "transition-transform",
-          )} style={{ transform: `scale(${0.7 + progress * 0.3})` }}>
-            {isLeft ? leftIcon : rightIcon}
-            <span>{isLeft ? leftLabel : rightLabel}</span>
-          </div>
-        </div>
+        )} style={{ opacity: 0.15 + progress * 0.85 }} />
       )}
       
       {/* Swipeable content */}

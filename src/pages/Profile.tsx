@@ -779,8 +779,23 @@ export default function Profile() {
         ) : currentUser && (
           <div className="flex gap-2">
             <button
-              onClick={() => navigate('/chat')}
-              className="flex-1 py-2.5 px-4 rounded-xl transition-all text-sm font-bold flex items-center justify-center gap-2 active:scale-[0.98] bg-orange-500 text-white border-orange-400 shadow-lg"
+              onClick={handleFollow}
+              className="flex-1 py-2.5 px-4 rounded-xl transition-all text-sm font-bold flex items-center justify-center gap-2 active:scale-[0.98] shadow-lg"
+              style={{
+                background: isFollowing 
+                  ? 'rgba(148, 163, 184, 0.1)' 
+                  : 'linear-gradient(135deg, #F58529, #DD2A7B, #8134AF)',
+                color: isFollowing ? '#94A3B8' : '#ffffff',
+                border: isFollowing ? '1px solid rgba(148, 163, 184, 0.2)' : 'none',
+              }}
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>{isFollowing ? 'Following' : 'Follow'}</span>
+            </button>
+            <button
+              onClick={() => navigate(`/chat/${userId}`)}
+              className="flex-1 py-2.5 px-4 rounded-xl transition-all text-sm font-bold flex items-center justify-center gap-2 active:scale-[0.98] shadow-lg"
+              style={{ background: '#7C3AED', color: '#ffffff' }}
             >
               <MessageCircle className="w-4 h-4" />
               <span>Message</span>
@@ -794,18 +809,10 @@ export default function Profile() {
                    });
                  }
                }}
-               className="py-2.5 px-4 rounded-xl active:scale-[0.98] transition-transform" style={{ background: '#111827', border: '1px solid #374151' }}
+               className="py-2.5 px-4 rounded-xl active:scale-[0.98] transition-transform" 
+               style={{ background: '#111827', border: '1px solid #374151' }}
             >
               <Share2 className="w-4 h-4 text-white" />
-            </button>
-            <button
-               onClick={async () => {
-                 await supabase.from('blocks').insert({ blocker_id: currentUser.id, blocked_id: userId });
-                 setIsBlocked(true); toast.success('Blocked');
-               }}
-               className="py-2.5 px-4 rounded-xl active:scale-[0.98] transition-transform" style={{ background: '#111827', border: '1px solid #374151' }}
-            >
-              <Ban className="w-4 h-4 text-red-500" />
             </button>
           </div>
         )}
