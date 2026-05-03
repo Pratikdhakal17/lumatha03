@@ -726,18 +726,37 @@ export function ChatSettingsSheet({
         /* Ensure Radix Dialog overlay doesn't block clicks when closed */
         .chat-settings-shell [data-radix-dialog-overlay] {
           pointer-events: auto;
+          background: rgba(0,0,0,0.85) !important;
         }
         .chat-settings-shell [data-radix-dialog-overlay][data-state="closed"] {
           pointer-events: none !important;
           opacity: 0 !important;
         }
+
+        /* Ensure dialog content is visible and covers full screen */
+        .chat-settings-shell [data-radix-dialog-content] {
+          width: 100vw !important;
+          height: 100dvh !important;
+          max-width: none !important;
+          max-height: none !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          transform: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          border: none !important;
+          border-radius: 0 !important;
+          background: transparent !important;
+        }
       `}</style>
 
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className="chat-settings-shell w-screen h-[100dvh] max-w-none max-h-none rounded-none border-0 p-0 bg-transparent !gap-0 [&>button]:hidden"
-          style={{ top: 0, left: 0, transform: 'none' }}
-          
+          className="chat-settings-shell w-screen h-[100dvh] max-w-none max-h-none rounded-none border-0 p-0 bg-transparent !gap-0 [&>button]:hidden !translate-x-0 !translate-y-0 data-[state=open]:animate-none data-[state=closed]:animate-none"
+          style={{ top: 0, left: 0, right: 0, bottom: 0, transform: 'none', margin: 0 }}
+          aria-label="Chat settings"
         >
           <DialogHeader className="sr-only">
             <DialogTitle>Chat details</DialogTitle>
@@ -766,8 +785,11 @@ export function ChatSettingsSheet({
             >
               <button
                 onClick={() => onOpenChange(false)}
-                className="w-11 h-11 rounded-full flex items-center justify-center hover:bg-white/[0.06] active:bg-white/[0.12] touch-target-44"
+                data-no-swipe="true"
+                className="w-11 h-11 rounded-full flex items-center justify-center hover:bg-white/[0.06] active:bg-white/[0.12] touch-target-44 cursor-pointer"
                 aria-label="Back"
+                style={{ touchAction: 'manipulation' }}
+                type="button"
               >
                 <ArrowLeft className="w-5 h-5" style={{ color: 'var(--text)' }} />
               </button>
