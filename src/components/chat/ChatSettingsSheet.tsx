@@ -779,7 +779,13 @@ export function ChatSettingsSheet({
               <div className="scroll-content">
                 <div className="px-0 py-2">
                   <section className="flex flex-col items-center justify-center" style={{ minHeight: 164 }} data-no-swipe="true">
-                    <button onClick={() => setShowAvatarViewer(true)} className="rounded-full" aria-label="Open profile photo">
+                    <button 
+                      type="button"
+                      onClick={() => setShowAvatarViewer(true)} 
+                      className="rounded-full cursor-pointer" 
+                      aria-label="Open profile photo"
+                      style={{ touchAction: 'manipulation' }}
+                    >
                       <Avatar className="w-[76px] h-[76px] sm:w-24 sm:h-24 lg:w-[104px] lg:h-[104px]" style={{ border: `2.5px solid ${getThemeColor(theme)}` }}>
                         <AvatarImage src={chatUserAvatar} />
                         <AvatarFallback style={{ background: 'var(--icon-bg)', color: 'var(--accent)', fontSize: 'clamp(20px, 5vw, 40px)', fontWeight: 700 }}>
