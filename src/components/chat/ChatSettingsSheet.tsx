@@ -1452,8 +1452,8 @@ function ListRow({
   return (
     <button
       onClick={onClick}
-      className="w-full min-h-[48px] px-[14px] py-2 flex items-center gap-3 text-left hover:bg-black/[0.04] dark:hover:bg-white/[0.04] active:bg-[rgba(128,128,128,0.12)] touch-target-44"
-      style={{ transition: 'background-color 120ms ease' }}
+      className="w-full min-h-[48px] px-[14px] py-2 flex items-center gap-3 text-left hover:bg-black/[0.04] dark:hover:bg-white/[0.04] active:bg-[rgba(128,128,128,0.12)] touch-target-44 cursor-pointer"
+      style={{ transition: 'background-color 120ms ease', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
     >
       <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--icon-bg)', color: 'var(--text-muted)' }}>
         {icon}
@@ -1529,8 +1529,8 @@ function DangerRow({
   return (
     <button
       onClick={onClick}
-      className="w-full min-h-[48px] px-[14px] py-2 flex items-center gap-3 text-left hover:bg-red-500/10 active:bg-red-500/15 touch-target-44"
-      style={{ transition: 'background-color 120ms ease' }}
+      className="w-full min-h-[48px] px-[14px] py-2 flex items-center gap-3 text-left hover:bg-red-500/10 active:bg-red-500/15 touch-target-44 cursor-pointer"
+      style={{ transition: 'background-color 120ms ease', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
     >
       <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(239,68,68,0.10)', color: '#FCA5A5' }}>
         {icon}

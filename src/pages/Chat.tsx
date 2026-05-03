@@ -2439,7 +2439,7 @@ export default function Chat() {
             onOpenPrimaryStickers={() => setShowEmojiStickerPanel(true)}
             interactionFx={chatFxSettings}
             onInteractionFxChange={setChatFxSettings}
-            onOpenMediaByUrl={openMediaFromDetails}
+            onOpenMediaByUrl={(url) => { setShowSettings(false); openMediaFromDetails(url); }}
             onRequirePremium={() => toast.info('Upgrade to Premium in Settings > Billing.')}
             isPremium={Boolean((profile as any)?.is_premium)}
             mediaData={detailMediaData}
