@@ -1526,22 +1526,16 @@ export default function Chat() {
       </div>
     );
 
-    // Swipeable on ALL devices - left to hide/archive only
+    // Click only - no swipe
     return (
-      <SwipeableChatCard 
-        key={conv.user_id} 
-        onSwipeLeft={() => toggleInSet('archivedChats', conv.user_id, archivedChats, setArchivedChats)}
-        leftLabel={isArchived ? "Unarchive" : "Hide"}
-        leftColor={isArchived ? "bg-emerald-500" : "bg-orange-500"}
+      <button
+        key={conv.user_id}
+        className="w-full flex items-center gap-3 px-4 active:bg-[rgba(124,58,237,0.05)] transition-colors"
+        style={HIDDEN_ROW_STYLE}
+        onClick={() => navigate(`/chat/${conv.user_id}`)}
       >
-        <button
-          className="w-full flex items-center gap-3 px-4 active:bg-[rgba(124,58,237,0.05)] transition-colors"
-          style={HIDDEN_ROW_STYLE}
-          onClick={() => navigate(`/chat/${conv.user_id}`)}
-        >
-          {rowContent}
-        </button>
-      </SwipeableChatCard>
+        {rowContent}
+      </button>
     );
   };
 
@@ -3001,16 +2995,7 @@ export default function Chat() {
 
             return (
               <div key={conv.user_id}>
-                <SwipeableChatCard
-                  onSwipeLeft={chatTab === 'main' || chatTab === 'market' ? () => toggleInSet('archivedChats', conv.user_id, archivedChats, setArchivedChats) : undefined}
-                  onSwipeRight={() => toggleInSet('privateChats', conv.user_id, privateChats, setPrivateChats)}
-                  leftLabel="Hide"
-                  rightLabel={isPrivate ? "Unprivate" : "Private"}
-                  leftColor="bg-orange-500"
-                  rightColor={isPrivate ? "bg-purple-500" : "bg-blue-500"}
-                >
-                  {conversationRow}
-                </SwipeableChatCard>
+                {conversationRow}
               </div>
             );
           })}

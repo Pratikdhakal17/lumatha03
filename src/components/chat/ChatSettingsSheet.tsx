@@ -408,8 +408,15 @@ export function ChatSettingsSheet({
     }
   };
 
-  const finishDrag = () => {
+  const finishDrag = (event?: React.PointerEvent) => {
     if (dragStartXRef.current === null) return;
+
+    // Release pointer capture if it was set
+    try {
+      if (event?.currentTarget && 'releasePointerCapture' in event.currentTarget) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+    } catch { /* ignore */ }
 
     if (!isDragging) {
       dragStartXRef.current = null;
@@ -745,8 +752,8 @@ export function ChatSettingsSheet({
               }}
               onPointerDown={onPanelPointerDown}
               onPointerMove={onPanelPointerMove}
-              onPointerUp={finishDrag}
-              onPointerCancel={finishDrag}
+              onPointerUp={(e) => finishDrag(e)}
+              onPointerCancel={(e) => finishDrag(e)}
             >
               <button
                 onClick={() => onOpenChange(false)}
