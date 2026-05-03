@@ -1535,25 +1535,25 @@ export default function Chat() {
       </div>
     );
 
-    return isMobile ? (
-      <SwipeableChatCard key={conv.user_id} onSwipeRight={swipeRight} rightLabel="Unarchive">
+    // Swipeable on ALL devices - left to hide/archive, right to unarchive/unhide
+    return (
+      <SwipeableChatCard 
+        key={conv.user_id} 
+        onSwipeLeft={() => toggleInSet('archivedChats', conv.user_id, archivedChats, setArchivedChats)}
+        onSwipeRight={swipeRight} 
+        leftLabel={isArchived ? "Unarchive" : "Hide"}
+        rightLabel={isPrivate ? "Unprivate" : "Unarchive"}
+        leftColor={isArchived ? "bg-emerald-500" : "bg-orange-500"}
+        rightColor={isPrivate ? "bg-purple-500" : "bg-emerald-500"}
+      >
         <button
-          className={cn("w-full flex items-center gap-3 px-4 active:bg-[rgba(124,58,237,0.05)]", isMobile ? "transition-colors" : "")}
+          className="w-full flex items-center gap-3 px-4 active:bg-[rgba(124,58,237,0.05)] transition-colors"
           style={HIDDEN_ROW_STYLE}
           onClick={() => navigate(`/chat/${conv.user_id}`)}
         >
           {rowContent}
         </button>
       </SwipeableChatCard>
-    ) : (
-      <button
-        key={conv.user_id}
-        className={cn("w-full flex items-center gap-3 px-4 active:bg-[rgba(124,58,237,0.05)]", isMobile ? "transition-colors" : "")}
-        style={HIDDEN_ROW_STYLE}
-        onClick={() => navigate(`/chat/${conv.user_id}`)}
-      >
-        {rowContent}
-      </button>
     );
   };
 
@@ -1965,28 +1965,20 @@ export default function Chat() {
               <ArrowLeft className="w-5 h-5 text-white/90" strokeWidth={2} />
             </button>
 
-            {/* Avatar - clickable */}
-            <div
-              className="relative shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+            {/* Avatar and Name - clickable profile link */}
+            <button
+              className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity"
               onClick={() => navigate(`/profile/${currentChatUser}`)}
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
-              <Avatar className="w-9 h-9 border border-white/10">
+              <Avatar className="w-9 h-9 border border-white/10 shrink-0">
                 <AvatarImage src={selectedConversation?.user_avatar || undefined} />
                 <AvatarFallback className="bg-slate-700 text-white font-semibold text-xs">
                   {displayName?.charAt(0)?.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-            </div>
-
-            {/* Display name - clickable */}
-            <div
-              className="flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity px-2"
-              onClick={() => navigate(`/profile/${currentChatUser}`)}
-              style={{ WebkitTapHighlightColor: 'transparent' }}
-            >
-              <p className="text-[14px] font-semibold text-white truncate">{displayName}</p>
-            </div>
+              <p className="text-[14px] font-semibold text-white truncate text-left">{displayName}</p>
+            </button>
 
             {/* Action buttons */}
             <div className="shrink-0 flex items-center gap-0.5" style={{ touchAction: 'manipulation' }}>
@@ -2826,16 +2818,23 @@ export default function Chat() {
           </div>
         )}
 
-      {/* Main / Archived content */}
+      {/* Main / Archived content - All tabs have consistent banner sizing */}
       {chatTab === 'find' ? (
-        <div className="px-4 pt-2 space-y-3">
+        <div className="px-4 pt-3 pb-2 space-y-3" style={{ background: '#0a0f1e' }}>
+          {/* Find Tab Banner - Consistent with other tabs */}
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-[13px] font-semibold text-white/80">Find People</p>
+              <p className="text-[11px] text-[#64748B]">{suggestedUsers.length + networkUsers.length} people found</p>
+            </div>
+          </div>
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#4B5563' }} />
             <input
               value={userSearchQuery}
               onChange={e => setUserSearchQuery(e.target.value)}
               placeholder="Search by name or @username..."
-              className="w-full rounded-full pl-11 pr-4 py-3.5 text-[15px] text-white placeholder:text-[#64748B] outline-none"
+              className="w-full rounded-full pl-11 pr-4 py-3 text-[15px] text-white placeholder:text-[#64748B] outline-none"
               style={{ background: '#111827', border: '1px solid rgba(51, 65, 85, 0.7)' }}
             />
           </div>
@@ -2945,167 +2944,95 @@ export default function Chat() {
             const isYou = conv.last_message?.startsWith('You:') || false;
             const preview = conv.last_message || '';
 
+            // Unified swipeable conversation row - works on BOTH mobile and desktop
+            const conversationRow = (
+              <div
+                role="button"
+                tabIndex={0}
+                className="w-full flex items-center gap-3 px-4 md:px-5 active:bg-[rgba(124,58,237,0.05)] transition-colors"
+                style={{ height: isMobile ? 72 : 84, borderBottom: '1px solid #1f2937' }}
+                onClick={(e) => handleConversationRowClick(e, conv.user_id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigate(`/chat/${conv.user_id}`);
+                  }
+                }}
+                onContextMenu={(e) => { e.preventDefault(); openConversationOptions(conv.user_id); }}
+                onTouchStart={(e) => {
+                  const timer = setTimeout(() => {
+                    if (navigator.vibrate) {
+                      try { navigator.vibrate(24); } catch { /* no-op */ }
+                    }
+                    openConversationOptions(conv.user_id);
+                  }, 520);
+                  (e.currentTarget as any).chatRowPressTimer = timer;
+                }}
+                onTouchEnd={(e) => clearTimeout((e.currentTarget as any).chatRowPressTimer)}
+                onTouchMove={(e) => clearTimeout((e.currentTarget as any).chatRowPressTimer)}
+              >
+                {/* Avatar */}
+                <div className="relative shrink-0">
+                  <Avatar className="w-[52px] h-[52px]">
+                    <AvatarImage src={conv.user_avatar || undefined} />
+                    <AvatarFallback style={{ background: 'rgba(124,58,237,0.15)', color: '#A78BFA', fontSize: 16, fontWeight: 700 }}>
+                      {conv.user_name?.charAt(0)?.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0 py-1">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <p className={cn(
+                        "text-[15px] truncate",
+                        hasUnread ? "font-bold text-white" : "font-medium"
+                      )} style={{ fontFamily: "'Space Grotesk', sans-serif", color: hasUnread ? undefined : '#CBD5E1' }}>
+                        {chatNicknames[conv.user_id] || conv.user_name}
+                      </p>
+                      {isPrivate && <Lock className="w-3 h-3 shrink-0" style={{ color: '#C4B5FD' }} />}
+                      {isMuted && <BellOff className="w-3 h-3 shrink-0" style={{ color: '#4B5563' }} />}
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                      {isPinned && <Pin className="w-3 h-3" style={{ color: '#4B5563' }} />}
+                      <span className="text-[12px]" style={{ color: hasUnread ? '#7C3AED' : '#4B5563' }}>
+                        {formatTime(conv.last_message_time || undefined)}
+                      </span>
+                    </div>
+                  </div>
+                  <p className={cn(
+                    "text-[14px] truncate",
+                    hasUnread ? "font-medium text-[#CBD5E1]" : "font-normal text-[#64748B]"
+                  )}>
+                    {preview}
+                  </p>
+                </div>
+                {/* Three-dot menu button */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); openConversationOptions(conv.user_id); }}
+                  onPointerUp={(e) => { e.stopPropagation(); e.preventDefault(); openConversationOptions(conv.user_id); }}
+                  className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all z-10"
+                  aria-label="Chat options"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <MoreVertical className="w-5 h-5" style={{ color: '#64748B' }} />
+                </button>
+              </div>
+            );
+
             return (
               <div key={conv.user_id}>
-              {isMobile ? (
-              <SwipeableChatCard
-                onSwipeLeft={chatTab === 'main' || chatTab === 'market' ? () => toggleInSet('archivedChats', conv.user_id, archivedChats, setArchivedChats) : undefined}
-                onSwipeRight={undefined}
-                leftLabel="Hide"
-                rightLabel="Remove"
-              >
-                <div
-                  role="button"
-                  tabIndex={0}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 md:px-5 active:bg-[rgba(124,58,237,0.05)]",
-                    isMobile ? "transition-none" : ""
-                  )}
-                  style={{ height: isMobile ? 72 : 84, borderBottom: '1px solid #1f2937' }}
-                  onClick={(e) => handleConversationRowClick(e, conv.user_id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      navigate(`/chat/${conv.user_id}`);
-                    }
-                  }}
-                  onContextMenu={(e) => { e.preventDefault(); openConversationOptions(conv.user_id); }}
-                  onTouchStart={(e) => {
-                    const timer = setTimeout(() => {
-                      if (navigator.vibrate) {
-                        try { navigator.vibrate(24); } catch { /* no-op */ }
-                      }
-                      openConversationOptions(conv.user_id);
-                    }, 520);
-                    (e.currentTarget as any).chatRowPressTimer = timer;
-                  }}
-                  onTouchEnd={(e) => clearTimeout((e.currentTarget as any).chatRowPressTimer)}
-                  onTouchMove={(e) => clearTimeout((e.currentTarget as any).chatRowPressTimer)}
+                <SwipeableChatCard
+                  onSwipeLeft={chatTab === 'main' || chatTab === 'market' ? () => toggleInSet('archivedChats', conv.user_id, archivedChats, setArchivedChats) : undefined}
+                  onSwipeRight={() => toggleInSet('privateChats', conv.user_id, privateChats, setPrivateChats)}
+                  leftLabel="Hide"
+                  rightLabel={isPrivate ? "Unprivate" : "Private"}
+                  leftColor="bg-orange-500"
+                  rightColor={isPrivate ? "bg-purple-500" : "bg-blue-500"}
                 >
-                  {/* Avatar */}
-                  <div className="relative shrink-0">
-                    <Avatar className="w-[52px] h-[52px]">
-                      <AvatarImage src={conv.user_avatar || undefined} />
-                      <AvatarFallback style={{ background: 'rgba(124,58,237,0.15)', color: '#A78BFA', fontSize: 16, fontWeight: 700 }}>
-                        {conv.user_name?.charAt(0)?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0 py-1">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <p className={cn(
-                          "text-[15px] truncate",
-                          hasUnread ? "font-bold text-white" : "font-medium"
-                        )} style={{ fontFamily: "'Space Grotesk', sans-serif", color: hasUnread ? undefined : '#CBD5E1' }}>
-                          {chatNicknames[conv.user_id] || conv.user_name}
-                        </p>
-                        {isPrivate && <Lock className="w-3 h-3 shrink-0" style={{ color: '#C4B5FD' }} />}
-                        {isMuted && <BellOff className="w-3 h-3 shrink-0" style={{ color: '#4B5563' }} />}
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                        {isPinned && <Pin className="w-3 h-3" style={{ color: '#4B5563' }} />}
-                        <span className="text-[12px]" style={{ color: hasUnread ? '#7C3AED' : '#4B5563' }}>
-                          {formatTime(conv.last_message_time || undefined)}
-                        </span>
-                      </div>
-                    </div>
-                    <p className={cn(
-                      "text-[14px] truncate",
-                      hasUnread ? "font-medium text-[#CBD5E1]" : "font-normal text-[#64748B]"
-                    )}>
-                      {preview}
-                    </p>
-                  </div>
-                  {/* Three-dot menu button - positioned outside SwipeableChatCard inner button */}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); openConversationOptions(conv.user_id); }}
-                    onPointerUp={(e) => { e.stopPropagation(); e.preventDefault(); openConversationOptions(conv.user_id); }}
-                    className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all z-10"
-                    aria-label="Chat options"
-                    style={{ WebkitTapHighlightColor: 'transparent' }}
-                  >
-                    <MoreVertical className="w-5 h-5" style={{ color: '#64748B' }} />
-                  </button>
-                </div>
-              </SwipeableChatCard>
-              ) : (
-                <div
-                  role="button"
-                  tabIndex={0}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 md:px-5 active:bg-[rgba(124,58,237,0.05)]",
-                    isMobile ? "transition-none" : ""
-                  )}
-                  style={{ height: isMobile ? 72 : 84, borderBottom: '1px solid #1f2937' }}
-                  onClick={(e) => handleConversationRowClick(e, conv.user_id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      navigate(`/chat/${conv.user_id}`);
-                    }
-                  }}
-                  onContextMenu={(e) => { e.preventDefault(); openConversationOptions(conv.user_id); }}
-                  onTouchStart={(e) => {
-                    const timer = setTimeout(() => {
-                      if (navigator.vibrate) {
-                        try { navigator.vibrate(24); } catch { /* no-op */ }
-                      }
-                      openConversationOptions(conv.user_id);
-                    }, 520);
-                    (e.currentTarget as any).chatRowPressTimer = timer;
-                  }}
-                  onTouchEnd={(e) => clearTimeout((e.currentTarget as any).chatRowPressTimer)}
-                  onTouchMove={(e) => clearTimeout((e.currentTarget as any).chatRowPressTimer)}
-                >
-                  <div className="relative shrink-0">
-                    <Avatar className="w-[52px] h-[52px]">
-                      <AvatarImage src={conv.user_avatar || undefined} />
-                      <AvatarFallback style={{ background: 'rgba(124,58,237,0.15)', color: '#A78BFA', fontSize: 16, fontWeight: 700 }}>
-                        {conv.user_name?.charAt(0)?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
-                  <div className="flex-1 min-w-0 py-1">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <p className={cn(
-                          "text-[15px] truncate",
-                          hasUnread ? "font-bold text-white" : "font-medium"
-                        )} style={{ fontFamily: "'Space Grotesk', sans-serif", color: hasUnread ? undefined : '#CBD5E1' }}>
-                          {chatNicknames[conv.user_id] || conv.user_name}
-                        </p>
-                        {isPrivate && <Lock className="w-3 h-3 shrink-0" style={{ color: '#C4B5FD' }} />}
-                        {isMuted && <BellOff className="w-3 h-3 shrink-0" style={{ color: '#4B5563' }} />}
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                        {isPinned && <Pin className="w-3 h-3" style={{ color: '#4B5563' }} />}
-                        <span className="text-[12px]" style={{ color: hasUnread ? '#7C3AED' : '#4B5563' }}>
-                          {formatTime(conv.last_message_time || undefined)}
-                        </span>
-                      </div>
-                    </div>
-                    <p className={cn(
-                      "text-[14px] truncate",
-                      hasUnread ? "font-medium text-[#CBD5E1]" : "font-normal text-[#64748B]"
-                    )}>
-                      {preview}
-                    </p>
-                  </div>
-                  {/* Three-dot menu button */}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); openConversationOptions(conv.user_id); }}
-                    onPointerUp={(e) => { e.stopPropagation(); e.preventDefault(); openConversationOptions(conv.user_id); }}
-                    className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all z-10"
-                    aria-label="Chat options"
-                    style={{ WebkitTapHighlightColor: 'transparent' }}
-                  >
-                    <MoreVertical className="w-5 h-5" style={{ color: '#64748B' }} />
-                  </button>
-                </div>
-              )}
+                  {conversationRow}
+                </SwipeableChatCard>
               </div>
             );
           })}

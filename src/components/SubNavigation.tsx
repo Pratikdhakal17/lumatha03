@@ -302,8 +302,8 @@ export function SubNavigation({ visible = true }: { visible?: boolean }) {
           <button
             key={tab.id}
             onClick={() => handleTabClick(tab)}
-            className="flex flex-col items-center justify-center flex-1 h-full relative transition-all active:scale-90"
-            style={{ minWidth: 36 }}
+            className="flex flex-col items-center justify-center flex-1 h-full relative transition-all active:scale-95 touch-manipulation"
+            style={{ minWidth: 48, WebkitTapHighlightColor: 'transparent' }}
             title={tab.label}
           >
             <div className="relative">
