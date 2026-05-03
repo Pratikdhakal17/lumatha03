@@ -811,26 +811,33 @@ export default function Profile() {
         )}
       </div>
 
-      {/* Profile Tabs */}
-      <div className="mt-4 flex justify-around border-t border-slate-800/50">
-        {profileTabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              "flex-1 py-3.5 relative transition-colors",
-              activeTab === tab.id ? "text-white" : "text-slate-500"
-            )}
-          >
-            {tab.id === 'posts' && <Image className={cn("w-5 h-5 mx-auto", activeTab === tab.id && "text-primary")} />}
-            {tab.id === 'info' && <FileText className={cn("w-5 h-5 mx-auto", activeTab === tab.id && "text-primary")} />}
-            {tab.id === 'marketplace' && <Star className={cn("w-5 h-5 mx-auto", activeTab === tab.id && "text-primary")} />}
-            
-            {activeTab === tab.id && (
-              <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-primary animate-in fade-in slide-in-from-top-1 duration-300" />
-            )}
-          </button>
-        ))}
+      {/* Profile Tabs - Consistent pill-style navigation */}
+      <div className="w-full shrink-0 px-3 py-2 mt-4" style={{ background: '#0a0f1e' }}>
+        <div className="relative flex items-center rounded-xl overflow-hidden shrink-0" style={{ background: '#0d1220', border: '1px solid #1f2937' }}>
+          <div
+            className="absolute top-0 bottom-0 rounded-xl transition-all duration-200 ease-out"
+            style={{
+              left: `${profileTabs.findIndex(t => t.id === activeTab) * (100 / profileTabs.length)}%`,
+              width: `${100 / profileTabs.length}%`,
+              background: '#7C3AED',
+            }}
+          />
+          {profileTabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className="relative z-10 flex items-center gap-1.5 justify-center flex-1 transition-colors duration-200 text-xs font-semibold py-2.5"
+              style={{
+                color: activeTab === tab.id ? 'white' : '#64748B',
+              }}
+            >
+              {tab.id === 'posts' && <Image className="w-4 h-4" />}
+              {tab.id === 'info' && <FileText className="w-4 h-4" />}
+              {tab.id === 'marketplace' && <Star className="w-4 h-4" />}
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tab Content */}

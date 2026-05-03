@@ -547,24 +547,27 @@ export default function Search() {
         </div>
       </div>
 
-      <div className="px-2 sm:px-3 pb-2">
-        <div className="flex gap-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+      {/* Subsection Navigation - Consistent with Chat.tsx */}
+      <div className="w-full shrink-0 px-3 py-2" style={{ background: '#0a0f1e' }}>
+        <div className="relative flex items-center rounded-xl overflow-hidden shrink-0" style={{ background: '#0d1220', border: '1px solid #1f2937' }}>
+          <div
+            className="absolute top-0 bottom-0 rounded-xl transition-all duration-200 ease-out"
+            style={{
+              left: `${FILTER_TABS.findIndex(t => t.id === activeTab) * (100 / FILTER_TABS.length)}%`,
+              width: `${100 / FILTER_TABS.length}%`,
+              background: '#7C3AED',
+            }}
+          />
           {FILTER_TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className="shrink-0 transition-all"
+              className="relative z-10 flex items-center gap-1.5 justify-center flex-1 transition-colors duration-200 text-xs font-semibold py-2"
               style={{
-                padding: '8px 14px',
-                fontSize: 14,
-                fontFamily: "'Inter', sans-serif",
-                fontWeight: activeTab === tab.id ? 600 : 400,
-                color: activeTab === tab.id ? 'white' : '#94A3B8',
-                borderBottom: activeTab === tab.id ? '2px solid #7C3AED' : '2px solid transparent',
-                background: 'transparent',
+                color: activeTab === tab.id ? 'white' : '#64748B',
               }}
             >
-              {tab.label}
+              <span className="truncate">{tab.label}</span>
             </button>
           ))}
         </div>

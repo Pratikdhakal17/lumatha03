@@ -222,17 +222,30 @@ function NotesListView({ notes, activeTab, setActiveTab, searchQuery, setSearchQ
         </div>
       </div>
 
-      <div className="flex gap-8 mb-6 border-b border-white/5 px-2">
-        {['All', 'Pinned', 'Saved'].map(tab => (
-          <button 
-            key={tab}
-            onClick={() => setActiveTab(tab as any)}
-            className={`pb-3 text-xs font-bold tracking-widest uppercase transition-all relative ${activeTab === tab ? 'text-[#E6E9F2]' : 'text-[#8A90A2]'}`}
-          >
-            {tab}
-            {activeTab === tab && <motion.div layoutId="tab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#7B61FF]" />}
-          </button>
-        ))}
+      {/* Subsection Navigation - Consistent pill-style */}
+      <div className="w-full shrink-0 mb-6">
+        <div className="relative flex items-center rounded-xl overflow-hidden shrink-0" style={{ background: '#0d1220', border: '1px solid #1f2937' }}>
+          <div
+            className="absolute top-0 bottom-0 rounded-xl transition-all duration-200 ease-out"
+            style={{
+              left: `${['All', 'Pinned', 'Saved'].indexOf(activeTab) * (100 / 3)}%`,
+              width: `${100 / 3}%`,
+              background: '#7B61FF',
+            }}
+          />
+          {['All', 'Pinned', 'Saved'].map(tab => (
+            <button 
+              key={tab}
+              onClick={() => setActiveTab(tab as any)}
+              className="relative z-10 flex items-center justify-center flex-1 transition-colors duration-200 text-xs font-semibold py-2.5"
+              style={{
+                color: activeTab === tab ? 'white' : '#8A90A2',
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar space-y-10 pb-32">
@@ -732,17 +745,30 @@ function NotesListView({ notes, activeTab, setActiveTab, searchQuery, setSearchQ
         </div>
       </div>
 
-      <div className="flex gap-8 mb-6 border-b border-white/5 px-2">
-        {['All', 'Pinned', 'Saved'].map(tab => (
-          <button 
-            key={tab}
-            onClick={() => setActiveTab(tab as any)}
-            className={`pb-3 text-xs font-bold tracking-widest uppercase transition-all relative ${activeTab === tab ? 'text-[#E6E9F2]' : 'text-[#8A90A2]'}`}
-          >
-            {tab}
-            {activeTab === tab && <motion.div layoutId="tab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#7B61FF]" />}
-          </button>
-        ))}
+      {/* Subsection Navigation - Consistent pill-style */}
+      <div className="w-full shrink-0 mb-6">
+        <div className="relative flex items-center rounded-xl overflow-hidden shrink-0" style={{ background: '#0d1220', border: '1px solid #1f2937' }}>
+          <div
+            className="absolute top-0 bottom-0 rounded-xl transition-all duration-200 ease-out"
+            style={{
+              left: `${['All', 'Pinned', 'Saved'].indexOf(activeTab) * (100 / 3)}%`,
+              width: `${100 / 3}%`,
+              background: '#7B61FF',
+            }}
+          />
+          {['All', 'Pinned', 'Saved'].map(tab => (
+            <button 
+              key={tab}
+              onClick={() => setActiveTab(tab as any)}
+              className="relative z-10 flex items-center justify-center flex-1 transition-colors duration-200 text-xs font-semibold py-2.5"
+              style={{
+                color: activeTab === tab ? 'white' : '#8A90A2',
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar space-y-10 pb-32">
