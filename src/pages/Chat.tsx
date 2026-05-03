@@ -2409,7 +2409,7 @@ export default function Chat() {
         </Suspense>
 
         {/* Settings Sheet */}
-        <Suspense fallback={<div aria-hidden style={{width:0,height:0}}/>}>
+        <Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(10,15,30,0.85)' }}><div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" /></div>}>
           <LazyChatSettingsSheet
             open={showSettings}
             onOpenChange={setShowSettings}

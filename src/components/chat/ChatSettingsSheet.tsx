@@ -722,6 +722,15 @@ export function ChatSettingsSheet({
             max-width: 560px;
           }
         }
+
+        /* Ensure Radix Dialog overlay doesn't block clicks when closed */
+        .chat-settings-shell [data-radix-dialog-overlay] {
+          pointer-events: auto;
+        }
+        .chat-settings-shell [data-radix-dialog-overlay][data-state="closed"] {
+          pointer-events: none !important;
+          opacity: 0 !important;
+        }
       `}</style>
 
       <Dialog open={open} onOpenChange={onOpenChange}>
