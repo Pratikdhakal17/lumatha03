@@ -185,12 +185,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!target) return false;
     if (user?.id === target.userId) return true;
 
-    const { error } = await supabase.auth.setSession({
-      access_token: target.accessToken,
-      refresh_token: target.refreshToken,
-    });
+    // Defensive: ensure we have a refresh token to avoid sending empty/invalid tokens
+    if (!target.refreshToken) return false;
 
-    return !error;
+    // Dev bypass: if using the local dev bypass session tokens, don't call the Supabase
+    // backend to set session — just restore the local user state instead.
+    try {
+      if (
+        import.meta.env.DEV &&
+        localStorage.getItem('lumatha_dev_bypass_auth') === '1' &&
+        target.refreshToken === 'dev_refresh_token'
+      ) {
+        const fakeUser = {
+          id: target.userId,
+          email: target.email,
+          user_metadata: { name: target.displayName, username: target.username },
+        } as any;
+        setUser(fakeUser);
+        loadProfile(fakeUser.id).catch(() => {});
+        upsertStoredAccount({
+          user: fakeUser,
+          access_token: target.accessToken,
+          refresh_token: target.refreshToken,
+          expires_at: null,
+        } as any);
+        return true;
+      }
+
+      const { error } = await supabase.auth.setSession({
+        access_token: target.accessToken,
+        refresh_token: target.refreshToken,
+      });
+
+      if (error) {
+        // If the refresh token is invalid on the server, remove the stored account
+        // so we don't repeatedly attempt to use a bad token.
+        try {
+          const cleaned = accountSessions.filter((s) => s.userId !== accountUserId);
+          setAccountSessions(cleaned);
+          saveStoredSessions(cleaned);
+        } catch {}
+        return false;
+      }
+
+      return true;
+    } catch (e) {
+      // Best-effort: if something goes wrong, remove the stored account to avoid
+      // repeated backend 400s and require the user to re-authenticate.
+      try {
+        const cleaned = accountSessions.filter((s) => s.userId !== accountUserId);
+        setAccountSessions(cleaned);
+        saveStoredSessions(cleaned);
+      } catch {}
+      return false;
+    }
   };
 
   const removeAccount = async (accountUserId: string): Promise<boolean> => {
@@ -203,11 +251,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (isActive) {
       if (remaining.length > 0) {
         const next = remaining[0];
-        const { error } = await supabase.auth.setSession({
-          access_token: next.accessToken,
-          refresh_token: next.refreshToken,
-        });
-        if (error) return false;
+        // Defensive: validate next.refreshToken before attempting to set session
+        if (!next.refreshToken) {
+          // remove the invalid session and continue
+          setAccountSessions(remaining.filter((r) => r.userId !== next.userId));
+          saveStoredSessions(remaining.filter((r) => r.userId !== next.userId));
+        } else if (
+          import.meta.env.DEV &&
+          localStorage.getItem('lumatha_dev_bypass_auth') === '1' &&
+          next.refreshToken === 'dev_refresh_token'
+        ) {
+          const fakeUser = { id: next.userId, email: next.email, user_metadata: { name: next.displayName, username: next.username } } as any;
+          setUser(fakeUser);
+          loadProfile(fakeUser.id).catch(() => {});
+          upsertStoredAccount({ user: fakeUser, access_token: next.accessToken, refresh_token: next.refreshToken, expires_at: null } as any);
+        } else {
+          const { error } = await supabase.auth.setSession({
+            access_token: next.accessToken,
+            refresh_token: next.refreshToken,
+          });
+          if (error) {
+            // drop the invalid token from storage
+            const cleaned = remaining.filter((r) => r.userId !== next.userId);
+            setAccountSessions(cleaned);
+            saveStoredSessions(cleaned);
+            return false;
+          }
+        }
       } else {
         await supabase.auth.signOut();
         setUser(null);
