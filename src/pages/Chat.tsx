@@ -2059,59 +2059,32 @@ export default function Chat() {
                 </div>
               )
             ) : (
-              {React.useMemo(() => {
-                const props = {
-                  messages: messages as any,
-                  userId: user?.id || '',
-                  displayName: displayName || '',
-                  messageReactions,
-                  userReactions,
-                  pinnedMessages,
-                  viewedOnceMessages,
-                  allChatMedia,
-                  messagesEndRef,
-                  hasMore: hasMoreMessages,
-                  loadingMore,
-                  bubbleGradient: currentTheme.gradient,
-                  onLoadMore: handleLoadOlderMessages,
-                  onReact: handleReactToMessage,
-                  onLongPress: handleOpenMessageActions,
-                  onOpenActions: handleOpenMessageActions,
-                  onSwipeReply: handleSwipeReply,
-                  onMarkViewOnce: markViewOnce,
-                  onOpenMedia: openChatMediaViewer,
-                  onOpenMediaByIndex: handleOpenMediaByIndex,
-                  formatMsgTime,
-                  getDateLabel,
-                  simpleMode: isLowEndMobile,
-                  onViewFullPosts: handleViewFullPosts,
-                } as const;
-                return <MessageList {...props} />;
-              }, [
-                messages,
-                user?.id,
-                displayName,
-                messageReactions,
-                userReactions,
-                pinnedMessages,
-                viewedOnceMessages,
-                allChatMedia,
-                messagesEndRef,
-                hasMoreMessages,
-                loadingMore,
-                currentTheme.gradient,
-                handleLoadOlderMessages,
-                handleReactToMessage,
-                handleOpenMessageActions,
-                handleSwipeReply,
-                markViewOnce,
-                openChatMediaViewer,
-                handleOpenMediaByIndex,
-                formatMsgTime,
-                getDateLabel,
-                isLowEndMobile,
-                handleViewFullPosts,
-              ])}
+              <MessageList
+                messages={messages as any}
+                userId={user?.id || ''}
+                displayName={displayName || ''}
+                messageReactions={messageReactions}
+                userReactions={userReactions}
+                pinnedMessages={pinnedMessages}
+                viewedOnceMessages={viewedOnceMessages}
+                allChatMedia={allChatMedia}
+                messagesEndRef={messagesEndRef}
+                hasMore={hasMoreMessages}
+                loadingMore={loadingMore}
+                bubbleGradient={currentTheme.gradient}
+                onLoadMore={handleLoadOlderMessages}
+                onReact={handleReactToMessage}
+                onLongPress={handleOpenMessageActions}
+                onOpenActions={handleOpenMessageActions}
+                onSwipeReply={handleSwipeReply}
+                onMarkViewOnce={markViewOnce}
+                onOpenMedia={openChatMediaViewer}
+                onOpenMediaByIndex={handleOpenMediaByIndex}
+                formatMsgTime={formatMsgTime}
+                getDateLabel={getDateLabel}
+                simpleMode={isLowEndMobile}
+                onViewFullPosts={handleViewFullPosts}
+              />
             )}
           </div>
         </div>
