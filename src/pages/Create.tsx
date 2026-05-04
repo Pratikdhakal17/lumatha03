@@ -261,8 +261,7 @@ export default function Create() {
           contentType: file.type,
         });
         if (uploadError) throw uploadError;
-        const { data: urlData } = supabase.storage.from('posts-media').getPublicUrl(path);
-        uploadedUrls.push(urlData.publicUrl);
+        uploadedUrls.push(getPublicUrlSafe('posts-media', path) ?? '');
         uploadedTypes.push(file.type.includes('video') ? 'video' : 'image');
       }
 

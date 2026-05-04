@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getPublicUrlSafe } from '@/lib/storageHelpers';
 
 const BUCKET_CANDIDATES = ['note-media', 'note-attachments'] as const;
 
@@ -11,8 +12,8 @@ const getMediaUrl = async (bucket: string, filePath: string) => {
     return signedData.signedUrl;
   }
 
-  const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
-  if (data?.publicUrl) return data.publicUrl;
+  const url = getPublicUrlSafe(bucket, filePath);
+  if (url) return url;
 
   throw new Error('Upload succeeded but media URL could not be generated.');
 };

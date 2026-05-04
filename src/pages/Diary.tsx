@@ -243,8 +243,8 @@ export default function Diary() {
           const path = `${user.id}/diary_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
           const { error } = await supabase.storage.from('posts-media').upload(path, block.file, { contentType: block.file.type });
           if (error) throw error;
-          const { data: { publicUrl } } = supabase.storage.from('posts-media').getPublicUrl(path);
-          return { ...block, file: undefined, previewUrl: publicUrl };
+          const url = getPublicUrlSafe('posts-media', path) ?? '';
+          return { ...block, file: undefined, previewUrl: url };
         }
         return { ...block, file: undefined };
       }));

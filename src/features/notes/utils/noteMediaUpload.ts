@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getPublicUrlSafe } from '@/lib/storageHelpers';
 
 const BUCKET_NAME = 'note-media';
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -151,18 +152,15 @@ export const uploadNoteMedia = async (
     onProgress?.({ status: 'processing', progress: 80 });
 
     // Get public URL
-    const { data: urlData } = supabase.storage
-      .from(BUCKET_NAME)
-      .getPublicUrl(filePath);
-
-    if (!urlData?.publicUrl) {
+    const url = getPublicUrlSafe(BUCKET_NAME, filePath);
+    if (!url) {
       throw new Error('Upload succeeded but failed to get public URL.');
     }
 
     onProgress?.({ status: 'complete', progress: 100 });
 
     return {
-      url: urlData.publicUrl,
+      url: url,
       path: filePath,
       type: validation.type!,
       size: file.size,

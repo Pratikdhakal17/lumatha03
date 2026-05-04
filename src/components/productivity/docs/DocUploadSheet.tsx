@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { toast } from 'sonner';
+import { getPublicUrlSafe } from '@/lib/storageHelpers';
 import { Upload, Loader2, Lock, Globe, X, Camera, FileText, ArrowLeft, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -64,8 +65,7 @@ export function DocUploadSheet({ open, onOpenChange, onUploaded }: DocUploadShee
         const coverName = `${user.id}/covers/${Date.now()}.${coverExt}`;
         const { error: coverError } = await supabase.storage.from('documents').upload(coverName, coverFile);
         if (!coverError) {
-          const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(coverName);
-          coverUrl = publicUrl;
+          coverUrl = getPublicUrlSafe('documents', coverName) ?? null;
         }
       }
 
@@ -73,7 +73,7 @@ export function DocUploadSheet({ open, onOpenChange, onUploaded }: DocUploadShee
       const fileName = `${user.id}/${Date.now()}_${file.name}`;
       const { error } = await supabase.storage.from('documents').upload(fileName, file);
       if (error) throw error;
-      const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(fileName);
+      const publicUrl = getPublicUrlSafe('documents', fileName) ?? '';
 
       const insertPayload = {
         user_id: user.id, title, description,

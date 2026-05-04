@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollWheelColumn } from '@/components/ScrollWheelColumn';
 import { toast } from 'sonner';
+import { getPublicUrlSafe } from '@/lib/storageHelpers';
 import { Eye, EyeOff, LogIn, UserPlus, Check, X, ArrowRight, ArrowLeft, Camera, User, MapPin, Loader2, AtSign } from 'lucide-react';
 import { validateLoginForm, validateSignupForm, getValidationErrors } from '@/lib/authValidation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -339,11 +340,11 @@ export default function Auth() {
       if (error) throw error;
       if (data.user) {
         let avatarUrl = null;
-        if (profilePicFile) {
+          if (profilePicFile) {
           const fileExt = profilePicFile.name.split('.').pop();
           const fileName = `${data.user.id}.${fileExt}`;
           const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, profilePicFile, { upsert: true });
-          if (!uploadError) { const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName); avatarUrl = urlData.publicUrl; }
+          if (!uploadError) { avatarUrl = getPublicUrlSafe('avatars', fileName) ?? null; }
         }
         await supabase.from('profiles').upsert({
           id: data.user.id, email: email.trim().toLowerCase(), name: sanitizedName, first_name: firstName.trim(), last_name: lastName.trim(),

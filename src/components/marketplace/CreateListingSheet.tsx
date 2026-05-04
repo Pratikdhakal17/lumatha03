@@ -3,6 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button';
 import { Loader2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { getPublicUrlSafe } from '@/lib/storageHelpers';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ListingTypeSelector } from './ListingTypeSelector';
@@ -58,8 +59,7 @@ export function CreateListingSheet({ editListing, defaultDetectedLocation, onClo
         const path = `${user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
         const { error } = await supabase.storage.from('marketplace-media').upload(path, file);
         if (error) throw error;
-        const { data: { publicUrl } } = supabase.storage.from('marketplace-media').getPublicUrl(path);
-        mediaUrls.push(publicUrl);
+        mediaUrls.push(getPublicUrlSafe('marketplace-media', path) ?? '');
         mediaTypes.push(file.type.startsWith('video') ? 'video' : 'image');
       }
 

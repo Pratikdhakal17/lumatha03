@@ -19,11 +19,12 @@ interface PostData {
 interface SharedPostPreviewProps {
   postId: string;
   className?: string;
+  onViewFullPosts?: () => void;
 }
 
 const postCache = new Map<string, PostData | null>();
 
-export function SharedPostPreview({ postId, className }: SharedPostPreviewProps) {
+export function SharedPostPreview({ postId, className, onViewFullPosts }: SharedPostPreviewProps) {
   const [post, setPost] = useState<PostData | null>(postCache.get(postId) || null);
   const [loading, setLoading] = useState(!postCache.has(postId));
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -99,6 +100,11 @@ export function SharedPostPreview({ postId, className }: SharedPostPreviewProps)
     setViewerOpen(true);
   };
 
+  const handleViewFullPosts = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    onViewFullPosts?.();
+  };
+
   const summary = (post.content || '').trim();
   const shortSummary = summary.length > 110 ? `${summary.slice(0, 110).trim()}...` : summary;
   const publicPostUrl = `/public?post=${post.id}`;
@@ -152,13 +158,13 @@ export function SharedPostPreview({ postId, className }: SharedPostPreviewProps)
           <p className="text-[13px] text-[#94A3B8] leading-snug">
             {shortSummary}
             {summary.length > 110 && (
-              <a href={publicPostUrl} className="text-[13px] text-[#7C3AED] hover:text-[#A78BFA] ml-1">
+              <a href={publicPostUrl} onClick={handleViewFullPosts} className="text-[13px] text-[#7C3AED] hover:text-[#A78BFA] ml-1">
                 ...see more
               </a>
             )}
           </p>
         ) : (
-          <a href={publicPostUrl} className="text-[13px] text-[#7C3AED] hover:text-[#A78BFA]">
+          <a href={publicPostUrl} onClick={handleViewFullPosts} className="text-[13px] text-[#7C3AED] hover:text-[#A78BFA]">
             View full post →
           </a>
         )}

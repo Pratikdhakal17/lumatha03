@@ -7,6 +7,7 @@ import {
   X, Check, Rocket, Wand2, FileText, Target, Flag
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { getPublicUrlSafe } from '@/lib/storageHelpers';
 import { toast } from 'sonner';
 import LazyBlurImage from '@/components/LazyBlurImage';
 import { useAuth } from '@/contexts/AuthContext';
@@ -205,9 +206,7 @@ export function StoryCreationSheet({
       
       if (uploadError) throw uploadError;
       
-      const { data: { publicUrl } } = supabase.storage
-        .from('posts-media')
-        .getPublicUrl(fileName);
+      const publicUrl = getPublicUrlSafe('posts-media', fileName) ?? '';
       
       setCoverImage(publicUrl);
       toast.success('Cover photo added!');
@@ -245,9 +244,7 @@ export function StoryCreationSheet({
       
       if (uploadError) throw uploadError;
       
-      const { data: { publicUrl } } = supabase.storage
-        .from('posts-media')
-        .getPublicUrl(fileName);
+      const publicUrl = getPublicUrlSafe('posts-media', fileName) ?? '';
       
       setPhotos(prev => [...prev, publicUrl]);
     } catch (err) {

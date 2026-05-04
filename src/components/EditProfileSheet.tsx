@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Camera, Sparkles, Loader2, Pencil, Lock, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { getPublicUrlSafe } from '@/lib/storageHelpers';
 import { Database } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
 import { DEFAULT_PROFILE_EXTRAS, loadProfileExtras, saveProfileExtras, type ProfileExtras } from '@/lib/profileExtras';
@@ -211,8 +212,7 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
         const path = `${user.id}/avatar.${ext}`;
         const { error: uploadError } = await supabase.storage.from('avatars').upload(path, avatarFile, { upsert: true });
         if (uploadError) throw uploadError;
-        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
-        newAvatarUrl = urlData.publicUrl + '?t=' + Date.now();
+        newAvatarUrl = (getPublicUrlSafe('avatars', path) ?? profile.avatar_url) + '?t=' + Date.now();
       }
 
       const nextExtras: ProfileExtras = {

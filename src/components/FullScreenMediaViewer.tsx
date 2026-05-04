@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { X, Heart, MessageCircle, Send, Pause, Play, Volume2, VolumeX, Bookmark, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useKeyboardGallery } from '@/hooks/useKeyboardGallery';
@@ -85,6 +85,7 @@ export function FullScreenMediaViewer({
   const [localLiked, setLocalLiked] = useState(isLiked);
   const [localSaved, setLocalSaved] = useState(isSaved);
   const [videoBufferedTime, setVideoBufferedTime] = useState(0);
+  const [mediaLoadError, setMediaLoadError] = useState<Record<number, boolean>>({});
   const [globalMuted, setGlobalMuted] = useState(() => {
     const stateMuted = getVideoAudioState().isGlobalMuted;
     return externalGlobalMuted ?? stateMuted;
@@ -551,9 +552,10 @@ export function FullScreenMediaViewer({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="w-screen h-screen max-w-none max-h-none p-0 m-0 bg-black border-none rounded-none [&>button]:hidden fixed inset-0 translate-x-0 translate-y-0 top-0 left-0"
-        
+        style={{ pointerEvents: open ? 'auto' : 'none', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', touchAction: 'none' }}
       >
         <DialogTitle className="sr-only">Media Viewer</DialogTitle>
+        <DialogDescription id="fs-media-desc" className="sr-only">Full screen media viewer with image and video support</DialogDescription>
 
         <div
           className="fixed inset-0 w-screen h-screen"
@@ -591,6 +593,9 @@ export function FullScreenMediaViewer({
             style={{
               paddingTop: 'calc(env(safe-area-inset-top, 0px) + 52px)',
               paddingBottom: minimal ? 'calc(env(safe-area-inset-bottom, 0px) + 10px)' : 'calc(env(safe-area-inset-bottom, 0px) + 44px)',
+              touchAction: 'manipulation',
+              overscrollBehavior: 'contain',
+              WebkitTouchCallout: 'none',
             }}
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
@@ -667,6 +672,7 @@ export function FullScreenMediaViewer({
                           controls={false}
                           muted={i === currentIndex ? shouldVideoBeMuted(playerIdRef.current) : true}
                           preload={Math.abs(i - currentIndex) <= 1 ? 'auto' : 'none'}
+                          onError={() => setMediaLoadError((s) => ({ ...s, [i]: true }))}
                           onTimeUpdate={() => {
                             if (i === currentIndex) syncVideoState(videoRef.current);
                           }}
@@ -675,22 +681,54 @@ export function FullScreenMediaViewer({
                           }}
                         />
                       ) : (
-                        <img
-                          src={url}
-                          alt={title || 'Media'}
-                          className="max-w-full max-h-full object-contain"
-                          loading={Math.abs(i - currentIndex) <= 1 ? 'eager' : 'lazy'}
-                          draggable={false}
-                          style={{
-                            transform: i === currentIndex ? `translate(${imageOffset.x}px, ${imageOffset.y}px) scale(${imageScale})` : 'none',
-                            transition: touchModeRef.current === 'pan' || touchModeRef.current === 'pinch' ? 'none' : 'transform 220ms ease',
-                            touchAction: imageScale > 1 ? 'none' : 'manipulation',
-                          }}
-                          onDoubleClick={(e) => {
-                            e.stopPropagation();
-                            toggleImageZoom(e.clientX, e.clientY);
-                          }}
-                        />
+                        <>
+                          {!mediaLoadError[i] ? (
+                            <img
+                              src={url}
+                              alt={title || 'Media'}
+                              className="max-w-full max-h-full object-contain"
+                              loading={Math.abs(i - currentIndex) <= 1 ? 'eager' : 'lazy'}
+                              draggable={false}
+                              style={{
+                                transform: i === currentIndex ? `translate(${imageOffset.x}px, ${imageOffset.y}px) scale(${imageScale})` : 'none',
+                                transition: touchModeRef.current === 'pan' || touchModeRef.current === 'pinch' ? 'none' : 'transform 220ms ease',
+                                touchAction: imageScale > 1 ? 'none' : 'manipulation',
+                              }}
+                              onDoubleClick={(e) => {
+                                e.stopPropagation();
+                                toggleImageZoom(e.clientX, e.clientY);
+                              }}
+                              onError={() => setMediaLoadError((s) => ({ ...s, [i]: true }))}
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center w-full h-full text-white/70">
+                              <div className="text-center">
+                                <p className="mb-2">Unable to load media</p>
+                                <div className="flex gap-2 justify-center">
+                                  <button
+                                    className="px-3 py-1 rounded bg-white/10"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // try opening in new tab as fallback
+                                      window.open(url, '_blank', 'noopener,noreferrer');
+                                    }}
+                                  >
+                                    Open
+                                  </button>
+                                  <button
+                                    className="px-3 py-1 rounded bg-white/10"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setMediaLoadError((s) => ({ ...s, [i]: false }));
+                                    }}
+                                  >
+                                    Retry
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </>
                       )}
 
                       {itemIsVideo && i === currentIndex && showVideoControls && (

@@ -4,6 +4,7 @@ import { ArrowLeft, Camera, Sparkles, Search, X, Check, ChevronDown, ChevronUp, 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { getPublicUrlSafe } from '@/lib/storageHelpers';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -92,8 +93,7 @@ export default function MarketplaceEditProfile() {
       const ext = file.name.split('.').pop();
       const path = `${user.id}/avatar.${ext}`;
       await supabase.storage.from('avatars').upload(path, file, { upsert: true });
-      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
-      const url = urlData.publicUrl + '?t=' + Date.now();
+      const url = (getPublicUrlSafe('avatars', path) ?? '') + '?t=' + Date.now();
       await supabase.from('profiles').update({ avatar_url: url }).eq('id', user.id);
       setAvatarUrl(url);
       toast.success('Photo updated!');

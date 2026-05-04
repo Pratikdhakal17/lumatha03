@@ -22,6 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { getPublicUrlSafe } from '@/lib/storageHelpers';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { useChatProtection, WatermarkOverlay, BlurOverlay } from '@/components/chat/ChatProtection';
@@ -45,6 +46,8 @@ import {
   LocationAttachment,
   type AttachmentOption,
 } from '../components/chat/MessageAttachments';
+
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 const LazyForwardMessageDialog = lazy(() =>
   import('@/components/chat/ForwardMessageDialog').then((m) => ({ default: m.ForwardMessageDialog }))
@@ -1015,7 +1018,7 @@ export default function Chat() {
       });
       if (error) throw error;
 
-      const mediaUrl = supabase.storage.from(bucket).getPublicUrl(name).data.publicUrl;
+      const mediaUrl = getPublicUrlSafe(bucket, name) ?? '';
       const mediaType = file.type.startsWith('image')
         ? 'image'
         : isVideo
@@ -1073,7 +1076,7 @@ export default function Chat() {
           const name = `${user?.id}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${ext}`;
           const { error } = await supabase.storage.from('chat-media').upload(name, f, { cacheControl: '31536000', contentType: f.type });
           if (error) continue;
-          urls.push(supabase.storage.from('chat-media').getPublicUrl(name).data.publicUrl);
+          urls.push(getPublicUrlSafe('chat-media', name) ?? '');
         }
         if (urls.length > 0) {
           const mediaType = viewOnceMode ? 'view_once_image' : (urls.length === 1 ? 'image' : 'images');
@@ -1092,7 +1095,7 @@ export default function Chat() {
         const bucket = isDocument ? 'documents' : 'chat-media';
         const { error } = await supabase.storage.from(bucket).upload(name, f, { cacheControl: '31536000', contentType: f.type });
         if (error) continue;
-        const url = supabase.storage.from(bucket).getPublicUrl(name).data.publicUrl;
+        const url = getPublicUrlSafe(bucket, name) ?? '';
         const mediaTypeForFile = viewOnceMode && isVideo ? 'view_once_video' : (isVideo ? 'video' : isAudio ? 'audio' : 'document');
         if (isDocument) {
           await syncPublicDocumentEntry(f, url);
@@ -1141,7 +1144,7 @@ export default function Chat() {
       const name = `${user.id}/${Date.now()}_voice.webm`;
       const { error } = await supabase.storage.from('chat-media').upload(name, audioBlob, { contentType: 'audio/webm' });
       if (error) throw error;
-      await sendMessage(currentChatUser, '🎤 Voice message', supabase.storage.from('chat-media').getPublicUrl(name).data.publicUrl, 'audio');
+      await sendMessage(currentChatUser, '🎤 Voice message', getPublicUrlSafe('chat-media', name) ?? '', 'audio');
       setAudioBlob(null); setRecordingTime(0);
     } catch { toast.error('Failed to send voice message'); }
     finally { setUploading(false); }
@@ -1173,7 +1176,7 @@ export default function Chat() {
     });
   }, [messages, currentChatUser, user]);
 
-  const handleReactToMessage = async (messageId: string, emoji: string) => {
+  const handleReactToMessage = useCallback(async (messageId: string, emoji: string) => {
     if (!user) return;
     const hasReacted = userReactions[messageId]?.has(emoji);
     const currentUserReactionSet = userReactions[messageId] || new Set<string>();
@@ -1228,7 +1231,7 @@ export default function Chat() {
       rememberReactionUsage(emoji);
       triggerInteractionFx('tap');
     }
-  };
+  }, [user, userReactions, rememberReactionUsage, triggerInteractionFx]);
 
   const togglePinMessage = (id: string) => {
     setPinnedMessages(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -1353,12 +1356,14 @@ export default function Chat() {
   }
 
   // View Once: mark as viewed
-  const markViewOnce = (msgId: string) => {
-    const updated = new Set(viewedOnceMessages);
-    updated.add(msgId);
-    setViewedOnceMessages(updated);
-    localStorage.setItem('viewedOnceMessages', JSON.stringify([...updated]));
-  };
+  const markViewOnce = useCallback((msgId: string) => {
+    setViewedOnceMessages((prev) => {
+      const updated = new Set(prev);
+      updated.add(msgId);
+      try { localStorage.setItem('viewedOnceMessages', JSON.stringify([...updated])); } catch {}
+      return updated;
+    });
+  }, []);
 
   const deleteForEveryone = async (msgId: string) => {
     await supabase.from('message_reactions').delete().eq('message_id', msgId);
@@ -1715,6 +1720,10 @@ export default function Chat() {
     });
   }, [currentChatUser, detailMediaData, navigate]);
 
+  const handleViewFullPosts = useCallback(() => {
+    openMediaPage('shared');
+  }, [openMediaPage]);
+
   const sendQuickReaction = useCallback(async (emoji: string) => {
     if (!currentChatUser) return;
     if (!rateLimit.trySend()) {
@@ -2050,31 +2059,59 @@ export default function Chat() {
                 </div>
               )
             ) : (
-              <MessageList
-                messages={messages as any}
-                userId={user?.id || ''}
-                displayName={displayName || ''}
-                messageReactions={messageReactions}
-                userReactions={userReactions}
-                pinnedMessages={pinnedMessages}
-                viewedOnceMessages={viewedOnceMessages}
-                allChatMedia={allChatMedia}
-                messagesEndRef={messagesEndRef}
-                hasMore={hasMoreMessages}
-                loadingMore={loadingMore}
-                bubbleGradient={currentTheme.gradient}
-                onLoadMore={handleLoadOlderMessages}
-                onReact={handleReactToMessage}
-                onLongPress={handleOpenMessageActions}
-                onOpenActions={handleOpenMessageActions}
-                onSwipeReply={handleSwipeReply}
-                onMarkViewOnce={markViewOnce}
-                onOpenMedia={openChatMediaViewer}
-                onOpenMediaByIndex={handleOpenMediaByIndex}
-                formatMsgTime={formatMsgTime}
-                getDateLabel={getDateLabel}
-                simpleMode={isLowEndMobile}
-              />
+              {React.useMemo(() => {
+                const props = {
+                  messages: messages as any,
+                  userId: user?.id || '',
+                  displayName: displayName || '',
+                  messageReactions,
+                  userReactions,
+                  pinnedMessages,
+                  viewedOnceMessages,
+                  allChatMedia,
+                  messagesEndRef,
+                  hasMore: hasMoreMessages,
+                  loadingMore,
+                  bubbleGradient: currentTheme.gradient,
+                  onLoadMore: handleLoadOlderMessages,
+                  onReact: handleReactToMessage,
+                  onLongPress: handleOpenMessageActions,
+                  onOpenActions: handleOpenMessageActions,
+                  onSwipeReply: handleSwipeReply,
+                  onMarkViewOnce: markViewOnce,
+                  onOpenMedia: openChatMediaViewer,
+                  onOpenMediaByIndex: handleOpenMediaByIndex,
+                  formatMsgTime,
+                  getDateLabel,
+                  simpleMode: isLowEndMobile,
+                  onViewFullPosts: handleViewFullPosts,
+                } as const;
+                return <MessageList {...props} />;
+              }, [
+                messages,
+                user?.id,
+                displayName,
+                messageReactions,
+                userReactions,
+                pinnedMessages,
+                viewedOnceMessages,
+                allChatMedia,
+                messagesEndRef,
+                hasMoreMessages,
+                loadingMore,
+                currentTheme.gradient,
+                handleLoadOlderMessages,
+                handleReactToMessage,
+                handleOpenMessageActions,
+                handleSwipeReply,
+                markViewOnce,
+                openChatMediaViewer,
+                handleOpenMediaByIndex,
+                formatMsgTime,
+                getDateLabel,
+                isLowEndMobile,
+                handleViewFullPosts,
+              ])}
             )}
           </div>
         </div>
@@ -2409,42 +2446,74 @@ export default function Chat() {
         </Suspense>
 
         {/* Settings Sheet */}
-        <Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(10,15,30,0.85)' }}><div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" /></div>}>
-          <LazyChatSettingsSheet
-            open={showSettings}
-            onOpenChange={setShowSettings}
-            chatUserName={selectedConversation?.user_name || ''}
-            chatUserAvatar={selectedConversation?.user_avatar}
-            chatUserId={currentChatUser}
-            theme={chatTheme}
-            onThemeChange={saveChatTheme}
-            nickname={chatNicknames[currentChatUser] || ''}
-            onNicknameChange={saveNickname}
-            isMuted={mutedChats.has(currentChatUser)}
-            onMuteToggle={() => toggleInSet('mutedChats', currentChatUser, mutedChats, setMutedChats)}
-            isArchived={archivedChats.has(currentChatUser)}
-            onArchiveToggle={() => toggleInSet('archivedChats', currentChatUser, archivedChats, setArchivedChats)}
-            isPrivate={privateChats.has(currentChatUser)}
-            onPrivateToggle={() => toggleInSet('privateChats', currentChatUser, privateChats, setPrivateChats)}
-            ghostMode={ghostMode}
-            onGhostModeChange={saveChatGhostMode}
-            onViewProfile={() => { setShowSettings(false); navigate(`/profile/${currentChatUser}`); }}
-            onMediaGallery={() => { setShowSettings(false); openMediaPage('pics'); }}
-            onUnsendAll={unsendAllForCurrentChat}
-            onShowForwardedHistory={openForwardedHistory}
-            onBlockUser={blockCurrentChatUser}
-            onReportUser={reportCurrentChatUser}
-            onDeleteChat={() => { setShowSettings(false); deleteEntireChat(currentChatUser); }}
-            onQuickReaction={sendQuickReaction}
-            onOpenPrimaryStickers={() => setShowEmojiStickerPanel(true)}
-            interactionFx={chatFxSettings}
-            onInteractionFxChange={setChatFxSettings}
-            onOpenMediaByUrl={(url) => { setShowSettings(false); openMediaFromDetails(url); }}
-            onRequirePremium={() => toast.info('Upgrade to Premium in Settings > Billing.')}
-            isPremium={Boolean((profile as any)?.is_premium)}
-            mediaData={detailMediaData}
-          />
-        </Suspense>
+        <ErrorBoundary fallback={<div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(10,15,30,0.85)' }}><div className="text-white">Failed to load chat settings</div></div>}>
+          <Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(10,15,30,0.85)' }}><div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" /></div>}>
+            <LazyChatSettingsSheet
+              {...React.useMemo(() => ({
+                open: showSettings,
+                onOpenChange: setShowSettings,
+                chatUserName: selectedConversation?.user_name || '',
+                chatUserAvatar: selectedConversation?.user_avatar,
+                chatUserId: currentChatUser,
+                theme: chatTheme,
+                onThemeChange: saveChatTheme,
+                nickname: chatNicknames[currentChatUser] || '',
+                onNicknameChange: saveNickname,
+                isMuted: mutedChats.has(currentChatUser),
+                onMuteToggle: () => toggleInSet('mutedChats', currentChatUser, mutedChats, setMutedChats),
+                isArchived: archivedChats.has(currentChatUser),
+                onArchiveToggle: () => toggleInSet('archivedChats', currentChatUser, archivedChats, setArchivedChats),
+                isPrivate: privateChats.has(currentChatUser),
+                onPrivateToggle: () => toggleInSet('privateChats', currentChatUser, privateChats, setPrivateChats),
+                ghostMode: ghostMode,
+                onGhostModeChange: saveChatGhostMode,
+                onViewProfile: () => { setShowSettings(false); navigate(`/profile/${currentChatUser}`); },
+                onMediaGallery: () => { setShowSettings(false); openMediaPage('pics'); },
+                onUnsendAll: unsendAllForCurrentChat,
+                onShowForwardedHistory: openForwardedHistory,
+                onBlockUser: blockCurrentChatUser,
+                onReportUser: reportCurrentChatUser,
+                onDeleteChat: () => { setShowSettings(false); deleteEntireChat(currentChatUser); },
+                onQuickReaction: sendQuickReaction,
+                onOpenPrimaryStickers: () => setShowEmojiStickerPanel(true),
+                interactionFx: chatFxSettings,
+                onInteractionFxChange: setChatFxSettings,
+                onOpenMediaByUrl: (url: string) => { setShowSettings(false); openMediaFromDetails(url); },
+                onRequirePremium: () => toast.info('Upgrade to Premium in Settings > Billing.'),
+                isPremium: Boolean((profile as any)?.is_premium),
+                mediaData: detailMediaData,
+              }), [
+                showSettings,
+                setShowSettings,
+                selectedConversation?.user_name,
+                selectedConversation?.user_avatar,
+                currentChatUser,
+                chatTheme,
+                saveChatTheme,
+                chatNicknames,
+                mutedChats,
+                archivedChats,
+                privateChats,
+                ghostMode,
+                saveChatGhostMode,
+                navigate,
+                openMediaPage,
+                unsendAllForCurrentChat,
+                openForwardedHistory,
+                blockCurrentChatUser,
+                reportCurrentChatUser,
+                deleteEntireChat,
+                sendQuickReaction,
+                setShowEmojiStickerPanel,
+                chatFxSettings,
+                setChatFxSettings,
+                openMediaFromDetails,
+                profile,
+                detailMediaData,
+              ])}
+            />
+          </Suspense>
+        </ErrorBoundary>
 
         <Suspense fallback={null}>
           <LazySharedMusicPlayer isOpen={showMusicPlayer} onClose={() => setShowMusicPlayer(false)} partnerName={displayName || 'User'} />
@@ -2505,7 +2574,7 @@ export default function Chat() {
                   return;
                 }
                 
-                const mediaUrl = supabase.storage.from('chat-media').getPublicUrl(name).data.publicUrl;
+                const mediaUrl = getPublicUrlSafe('chat-media', name) ?? '';
                 
                 // Send message with capturing_moment media type (view-once moment capture)
                 await sendMessage(currentChatUser, '📸 Capture Moment', mediaUrl, 'capturing_moment');
@@ -2544,7 +2613,7 @@ export default function Chat() {
                   return;
                 }
 
-                const mediaUrl = supabase.storage.from('chat-media').getPublicUrl(name).data.publicUrl;
+                const mediaUrl = getPublicUrlSafe('chat-media', name) ?? '';
                 await sendMessage(currentChatUser, 'Sketch drawing', mediaUrl, 'image');
                 setShowAttachments(false);
                 setSelectedAttachmentType(null);

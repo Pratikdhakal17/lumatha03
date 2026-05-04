@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ReportDialog } from './ReportDialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { getPublicUrlSafe } from '@/lib/storageHelpers';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Message {
@@ -219,7 +220,7 @@ export const TextConnectV2: React.FC<TextConnectV2Props> = ({
 
       if (uploadErr) throw uploadErr;
 
-      const { data: { publicUrl } } = supabase.storage.from('random-connect-media').getPublicUrl(path);
+      const publicUrl = getPublicUrlSafe('random-connect-media', path) ?? '';
 
       // Send message with media
       onSendMessage('', 'media', publicUrl, viewOnceEnabled);
@@ -320,7 +321,7 @@ export const TextConnectV2: React.FC<TextConnectV2Props> = ({
 
       if (uploadErr) throw uploadErr;
 
-      const { data: { publicUrl } } = supabase.storage.from('random-connect-media').getPublicUrl(path);
+      const publicUrl = getPublicUrlSafe('random-connect-media', path) ?? '';
 
       onSendMessage('', 'drawing', publicUrl, viewOnceEnabled);
       

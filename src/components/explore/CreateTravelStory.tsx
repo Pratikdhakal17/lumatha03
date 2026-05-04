@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Camera, Loader2, MapPin, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { getPublicUrlSafe } from '@/lib/storageHelpers';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -61,8 +62,7 @@ export function CreateTravelStory({ open, onOpenChange, onSubmit }: CreateTravel
 
         if (uploadError) throw uploadError;
 
-        const { data } = supabase.storage.from('posts-media').getPublicUrl(path);
-        uploadedUrls.push(data.publicUrl);
+        uploadedUrls.push(getPublicUrlSafe('posts-media', path) ?? '');
       }
 
       if (uploadedUrls.length > 0) {

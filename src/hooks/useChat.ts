@@ -320,6 +320,15 @@ export function useChat() {
   useEffect(() => {
     if (!user) return;
 
+    // If offline, skip realtime subscription and retry when back online.
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      const onOnline = () => {
+        fetchConversations();
+      };
+      window.addEventListener('online', onOnline);
+      return () => window.removeEventListener('online', onOnline);
+    }
+
     const channel = supabase
       .channel(`chat-realtime-${user.id}`)
       .on(

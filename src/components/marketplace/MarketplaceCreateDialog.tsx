@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ImagePlus, X, Loader2, MapPin, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { getPublicUrlSafe } from '@/lib/storageHelpers';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -110,8 +111,7 @@ export function MarketplaceCreateDialog({ open, onOpenChange, editListing, onSuc
         const path = `${user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
         const { error } = await supabase.storage.from('marketplace-media').upload(path, file);
         if (error) throw error;
-        const { data: { publicUrl } } = supabase.storage.from('marketplace-media').getPublicUrl(path);
-        mediaUrls.push(publicUrl);
+        mediaUrls.push(getPublicUrlSafe('marketplace-media', path) ?? '');
         mediaTypes.push(file.type.startsWith('video') ? 'video' : 'image');
       }
 

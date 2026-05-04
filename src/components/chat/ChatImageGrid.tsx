@@ -55,7 +55,7 @@ export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGrid
   };
 
   return (
-    <div className={gridClass}>
+    <div className={gridClass} style={{ WebkitTouchCallout: 'none', touchAction: 'manipulation' }}>
       {displayUrls.map((url, i) => (
         <button
           key={i}
@@ -64,9 +64,15 @@ export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGrid
             'active:scale-[0.98] transition-transform duration-100',
             getImageStyle(i)
           )}
+          onPointerDown={(e) => {
+            (e as any).stopPropagation();
+          }}
           onPointerUp={(e) => {
             (e as any).stopPropagation();
             guardAndRun(() => handleImageTap(url));
+          }}
+          onTouchStart={(e) => {
+            (e as any).stopPropagation();
           }}
           onTouchEnd={(e) => {
             (e as any).stopPropagation();

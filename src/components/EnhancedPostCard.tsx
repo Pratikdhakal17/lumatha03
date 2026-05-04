@@ -585,9 +585,8 @@ export function EnhancedPostCard({
         const { error: uploadError } = await supabase.storage.from('posts-media').upload(fileName, file);
         if (uploadError) throw uploadError;
 
-        const { data } = supabase.storage.from('posts-media').getPublicUrl(fileName);
         uploaded.push({
-          url: data.publicUrl,
+          url: getPublicUrlSafe('posts-media', fileName) ?? '',
           type: file.type.includes('video') ? 'video' : 'image',
         });
       }

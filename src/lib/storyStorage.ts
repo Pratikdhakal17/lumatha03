@@ -85,8 +85,7 @@ export async function uploadStoryMediaWithFallback(options: {
 
     if (!error) {
       cachedStoryBucket = bucket;
-      const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
-      return { bucket, path: filePath, publicUrl: data.publicUrl };
+        return { bucket, path: filePath, publicUrl: getPublicUrlSafe(bucket, filePath) ?? '' };
     }
 
     const message = error.message || 'Unknown storage error';
