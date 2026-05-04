@@ -167,7 +167,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Defensive: if there's no active session but the browser still contains
+    // Supabase-stored tokens in localStorage (from a previous session), clear
+    // them to avoid the client attempting background refreshes with invalid
+    // tokens which produce repeated 400s in the console.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        try {
+          const keys = Object.keys(localStorage || {});
+          const maybeTokenKey = keys.find((k) => /(^sb:)|supabase|supabase.auth.token/i.test(k));
+          if (maybeTokenKey) {
+            // Attempt a signOut to clear client storage; ignore network errors.
+            supabase.auth.signOut().catch(() => {});
+            setAccountSessions([]);
+            saveStoredSessions([]);
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+    }).catch(() => {});
+
+    // Global handler: catch unhandled promise rejections that contain the
+    // Supabase refresh error and proactively clear stored sessions so the
+    // app stops repeatedly attempting invalid refreshes.
+    const onUnhandledRejection = (ev: PromiseRejectionEvent) => {
+      try {
+        const reason = ev && (ev as any).reason;
+        const msg = reason && (reason.message || reason.error || String(reason));
+        if (typeof msg === 'string' && (msg.includes('Invalid Refresh Token') || msg.includes('Refresh Token Not Found') || msg.includes('Invalid refresh token'))) {
+          supabase.auth.signOut().catch(() => {});
+          setAccountSessions([]);
+          saveStoredSessions([]);
+        }
+      } catch (e) {
+        // swallow
+      }
+    };
+
+    window.addEventListener('unhandledrejection', onUnhandledRejection as EventListener);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('unhandledrejection', onUnhandledRejection as EventListener);
+    };
   }, []);
 
   const loadProfile = async (userId: string) => {
