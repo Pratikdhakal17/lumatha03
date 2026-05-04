@@ -110,6 +110,7 @@ interface ChatSettingsSheetProps {
   onGhostModeChange: (mode: number) => void;
   onViewProfile: () => void;
   onMediaGallery: () => void;
+  onOpenMediaTab?: (tab: MediaTab) => void;
   onUnsendAll: () => void;
   onShowForwardedHistory: () => void;
   onBlockUser: () => void;
@@ -150,6 +151,7 @@ export function ChatSettingsSheet({
   onGhostModeChange,
   onViewProfile,
   onMediaGallery,
+  onOpenMediaTab,
   onUnsendAll,
   onShowForwardedHistory,
   onBlockUser,
@@ -510,10 +512,16 @@ export function ChatSettingsSheet({
               );
             })}
           </div>
-          {extraPics > 0 ? (
+            {extraPics > 0 ? (
             <div className="px-2 pb-2">
-              <button
-                onClick={onMediaGallery}
+                <button
+                onClick={() => {
+                  if (onOpenMediaTab) {
+                    onOpenMediaTab(activeMediaTab);
+                    return;
+                  }
+                  onMediaGallery();
+                }}
                 className="w-full h-9 sm:h-10 rounded-lg text-xs sm:text-sm touch-target-44"
                 style={{ background: 'var(--icon-bg)', color: 'var(--text)', border: '0.5px solid var(--separator)' }}
               >
@@ -577,7 +585,13 @@ export function ChatSettingsSheet({
             ))}
             {data.shared.length > 5 ? (
               <button
-                onClick={onMediaGallery}
+                onClick={() => {
+                  if (onOpenMediaTab) {
+                    onOpenMediaTab(activeMediaTab);
+                    return;
+                  }
+                  onMediaGallery();
+                }}
                 className="w-full h-9 sm:h-10 rounded-lg text-xs sm:text-sm touch-target-44"
                 style={{ background: 'var(--icon-bg)', color: 'var(--text)', border: '0.5px solid var(--separator)' }}
               >
@@ -621,7 +635,13 @@ export function ChatSettingsSheet({
           ))}
           {data.pdf.length > 5 ? (
             <button
-              onClick={onMediaGallery}
+              onClick={() => {
+                if (onOpenMediaTab) {
+                  onOpenMediaTab(activeMediaTab);
+                  return;
+                }
+                onMediaGallery();
+              }}
               className="w-full h-9 sm:h-10 rounded-lg text-xs sm:text-sm touch-target-44"
               style={{ background: 'var(--icon-bg)', color: 'var(--text)', border: '0.5px solid var(--separator)' }}
             >

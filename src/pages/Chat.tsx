@@ -1767,6 +1767,32 @@ export default function Chat() {
     });
   }, [currentChatUser, detailMediaData, navigate]);
 
+  const openChatSettingsMediaTab = useCallback((tab: 'pics' | 'videos' | 'shared' | 'pdf') => {
+    setShowSettings(false);
+
+    if (tab === 'pics') {
+      const firstPic = detailMediaData.pics[0]?.url;
+      if (firstPic) {
+        openChatMediaViewer(firstPic);
+        return;
+      }
+      openMediaPage('pics');
+      return;
+    }
+
+    if (tab === 'videos') {
+      const firstVideo = detailMediaData.videos[0]?.url;
+      if (firstVideo) {
+        openChatMediaViewer(firstVideo);
+        return;
+      }
+      openMediaPage('videos');
+      return;
+    }
+
+    openMediaPage(tab);
+  }, [detailMediaData.pics, detailMediaData.videos, openChatMediaViewer, openMediaPage]);
+
   const handleViewFullPosts = useCallback(() => {
     openMediaPage('shared');
   }, [openMediaPage]);
@@ -1824,6 +1850,7 @@ export default function Chat() {
     onGhostModeChange: saveChatGhostMode,
     onViewProfile: () => { setShowSettings(false); navigate(`/profile/${currentChatUser}`); },
     onMediaGallery: () => { setShowSettings(false); openMediaPage('pics'); },
+    onOpenMediaTab: openChatSettingsMediaTab,
     onUnsendAll: unsendAllForCurrentChat,
     onShowForwardedHistory: openForwardedHistory,
     onBlockUser: blockCurrentChatUser,
@@ -1853,6 +1880,7 @@ export default function Chat() {
     saveChatGhostMode,
     navigate,
     openMediaPage,
+    openChatSettingsMediaTab,
     unsendAllForCurrentChat,
     openForwardedHistory,
     blockCurrentChatUser,
