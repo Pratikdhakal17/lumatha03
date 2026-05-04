@@ -58,6 +58,26 @@ const DialogContent = React.forwardRef<
     return found;
   };
 
+  // Recursively check children for a Dialog description element
+  const hasDialogDescription = (nodes: React.ReactNode): boolean => {
+    let found = false;
+    React.Children.forEach(nodes, (child) => {
+      if (found) return;
+      if (!child || typeof child === 'string' || typeof child === 'number') return;
+      const elem = child as React.ReactElement<any>;
+      const type = elem.type as any;
+      const name = type?.displayName || type?.name || '';
+      if (type === DialogPrimitive.Description || name === DialogPrimitive.Description.displayName || name === 'DialogDescription') {
+        found = true;
+        return;
+      }
+      if (elem.props && elem.props.children) {
+        if (hasDialogDescription(elem.props.children)) found = true;
+      }
+    });
+    return found;
+  };
+
   const needsHiddenTitle = !hasDialogTitle(children);
 
   const handleOpenAutoFocus: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>["onOpenAutoFocus"] = (event) => {
@@ -84,6 +104,9 @@ const DialogContent = React.forwardRef<
       {...safeProps}
     >
       {needsHiddenTitle && <DialogPrimitive.Title className="sr-only">Dialog</DialogPrimitive.Title>}
+      {!hasDialogDescription(children) && !props['aria-describedby'] && (
+        <DialogPrimitive.Description className="sr-only">Dialog content</DialogPrimitive.Description>
+      )}
       {children}
       <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity data-[state=open]:bg-accent data-[state=open]:text-muted-foreground hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
         <X className="h-4 w-4" />
