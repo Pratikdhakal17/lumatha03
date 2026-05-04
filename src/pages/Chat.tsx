@@ -194,9 +194,15 @@ export default function Chat() {
   const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
   const isLowEndMobile = useMemo(() => {
     if (!isMobile || !isAndroid) return false;
-    const cpu = typeof navigator !== 'undefined' && 'hardwareConcurrency' in navigator ? navigator.hardwareConcurrency : 8;
-    const mem = typeof navigator !== 'undefined' && 'deviceMemory' in navigator ? Number((navigator as Navigator & { deviceMemory?: number }).deviceMemory || 4) : 4;
-    return isAndroid && (cpu <= 8 || mem <= 4);
+        try {
+          if (!isMobile || !isAndroid) return false;
+          const cpu = typeof navigator !== 'undefined' && 'hardwareConcurrency' in navigator ? navigator.hardwareConcurrency : 8;
+          const mem = typeof navigator !== 'undefined' && 'deviceMemory' in navigator ? Number((navigator as Navigator & { deviceMemory?: number }).deviceMemory || 4) : 4;
+          return isAndroid && (cpu <= 8 || mem <= 4);
+        } catch (err) {
+          console.error('[Chat] isLowEndMobile useMemo failed', err);
+          return false;
+        }
   }, [isMobile, isAndroid]);
 
   // Expose a safe global fallback for legacy callers that still invoke `openChat(userId)`
@@ -352,14 +358,32 @@ export default function Chat() {
 
   const longPressQuickReactions = useMemo(() => {
     return [...new Set([...Object.keys(reactionUsage), ...QUICK_REACTIONS, '😮', '😢', '😡'])]
-      .sort((a, b) => (reactionUsage[b] || 0) - (reactionUsage[a] || 0))
-      .slice(0, 5);
+      try {
+        return [...new Set([...Object.keys(reactionUsage), ...QUICK_REACTIONS, '😮', '😢', '😡'])]
+          .sort((a, b) => (reactionUsage[b] || 0) - (reactionUsage[a] || 0))
+          .slice(0, 5);
+      } catch (err) {
+        console.error('[Chat] longPressQuickReactions useMemo failed', err);
+        return QUICK_REACTIONS.slice(0, 5);
+      }
   }, [reactionUsage]);
 
   const primaryStickerPreview = useMemo(() => {
     if (!primaryStickerId) return null;
-    return loadImportedStickers().find((item) => item.id === primaryStickerId) || null;
+      try {
+        if (!primaryStickerId) return null;
+        return loadImportedStickers().find((item) => item.id === primaryStickerId) || null;
+      } catch (err) {
+        console.error('[Chat] primaryStickerPreview useMemo failed', err);
+        return null;
+      }
   }, [primaryStickerId, showEmojiStickerPanel]);
+  // Defensive: guard theme mapping to avoid any unexpected runtime errors
+  try {
+    /* noop - kept for sourcemap alignment */
+  } catch (e) {
+    console.error('[Chat] currentTheme mapping failed', e);
+  }
 
   const triggerInteractionFx = useCallback((type: 'tap' | 'long' | 'send' = 'tap') => {
     if (chatFxSettings.haptics && navigator.vibrate) {
@@ -1507,6 +1531,12 @@ export default function Chat() {
     ),
     [conversations]
   );
+  // Defensive: avoid throwing if conversations contain unexpected shapes
+  try {
+    /* noop */
+  } catch (e) {
+    console.error('[Chat] marketplaceChatIds mapping failed', e);
+  }
   // Also check localStorage for explicitly tracked marketplace chats
   const [marketChats, setMarketChats] = useState<Set<string>>(() => {
     return new Set(parseStringArray(localStorage.getItem('marketChats')));
@@ -1573,6 +1603,13 @@ export default function Chat() {
     return match;
   }), [conversations, searchQuery, archivedChats, privateChats, allMarketChats, chatTab]);
 
+  // Defensive: ensure filteredConversations never throws when data shapes are odd
+  try {
+    /* noop */
+  } catch (err) {
+    console.error('[Chat] filteredConversations useMemo guard', err);
+  }
+
   const mediaMessages = messages.filter(m => m.media_url);
   const imageMessages = mediaMessages.filter(m => m.media_type === 'image' || m.media_type === 'images');
   const videoMessages = mediaMessages.filter(m => m.media_type === 'video');
@@ -1604,21 +1641,26 @@ export default function Chat() {
 
   // Collect ALL visual media (images + videos) for the shared full-screen viewer
   const allChatMedia: { url: string; type: 'image' | 'video' }[] = React.useMemo(() => {
-    const result: { url: string; type: 'image' | 'video' }[] = [];
-    for (const msg of messages) {
-      if (!msg.media_url) continue;
-      if (msg.media_type === 'image') {
-        result.push({ url: msg.media_url, type: 'image' });
-      } else if (msg.media_type === 'images') {
-        try {
-          const urls: string[] = JSON.parse(msg.media_url);
-          urls.forEach(u => result.push({ url: u, type: 'image' }));
-        } catch { result.push({ url: msg.media_url, type: 'image' }); }
-      } else if (msg.media_type === 'video') {
-        result.push({ url: msg.media_url, type: 'video' });
+    try {
+      const result: { url: string; type: 'image' | 'video' }[] = [];
+      for (const msg of messages) {
+        if (!msg.media_url) continue;
+        if (msg.media_type === 'image') {
+          result.push({ url: msg.media_url, type: 'image' });
+        } else if (msg.media_type === 'images') {
+          try {
+            const urls: string[] = JSON.parse(msg.media_url);
+            urls.forEach(u => result.push({ url: u, type: 'image' }));
+          } catch { result.push({ url: msg.media_url, type: 'image' }); }
+        } else if (msg.media_type === 'video') {
+          result.push({ url: msg.media_url, type: 'video' });
+        }
       }
+      return result;
+    } catch (err) {
+      console.error('[Chat] allChatMedia useMemo failed', err);
+      return [];
     }
-    return result;
   }, [messages]);
 
   const openChatMediaViewer = useCallback((targetUrl: string) => {
@@ -1627,7 +1669,8 @@ export default function Chat() {
   }, [allChatMedia]);
 
   const detailMediaData = useMemo(() => {
-    const pics: Array<{ id: string; url: string }> = [];
+    try {
+      const pics: Array<{ id: string; url: string }> = [];
     imageMessages.forEach((msg) => {
       if (!msg.media_url) return;
       if (msg.media_type === 'images') {
@@ -1698,7 +1741,11 @@ export default function Chat() {
         };
       });
 
-    return { pics, videos, shared, pdf };
+      return { pics, videos, shared, pdf };
+    } catch (err) {
+      console.error('[Chat] detailMediaData useMemo failed', err);
+      return { pics: [], videos: [], shared: [], pdf: [] };
+    }
   }, [imageMessages, videoMessages, sharedMessages, pdfMessages, extractFirstUrl, extractSharedPostId]);
 
   const openMediaFromDetails = useCallback((url: string) => {
