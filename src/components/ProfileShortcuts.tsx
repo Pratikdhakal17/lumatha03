@@ -34,8 +34,9 @@ export function ProfileShortcuts() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
 
+import { safeSignOut } from '@/lib/supabaseAuth';
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await safeSignOut();
     toast.success('Logged out successfully');
     navigate('/auth');
   };

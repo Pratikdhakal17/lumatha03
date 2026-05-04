@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { safeGetUser } from '@/lib/supabaseAuth';
 import { toast } from 'sonner';
 import { ArrowLeft, Check, ChevronDown, Palette, Users, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -234,7 +235,7 @@ export default function Create() {
   };
 
   const handlePublish = async () => {
-    const { data: authData } = await supabase.auth.getUser();
+    const { data: authData } = await safeGetUser();
     const authUser = authData.user;
     if (!authUser) {
       toast.error('Please sign in first');

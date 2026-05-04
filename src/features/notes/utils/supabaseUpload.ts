@@ -19,7 +19,8 @@ const getMediaUrl = async (bucket: string, filePath: string) => {
 };
 
 export const uploadNoteMedia = async (file: File, type: 'image' | 'video' | 'audio') => {
-  const { data: authData } = await supabase.auth.getUser();
+import { safeGetUser } from '@/lib/supabaseAuth';
+  const { data: authData } = await safeGetUser();
   const user = authData.user;
   if (!user) {
     throw new Error('Please sign in to upload media.');

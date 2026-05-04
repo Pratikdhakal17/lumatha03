@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { LumaNote, NoteBlock, NoteTheme, NoteCategory } from '../types';
 import { supabase } from '@/integrations/supabase/client';
+import { safeGetUser } from '@/lib/supabaseAuth';
 import { toast } from 'sonner';
 
 interface SupabaseNotesContextType {
@@ -96,7 +97,7 @@ export const SupabaseNotesProvider: React.FC<{ children: React.ReactNode }> = ({
   // Load user and notes
   useEffect(() => {
     const loadUser = async () => {
-      const { data } = await supabase.auth.getUser();
+      const { data } = await safeGetUser();
       if (data.user) {
         setUserId(data.user.id);
       }

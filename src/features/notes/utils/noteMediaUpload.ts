@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getPublicUrlSafe } from '@/lib/storageHelpers';
+import { safeGetUser } from '@/lib/supabaseAuth';
 
 const BUCKET_NAME = 'note-media';
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -88,7 +89,7 @@ export const uploadNoteMedia = async (
   onProgress?: (progress: UploadProgress) => void
 ): Promise<UploadResult> => {
   // Get current user
-  const { data: authData, error: authError } = await supabase.auth.getUser();
+  const { data: authData, error: authError } = await safeGetUser();
   if (authError || !authData.user) {
     throw new Error('Please sign in to upload media.');
   }

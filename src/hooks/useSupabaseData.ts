@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { safeGetUser } from '@/lib/supabaseAuth';
 
 type Post = Database['public']['Tables']['posts']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -16,7 +17,7 @@ export function useSupabaseData() {
 
   const fetchData = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await safeGetUser();
       if (!user) return;
 
       const { data: profileData } = await supabase
@@ -76,7 +77,7 @@ export function useSupabaseData() {
 
   const toggleSave = async (postId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await safeGetUser();
       if (!user) return;
       if (saved.includes(postId)) {
         await supabase.from('saved').delete().eq('user_id', user.id).eq('post_id', postId);
@@ -112,7 +113,7 @@ export function useSupabaseData() {
 
   const toggleLike = async (postId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await safeGetUser();
       if (!user) return;
       const isLiked = likes.some(l => l.post_id === postId);
       if (isLiked) {

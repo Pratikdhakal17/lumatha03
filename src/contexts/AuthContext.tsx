@@ -1,6 +1,7 @@
 import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { safeGetSession, safeSignOut } from '@/lib/supabaseAuth';
 
 const ACCOUNT_SESSIONS_STORAGE_KEY = 'lumatha_account_sessions';
 const MAX_SWITCH_ACCOUNTS = 2;
@@ -131,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         // Get initial session
         authBootstrapPromise = authBootstrapPromise.then(() =>
-          supabase.auth.getSession().then(({ data: { session } }) => {
+          safeGetSession().then(({ data: { session } }) => {
           setUser(session?.user ?? null);
           if (session?.user) {
             loadProfile(session.user.id);
@@ -143,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       // fall back to normal behavior
       authBootstrapPromise = authBootstrapPromise?.then(() =>
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        safeGetSession().then(({ data: { session } }) => {
         setUser(session?.user ?? null);
         if (session?.user) {
           loadProfile(session.user.id);
@@ -171,14 +172,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Supabase-stored tokens in localStorage (from a previous session), clear
     // them to avoid the client attempting background refreshes with invalid
     // tokens which produce repeated 400s in the console.
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    safeGetSession().then(({ data: { session } }) => {
       if (!session) {
         try {
           const keys = Object.keys(localStorage || {});
           const maybeTokenKey = keys.find((k) => /(^sb:)|supabase|supabase.auth.token/i.test(k));
           if (maybeTokenKey) {
             // Attempt a signOut to clear client storage; ignore network errors.
-            supabase.auth.signOut().catch(() => {});
+            safeSignOut().catch(() => {});
             setAccountSessions([]);
             saveStoredSessions([]);
           }
@@ -196,7 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const reason = ev && (ev as any).reason;
         const msg = reason && (reason.message || reason.error || String(reason));
         if (typeof msg === 'string' && (msg.includes('Invalid Refresh Token') || msg.includes('Refresh Token Not Found') || msg.includes('Invalid refresh token'))) {
-          supabase.auth.signOut().catch(() => {});
+          safeSignOut().catch(() => {});
           setAccountSessions([]);
           saveStoredSessions([]);
         }
@@ -322,7 +323,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       } else {
-        await supabase.auth.signOut();
+        await safeSignOut();
         setUser(null);
         setProfile(null);
       }
@@ -334,7 +335,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
+    await safeSignOut();
     setUser(null);
     setProfile(null);
   };
