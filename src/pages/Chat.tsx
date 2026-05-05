@@ -1761,12 +1761,39 @@ export default function Chat() {
   }, [imageMessages, videoMessages, sharedMessages, pdfMessages, extractFirstUrl, extractSharedPostId]);
 
   const openMediaFromDetails = useCallback((url: string) => {
+    console.debug('[Chat] openMediaFromDetails', url, 'allChatMedia count:', allChatMedia.length);
+    
+    // First check if URL is in allChatMedia (main chat media viewer)
     if (allChatMedia.some((item) => item.url === url)) {
+      console.debug('[Chat] URL found in allChatMedia, opening viewer');
       openChatMediaViewer(url);
       return;
     }
+    
+    // If not in allChatMedia, check if it's in detailMediaData and add it temporarily
+    const allDetailUrls = [
+      ...detailMediaData.pics.map(p => p.url),
+      ...detailMediaData.videos.map(v => v.url)
+    ];
+    
+    if (allDetailUrls.includes(url)) {
+      console.debug('[Chat] URL found in detailMediaData but not allChatMedia, adding to viewer');
+      // Create a temporary combined array for the viewer
+      const combinedMedia = [
+        ...allChatMedia,
+        ...detailMediaData.pics.map(p => ({ url: p.url, type: 'image' as const })),
+        ...detailMediaData.videos.map(v => ({ url: v.url, type: 'video' as const }))
+      ];
+      const idx = combinedMedia.findIndex(m => m.url === url);
+      if (idx >= 0) {
+        setChatMediaViewer({ open: true, index: idx });
+        return;
+      }
+    }
+    
+    console.debug('[Chat] URL not found anywhere, opening in new tab');
     window.open(url, '_blank', 'noopener,noreferrer');
-  }, [allChatMedia, openChatMediaViewer]);
+  }, [allChatMedia, openChatMediaViewer, detailMediaData]);
 
   const openMediaPage = useCallback((initialTab: 'pics' | 'videos' | 'shared' | 'pdf' = 'pics') => {
     navigate('/media', {
@@ -1905,6 +1932,7 @@ export default function Chat() {
     openMediaFromDetails,
     profile,
     detailMediaData,
+    allChatMedia,
     toggleInSet,
     saveNickname,
   ]);
