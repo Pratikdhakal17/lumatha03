@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { cn } from '@/lib/utils';
 
 interface ChatImageGridProps {
@@ -19,7 +19,6 @@ interface ChatImageGridProps {
 export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGridProps) {
   if (!urls.length) return null;
 
-  const touchHandledRef = useRef(false);
   const count = urls.length;
   const displayUrls = urls.slice(0, 4);
   const extraCount = count > 4 ? count - 4 : 0;
@@ -41,16 +40,10 @@ export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGrid
     return 'aspect-square max-h-[180px]';
   };
 
-  const guardAndRun = (fn: () => void) => {
-    if (touchHandledRef.current) return;
-    touchHandledRef.current = true;
-    window.setTimeout(() => (touchHandledRef.current = false), 500);
-    fn();
-  };
-
   const handleImageTap = (url: string) => {
     // Haptic feedback for mobile
     if (navigator.vibrate) navigator.vibrate(15);
+    console.debug('[ChatImageGrid] image tapped', url);
     onImageTap?.(url);
   };
 
@@ -59,28 +52,15 @@ export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGrid
       {displayUrls.map((url, i) => (
         <button
           key={i}
+          type="button"
           className={cn(
             'relative overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 group',
             'active:scale-[0.98] transition-transform duration-100',
             getImageStyle(i)
           )}
-          onPointerDown={(e) => {
-            (e as any).stopPropagation();
-          }}
-          onPointerUp={(e) => {
-            (e as any).stopPropagation();
-            guardAndRun(() => handleImageTap(url));
-          }}
-          onTouchStart={(e) => {
-            (e as any).stopPropagation();
-          }}
-          onTouchEnd={(e) => {
-            (e as any).stopPropagation();
-            guardAndRun(() => handleImageTap(url));
-          }}
           onClick={(e) => {
-            (e as any).stopPropagation();
-            guardAndRun(() => handleImageTap(url));
+            e.stopPropagation();
+            handleImageTap(url);
           }}
           style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
           aria-label={`Image ${i + 1} of ${count}`}

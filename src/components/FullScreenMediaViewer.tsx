@@ -178,6 +178,13 @@ export function FullScreenMediaViewer({
   }, [open, initialIndex, resetForCurrentItem, externalGlobalMuted]);
 
   useEffect(() => {
+    if (open && mediaUrls.length === 0) {
+      console.debug('[FullScreenMediaViewer] open with empty mediaUrls — closing');
+      onOpenChange(false);
+    }
+  }, [open, mediaUrls.length, onOpenChange]);
+
+  useEffect(() => {
     setGlobalMuted(externalGlobalMuted);
     if (videoRef.current) {
       videoRef.current.muted = externalGlobalMuted;
@@ -330,6 +337,7 @@ export function FullScreenMediaViewer({
       setShowVideoControls(true);
       return;
     }
+    console.debug('[FullScreenMediaViewer] media tap', { clientX, clientY, currentIndex });
 
     const now = Date.now();
     const isDoubleTap = now - lastTapRef.current < 280;
@@ -647,6 +655,7 @@ export function FullScreenMediaViewer({
               {mediaUrls.map((url, i) => {
                 const itemType = mediaTypes[i] || 'image';
                 const itemIsVideo = itemType.includes('video');
+                const shouldRenderItem = Math.abs(i - currentIndex) <= 2;
 
                 return (
                   <div key={i} className="flex-shrink-0 w-full h-full flex items-center justify-center">
@@ -662,7 +671,9 @@ export function FullScreenMediaViewer({
                         onMediaTap(e.clientX, e.clientY);
                       }}
                     >
-                      {itemIsVideo ? (
+                      {!shouldRenderItem ? (
+                        <div className="w-full h-full" aria-hidden="true" />
+                      ) : itemIsVideo ? (
                         <video
                           ref={i === currentIndex ? videoRef : null}
                           src={url}

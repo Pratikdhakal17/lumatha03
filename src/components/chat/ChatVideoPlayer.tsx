@@ -16,6 +16,7 @@ const CHAT_VIDEO_PLAY_EVENT = 'lumatha:chat-video-play';
 interface ChatVideoPlayerProps {
   src: string;
   className?: string;
+  disableTap?: boolean;
 }
 
 const formatTime = (seconds: number): string => {
@@ -27,7 +28,7 @@ const formatTime = (seconds: number): string => {
   return `${minutes}:${String(secs).padStart(2, '0')}`;
 };
 
-export const ChatVideoPlayer = memo(function ChatVideoPlayer({ src, className }: ChatVideoPlayerProps) {
+export const ChatVideoPlayer = memo(function ChatVideoPlayer({ src, className, disableTap }: ChatVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const playerIdRef = useRef<string>(`chat-video-${Math.random().toString(36).slice(2)}-${Date.now()}`);
@@ -215,7 +216,9 @@ export const ChatVideoPlayer = memo(function ChatVideoPlayer({ src, className }:
     videoRef.current?.requestFullscreen?.();
   };
 
-  const handleTap = () => {
+  const handleTap = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    console.debug('[ChatVideoPlayer] tap', { src, disableTap });
     togglePlay();
     setShowControls(true);
     if (hideTimer.current) clearTimeout(hideTimer.current);
@@ -234,12 +237,12 @@ export const ChatVideoPlayer = memo(function ChatVideoPlayer({ src, className }:
     <div
       ref={containerRef}
       className={cn('relative rounded-2xl overflow-hidden bg-black cursor-pointer group', className)}
-      onClick={handleTap}
+      onClick={disableTap ? undefined : handleTap}
     >
       <video
         ref={videoRef}
         src={src}
-        className="w-full aspect-video max-h-80 object-cover bg-black"
+        className={cn('w-full aspect-video max-h-80 object-cover bg-black', disableTap && 'pointer-events-none')}
         muted={shouldVideoBeMuted(playerIdRef.current, getVideoAudioState())}
         playsInline
         preload="auto"

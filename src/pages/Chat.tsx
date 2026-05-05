@@ -49,6 +49,8 @@ import {
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
+const db = supabase as any;
+
 const LazyForwardMessageDialog = lazy(() =>
   import('@/components/chat/ForwardMessageDialog').then((m) => ({ default: m.ForwardMessageDialog }))
 );
@@ -439,7 +441,7 @@ export default function Chat() {
     let cancelled = false;
 
     const loadChatSettings = async () => {
-      const { data } = await supabase
+      const { data } = await db
         .from('chat_settings')
         .select('chat_user_id, is_muted, is_archived, is_private, nickname')
         .eq('user_id', user.id)
@@ -643,9 +645,9 @@ export default function Chat() {
 
     const fUsers: any[] = [];
     following.data?.forEach((f: any) => { if (f.profiles?.id) fUsers.push(f.profiles); });
-    const fIds = friends.data?.map(f => f.sender_id === user.id ? f.receiver_id : f.sender_id) || [];
+    const fIds = friends.data?.map((f: any) => f.sender_id === user.id ? f.receiver_id : f.sender_id) || [];
     if (fIds.length > 0) {
-      const { data: fp } = await supabase.from('profiles').select('id, name, username, avatar_url, country, created_at').in('id', fIds);
+      const { data: fp } = await db.from('profiles').select('id, name, username, avatar_url, country, created_at').in('id', fIds);
       const all = [...(fp || []), ...fUsers];
       setNetworkUsers(
         all
@@ -692,7 +694,7 @@ export default function Chat() {
     });
     // Mark notifications from this user as read
     if (user) {
-      supabase.from('notifications')
+      db.from('notifications')
         .update({ is_read: true })
         .eq('user_id', user.id)
         .eq('from_user_id', userId)
@@ -863,7 +865,7 @@ export default function Chat() {
       });
       setNetworkUsers((prev) => prev.filter((item) => item.id !== profileId));
     } else {
-      const { error } = await supabase
+      const { error } = await db
         .from('follows')
         .insert({ follower_id: user.id, following_id: profileId });
       if (error) {
@@ -910,7 +912,7 @@ export default function Chat() {
       };
       const field = dbField[key];
       if (field) {
-        supabase.from('chat_settings').upsert({
+        db.from('chat_settings').upsert({
           user_id: user.id, chat_user_id: id, [field]: !wasInSet, updated_at: new Date().toISOString()
         }, { onConflict: 'user_id,chat_user_id' }).then(() => {});
       }
@@ -926,13 +928,13 @@ export default function Chat() {
       const updatedAt = new Date().toISOString();
 
       Promise.allSettled([
-        supabase.from('chat_settings').upsert({
+        db.from('chat_settings').upsert({
           user_id: user.id,
           chat_user_id: currentChatUser,
           theme_color: theme,
           updated_at: updatedAt,
         }, { onConflict: 'user_id,chat_user_id' }),
-        supabase.from('chat_settings').upsert({
+        db.from('chat_settings').upsert({
           user_id: currentChatUser,
           chat_user_id: user.id,
           theme_color: theme,
@@ -959,7 +961,7 @@ export default function Chat() {
       const modes = parseRecord<number>(localStorage.getItem('chatGhostModes'));
       modes[currentChatUser] = mode;
       localStorage.setItem('chatGhostModes', JSON.stringify(modes));
-      supabase.from('chat_settings').upsert({
+      db.from('chat_settings').upsert({
         user_id: user.id, chat_user_id: currentChatUser, disappear_timer: mode, updated_at: new Date().toISOString()
       }, { onConflict: 'user_id,chat_user_id' }).then(() => {});
     }
@@ -972,7 +974,7 @@ export default function Chat() {
     setChatNicknames(updated);
     localStorage.setItem('chatNicknames', JSON.stringify(updated));
     if (user) {
-      supabase.from('chat_settings').upsert({
+      db.from('chat_settings').upsert({
         user_id: user.id, chat_user_id: currentChatUser, nickname: name || null, updated_at: new Date().toISOString()
       }, { onConflict: 'user_id,chat_user_id' }).then(() => {});
     }
@@ -1008,7 +1010,7 @@ export default function Chat() {
     const fileExt = file.name.split('.').pop()?.toLowerCase() || 'file';
     const cleanTitle = file.name.replace(/\.[^/.]+$/, '').trim() || file.name;
 
-    const { error } = await supabase.from('documents').insert({
+    const { error } = await db.from('documents').insert({
       user_id: user.id,
       title: cleanTitle,
       description: '',
@@ -1073,7 +1075,7 @@ export default function Chat() {
 
     // Edit mode — edits don't count toward rate limit
     if (editingMsg) {
-      await supabase.from('messages').update({ content: newMessage, edited_at: new Date().toISOString() }).eq('id', editingMsg.id);
+      await db.from('messages').update({ content: newMessage, edited_at: new Date().toISOString() }).eq('id', editingMsg.id);
       setEditingMsg(null);
       setNewMessage('');
       if (currentChatUser) fetchMessages(currentChatUser);
@@ -1183,7 +1185,7 @@ export default function Chat() {
   useEffect(() => {
     if (!currentChatUser || messages.length === 0) return;
     const msgIds = messages.map(m => m.id);
-    supabase.from('message_reactions').select('*').in('message_id', msgIds).then(({ data }) => {
+    db.from('message_reactions').select('*').in('message_id', msgIds).then(({ data }) => {
       if (!data) return;
       const reactMap: Record<string, Record<string, number>> = {};
       const userReactMap: Record<string, Set<string>> = {};
@@ -1206,7 +1208,7 @@ export default function Chat() {
     const currentUserReactionSet = userReactions[messageId] || new Set<string>();
     if (hasReacted) {
       // Remove reaction
-      await supabase.from('message_reactions').delete()
+      await db.from('message_reactions').delete()
         .eq('message_id', messageId).eq('user_id', user.id).eq('emoji', emoji);
       setMessageReactions(prev => {
         const r = { ...(prev[messageId] || {}) };
@@ -1223,7 +1225,7 @@ export default function Chat() {
       // One reaction per user per message: replace existing reaction if present.
       if (currentUserReactionSet.size > 0) {
         const existing = Array.from(currentUserReactionSet);
-        await supabase.from('message_reactions').delete()
+        await db.from('message_reactions').delete()
           .eq('message_id', messageId)
           .eq('user_id', user.id)
           .in('emoji', existing);
@@ -1239,7 +1241,7 @@ export default function Chat() {
       }
 
       // Add reaction
-      await supabase.from('message_reactions').insert({
+      await db.from('message_reactions').insert({
         message_id: messageId, user_id: user.id, emoji
       });
       setMessageReactions(prev => {
@@ -1357,6 +1359,7 @@ export default function Chat() {
   );
 
   const handleBackToChats = () => {
+    console.debug('[Chat] handleBackToChats');
     setCurrentChatUser(null);
     setReplyTo(null);
     setEditingMsg(null);
@@ -1390,8 +1393,8 @@ export default function Chat() {
   }, []);
 
   const deleteForEveryone = async (msgId: string) => {
-    await supabase.from('message_reactions').delete().eq('message_id', msgId);
-    await supabase.from('messages').delete().eq('id', msgId);
+    await db.from('message_reactions').delete().eq('message_id', msgId);
+    await db.from('messages').delete().eq('id', msgId);
   };
 
   const deleteForMe = (msgId: string) => {
@@ -1402,16 +1405,16 @@ export default function Chat() {
   const deleteEntireChat = async (chatUserId: string) => {
     if (!user) return;
     // Delete all reactions for messages in this chat first
-    const { data: chatMsgs } = await supabase.from('messages').select('id')
+    const { data: chatMsgs } = await db.from('messages').select('id')
       .or(`and(sender_id.eq.${user.id},receiver_id.eq.${chatUserId}),and(sender_id.eq.${chatUserId},receiver_id.eq.${user.id})`);
     if (chatMsgs && chatMsgs.length > 0) {
       const msgIds = chatMsgs.map(m => m.id);
-      await supabase.from('message_reactions').delete().in('message_id', msgIds);
+      await db.from('message_reactions').delete().in('message_id', msgIds);
     }
-    await supabase.from('messages').delete()
+    await db.from('messages').delete()
       .or(`and(sender_id.eq.${user.id},receiver_id.eq.${chatUserId}),and(sender_id.eq.${chatUserId},receiver_id.eq.${user.id})`);
     // Also remove from notifications
-    await supabase.from('notifications').delete()
+    await db.from('notifications').delete()
       .eq('user_id', user.id).eq('from_user_id', chatUserId).eq('type', 'message');
     navigate('/chat', { replace: true });
   };
@@ -1462,7 +1465,7 @@ export default function Chat() {
   const blockCurrentChatUser = useCallback(async () => {
     if (!user || !currentChatUser) return;
     try {
-      const { error } = await supabase.from('blocks').insert({ blocker_id: user.id, blocked_id: currentChatUser });
+      const { error } = await db.from('blocks').insert({ blocker_id: user.id, blocked_id: currentChatUser });
       if (error && !String(error.message || '').toLowerCase().includes('duplicate')) {
         throw error;
       }
@@ -1485,7 +1488,7 @@ export default function Chat() {
     setChatNicknames(updated);
     localStorage.setItem('chatNicknames', JSON.stringify(updated));
     try {
-      await supabase.from('chat_settings').upsert({
+      await db.from('chat_settings').upsert({
         user_id: user.id,
         chat_user_id: targetUserId,
         nickname: name || null,
@@ -1500,7 +1503,7 @@ export default function Chat() {
   const blockUserById = useCallback(async (targetUserId: string) => {
     if (!user || !targetUserId) return;
     try {
-      const { error } = await supabase.from('blocks').insert({ blocker_id: user.id, blocked_id: targetUserId });
+      const { error } = await db.from('blocks').insert({ blocker_id: user.id, blocked_id: targetUserId });
       if (error && !String(error.message || '').toLowerCase().includes('duplicate')) {
         throw error;
       }
@@ -1654,6 +1657,10 @@ export default function Chat() {
           } catch { result.push({ url: msg.media_url, type: 'image' }); }
         } else if (msg.media_type === 'video') {
           result.push({ url: msg.media_url, type: 'video' });
+        } else if (msg.media_type === 'view_once_image' || msg.media_type === 'capturing_moment') {
+          result.push({ url: msg.media_url, type: 'image' });
+        } else if (msg.media_type === 'view_once_video') {
+          result.push({ url: msg.media_url, type: 'video' });
         }
       }
       return result;
@@ -1664,8 +1671,13 @@ export default function Chat() {
   }, [messages]);
 
   const openChatMediaViewer = useCallback((targetUrl: string) => {
+    if (!targetUrl) return;
     const idx = allChatMedia.findIndex(m => m.url === targetUrl);
-    setChatMediaViewer({ open: true, index: idx >= 0 ? idx : 0 });
+    if (idx < 0) {
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    setChatMediaViewer({ open: true, index: idx });
   }, [allChatMedia]);
 
   const detailMediaData = useMemo(() => {
@@ -2113,7 +2125,7 @@ export default function Chat() {
             {/* Avatar and Name - clickable profile link */}
             <button
               className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity"
-              onClick={() => navigate(`/profile/${currentChatUser}`)}
+              onClick={() => { console.debug('[Chat] header: open profile', currentChatUser); navigate(`/profile/${currentChatUser}`); }}
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
               <Avatar className="w-9 h-9 border border-white/10 shrink-0">
@@ -2130,7 +2142,7 @@ export default function Chat() {
               <button
                 className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
                 title="Start video call"
-                onClick={() => setCallState({ open: true, isVideo: true })}
+                onClick={() => { console.debug('[Chat] header: start video call', currentChatUser); setCallState({ open: true, isVideo: true }); }}
                 aria-label="Start video call"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
@@ -2139,7 +2151,7 @@ export default function Chat() {
               <button
                 className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
                 title="Start voice call"
-                onClick={() => setCallState({ open: true, isVideo: false })}
+                onClick={() => { console.debug('[Chat] header: start voice call', currentChatUser); setCallState({ open: true, isVideo: false }); }}
                 aria-label="Start voice call"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
@@ -2148,7 +2160,7 @@ export default function Chat() {
               <button
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
                 title="Chat options"
-                onClick={() => setShowSettings(true)}
+                onClick={() => { console.debug('[Chat] header: open settings', currentChatUser); setShowSettings(true); }}
                 aria-label="Chat options"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
