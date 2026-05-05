@@ -17,6 +17,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { SmartDrawCanvas } from '@/components/chat/SmartDrawCanvas';
 
+const db = supabase as any;
+
 export interface AttachmentOption {
   id: 'gallery' | 'moment' | 'docs' | 'poll' | 'drawing' | 'location';
   label: string;
@@ -508,7 +510,7 @@ export function DocumentAttachment({
   useEffect(() => {
     if (!showDocs || !user) return;
     const load = async () => {
-      const { data } = await supabase
+      const { data } = await db
         .from('documents')
         .select('id, title, file_url, file_name')
         .eq('user_id', user.id)

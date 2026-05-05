@@ -5,6 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { canSend } from '@/utils/rateLimiter';
 import { toast } from 'sonner';
 
+const db = supabase as any;
+
 const PAGE_SIZE = 50;
 
 export function useChat() {
@@ -40,7 +42,7 @@ export function useChat() {
 
     const missingIds = uniqueIds.filter(id => !profileCacheRef.current.has(id));
     if (missingIds.length > 0) {
-      const { data } = await supabase
+      const { data } = await db
         .from('profiles')
         .select('id, name, avatar_url')
         .in('id', missingIds);
@@ -64,7 +66,7 @@ export function useChat() {
   const fetchConversations = useCallback(async () => {
     if (!user) return;
     try {
-      const { data: messagesData, error } = await supabase
+      const { data: messagesData, error } = await db
         .from('messages')
         .select('id, sender_id, receiver_id, content, created_at, is_read')
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
@@ -148,7 +150,7 @@ export function useChat() {
       if (!hasCachedMessages) {
         setLoading(true);
       }
-      const { data: messagesData, error } = await supabase
+      const { data: messagesData, error } = await db
         .from('messages')
         .select('*')
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
@@ -177,7 +179,7 @@ export function useChat() {
         // Might be out of space, ignore
       }
 
-      await supabase
+      await db
         .from('messages')
         .update({ is_read: true })
         .eq('receiver_id', user.id)
@@ -196,7 +198,7 @@ export function useChat() {
     if (!user) return;
     setLoadingMore(true);
     try {
-      const { data: messagesData, error } = await supabase
+      const { data: messagesData, error } = await db
         .from('messages')
         .select('*')
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
@@ -253,7 +255,7 @@ export function useChat() {
     setMessages(prev => [...prev, optimisticMsg]);
 
     try {
-      const { data: newMsg, error } = await supabase
+      const { data: newMsg, error } = await db
         .from('messages')
         .insert({
           sender_id: user.id,
@@ -275,7 +277,7 @@ export function useChat() {
         } as Message : m));
       }
 
-      supabase.from('notifications').insert({
+      db.from('notifications').insert({
         user_id: receiverId,
         type: 'message',
         from_user_id: user.id,
@@ -289,7 +291,7 @@ export function useChat() {
 
   const deleteMessage = useCallback(async (messageId: string) => {
     try {
-      const { error } = await supabase.from('messages').delete().eq('id', messageId);
+      const { error } = await db.from('messages').delete().eq('id', messageId);
       if (error) throw error;
       setMessages(prev => prev.filter(m => m.id !== messageId));
     } catch {
@@ -300,16 +302,16 @@ export function useChat() {
   const clearChatHistory = useCallback(async (otherUserId: string) => {
     if (!user) return false;
     try {
-      const { data: msgs } = await supabase
+      const { data: msgs } = await db
         .from('messages')
         .select('id')
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
-        .order('created_at', { ascending: true });
+
       if (!msgs || msgs.length <= 1) return true;
       const firstMsgId = msgs[0].id;
       const idsToDelete = msgs.slice(1).map(m => m.id);
-      await supabase.from('message_reactions').delete().in('message_id', idsToDelete);
-      await supabase.from('messages').delete().in('id', idsToDelete);
+      await db.from('message_reactions').delete().in('message_id', idsToDelete);
+      await db.from('messages').delete().in('id', idsToDelete);
       setMessages(prev => prev.filter(m => m.id === firstMsgId));
       return true;
     } catch {
@@ -329,7 +331,7 @@ export function useChat() {
       return () => window.removeEventListener('online', onOnline);
     }
 
-    const channel = supabase
+    const channel = db
       .channel(`chat-realtime-${user.id}`)
       .on(
         'postgres_changes',
@@ -341,7 +343,7 @@ export function useChat() {
               if (prev.some(m => m.id === newMsg.id)) return prev;
               return [...prev, { ...newMsg, sender: { id: newMsg.sender_id, name: '', avatar_url: null } } as Message];
             });
-            supabase.from('messages').update({ is_read: true }).eq('id', newMsg.id).then(() => {});
+            db.from('messages').update({ is_read: true }).eq('id', newMsg.id).then(() => {});
             scheduleConversationsRefresh();
             setConversations(prev => prev.map(c =>
               c.user_id === currentChatUserRef.current ? { ...c, unread_count: 0 } : c
@@ -383,7 +385,7 @@ export function useChat() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      db.removeChannel(channel);
       if (refreshConversationsTimerRef.current) {
         clearTimeout(refreshConversationsTimerRef.current);
         refreshConversationsTimerRef.current = null;

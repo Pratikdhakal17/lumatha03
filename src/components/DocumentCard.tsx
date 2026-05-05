@@ -147,7 +147,7 @@ export default function DocumentCard({ doc, onDelete, onDownload, onOpenInBrowse
     
     if (data) {
       const userIds = [...new Set(data.map(c => c.user_id))];
-      const { data: profiles } = await supabase.from('profiles').select('id, name, avatar_url, username, name, username').in('id', userIds);
+      const { data: profiles } = await supabase.from('profiles').select('id, name, avatar_url, username').in('id', userIds);
       const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
       setComments(data.map(c => ({ ...c, profile: profilesMap.get(c.user_id) })));
     }
@@ -418,7 +418,7 @@ export default function DocumentCard({ doc, onDelete, onDownload, onOpenInBrowse
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-medium">{(comment.profile as any)?.username || (comment.profile as any)?.name || (comment.profile as any)?.username || comment.profile?.name || 'User'}</p>
+                      <p className="text-[10px] font-medium">{comment.profile?.username ? `@${comment.profile.username}` : comment.profile?.name || 'User'}</p>
                       {comment.user_id === currentUser?.id && (
                         <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => handleDeleteComment(comment.id)}>
                           <Trash2 className="w-2.5 h-2.5 text-destructive" />

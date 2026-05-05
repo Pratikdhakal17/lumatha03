@@ -19,6 +19,7 @@ interface Comment {
   profiles?: {
     name: string;
     avatar_url: string | null;
+    username?: string | null;
   };
   likeCount: number;
   userLiked: boolean;
@@ -199,12 +200,16 @@ export function AdventureCommentsDialog({
             <div key={comment.id} className="flex gap-3">
               <Avatar className="w-9 h-9 border border-white/5">
                 <AvatarImage src={comment.profiles?.avatar_url || ''} />
-                <AvatarFallback className="bg-slate-800 text-primary text-[10px] font-black uppercase">{comment.profiles?.name?.[0] || '?'}</AvatarFallback>
+                <AvatarFallback className="bg-slate-800 text-primary text-[10px] font-black uppercase">
+                  {(comment.profiles?.username || comment.profiles?.name || '?').charAt(0).toUpperCase()}
+                </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="bg-slate-900/50 border border-white/5 rounded-2xl p-3 relative group">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[13px] font-bold text-white">{(comment.profiles as any)?.name || (comment.profiles as any)?.username || comment.profiles?.name || (comment.profiles as any)?.username || 'Explorer'}</span>
+                    <span className="text-[13px] font-bold text-white">
+                      {comment.profiles?.username ? `@${comment.profiles.username}` : comment.profiles?.name || 'Explorer'}
+                    </span>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-medium text-slate-500">
                         {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}

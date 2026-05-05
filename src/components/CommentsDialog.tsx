@@ -56,7 +56,8 @@ export function CommentsDialog({ postId, postTitle, type = 'post', open, onOpenC
   const getDisplayName = (p?: Profile) => {
     if (!p) return 'Lumatha Member';
     const fullName = p.first_name && p.last_name ? `${p.first_name} ${p.last_name}` : p.first_name || p.last_name;
-    return fullName || p.name || p.username || 'Lumatha Member';
+    if (p.username) return `@${p.username}`;
+    return fullName || p.name || 'Lumatha Member';
   };
 
   useEffect(() => {
@@ -193,7 +194,7 @@ export function CommentsDialog({ postId, postTitle, type = 'post', open, onOpenC
       <div key={comment.id} className={cn("group flex gap-3", isReply ? "ml-10 mt-3" : "mt-5")}>
         <Avatar className="h-8 w-8 shrink-0 border border-white/5 cursor-pointer" onClick={() => { onOpenChange(false); navigate(`/profile/${comment.user_id}`); }}>
           <AvatarImage src={comment.profiles?.avatar_url || undefined} />
-          <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-black uppercase">{displayName.slice(0, 2)}</AvatarFallback>
+          <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-black uppercase">{displayName.replace('@', '').slice(0, 2)}</AvatarFallback>
         </Avatar>
 
         <div className="flex-1 min-w-0">

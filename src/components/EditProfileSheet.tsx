@@ -28,7 +28,7 @@ interface EditProfileSheetProps {
 }
 
 export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditProfileSheetProps) {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const avatarRef = useRef<HTMLInputElement>(null);
   const storageUserId = user?.id || profile.id;
 
@@ -231,6 +231,7 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
       };
 
       saveProfileExtras(storageUserId, nextExtras);
+      await refreshProfile(user.id);
 
       // Build update data for core profile fields and extended profile fields.
       // If the live schema rejects the extended columns, we fall back to core-only.
@@ -265,14 +266,14 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
 
       let { error } = await supabase
         .from('profiles')
-        .update(extendedUpdateData)
+        .update(extendedUpdateData as never)
         .eq('id', user.id);
 
       if (error && /section_order|profile_visibility|school_name|hobbies|favorite_club|favorite_show_movie_song|favorite_actor_athlete_person|games|contact_email|contact_phone|relationship|occupation|schema cache/i.test(error.message || '')) {
         console.warn('Extended profile columns unavailable, falling back to core profile save only', error);
         ({ error } = await supabase
           .from('profiles')
-          .update(coreUpdateData)
+          .update(coreUpdateData as never)
           .eq('id', user.id));
       }
 

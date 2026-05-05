@@ -3,6 +3,8 @@ import { ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
+const db = supabase as any;
+
 interface LinkPreviewData {
   title?: string;
   description?: string;
@@ -35,7 +37,7 @@ export function LinkPreviewCard({ url, className }: LinkPreviewCardProps) {
 
     const fetchPreview = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('link-preview', {
+        const { data, error } = await db.functions.invoke('link-preview', {
           body: { url },
         });
 

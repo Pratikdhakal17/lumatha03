@@ -10,6 +10,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
+const db = supabase as any;
+
 interface GroupChatCreationProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -37,7 +39,7 @@ export function GroupChatCreation({ open, onOpenChange, onGroupCreated }: GroupC
 
   const loadFriends = async () => {
     if (!user) return;
-    const { data } = await supabase
+    const { data } = await db
       .from('friend_requests')
       .select('sender_id, receiver_id')
       .eq('status', 'accepted')
@@ -46,7 +48,7 @@ export function GroupChatCreation({ open, onOpenChange, onGroupCreated }: GroupC
     const friendIds = data?.map(f => f.sender_id === user.id ? f.receiver_id : f.sender_id) || [];
     if (friendIds.length === 0) { setFriends([]); return; }
 
-    const { data: profiles } = await supabase.from('profiles').select('id, name, avatar_url, username').in('id', friendIds);
+    const { data: profiles } = await db.from('profiles').select('id, name, avatar_url, username').in('id', friendIds);
     setFriends(profiles || []);
   };
 
@@ -66,7 +68,7 @@ export function GroupChatCreation({ open, onOpenChange, onGroupCreated }: GroupC
     if (!user || !groupName.trim() || selectedMembers.size === 0) return;
     setCreating(true);
     try {
-      const { data: group, error } = await supabase
+      const { data: group, error } = await db
         .from('chat_groups')
         .insert({ name: groupName.trim(), created_by: user.id })
         .select()
@@ -74,13 +76,13 @@ export function GroupChatCreation({ open, onOpenChange, onGroupCreated }: GroupC
       if (error) throw error;
 
       // Add creator as admin
-      await supabase.from('chat_group_members').insert({ group_id: group.id, user_id: user.id, role: 'admin' });
+      await db.from('chat_group_members').insert({ group_id: group.id, user_id: user.id, role: 'admin' });
 
       // Add selected members
       const memberInserts = [...selectedMembers].map(uid => ({
         group_id: group.id, user_id: uid, role: 'member'
       }));
-      await supabase.from('chat_group_members').insert(memberInserts);
+      await db.from('chat_group_members').insert(memberInserts);
 
       toast.success('Group created!');
       onOpenChange(false);

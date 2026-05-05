@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { FullScreenMediaViewer } from '@/components/FullScreenMediaViewer';
 
+const db = supabase as any;
+
 interface PostData {
   id: string;
   title: string;
@@ -38,7 +40,7 @@ export function SharedPostPreview({ postId, className, onViewFullPosts }: Shared
 
     const fetchPost = async () => {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from('posts')
           .select('id, title, content, media_urls, media_types, file_url, file_type, user_id, profiles(name, avatar_url)')
           .eq('id', postId)
@@ -51,7 +53,14 @@ export function SharedPostPreview({ postId, className, onViewFullPosts }: Shared
         }
 
         const postData: PostData = {
-          ...data,
+          id: data.id,
+          title: data.title,
+          content: data.content,
+          media_urls: data.media_urls,
+          media_types: data.media_types,
+          file_url: data.file_url,
+          file_type: data.file_type,
+          user_id: data.user_id,
           profile: (data as any).profiles || undefined,
         };
         postCache.set(postId, postData);

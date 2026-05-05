@@ -10,6 +10,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
+const db = supabase as any;
+
 interface ForwardMessageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -28,7 +30,7 @@ export function ForwardMessageDialog({ open, onOpenChange, messageContent, media
   useEffect(() => {
     if (!open || !user) return;
     const fetchFriends = async () => {
-      const { data: friendData } = await supabase
+      const { data: friendData } = await db
         .from('friend_requests')
         .select('sender_id, receiver_id')
         .eq('status', 'accepted')
@@ -37,7 +39,7 @@ export function ForwardMessageDialog({ open, onOpenChange, messageContent, media
       const friendIds = friendData?.map(f => f.sender_id === user.id ? f.receiver_id : f.sender_id) || [];
       if (friendIds.length === 0) return;
 
-      const { data: profiles } = await supabase.from('profiles').select('id, name, avatar_url').in('id', friendIds);
+      const { data: profiles } = await db.from('profiles').select('id, name, avatar_url').in('id', friendIds);
       setFriends(profiles || []);
     };
     fetchFriends();
@@ -67,7 +69,7 @@ export function ForwardMessageDialog({ open, onOpenChange, messageContent, media
           is_forwarded: true,
       }));
 
-      const { error } = await supabase.from('messages').insert(rows);
+      const { error } = await db.from('messages').insert(rows);
       if (error) throw error;
 
       toast.success(`Forwarded to ${selected.size} chat${selected.size > 1 ? 's' : ''}`);

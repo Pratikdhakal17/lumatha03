@@ -301,7 +301,7 @@ const MessageItem = memo(function MessageItem({
             {msg.media_url && msg.media_type === 'video' && (
               <div className={cn('relative cursor-pointer group', isSensitive && 'overflow-hidden rounded-xl')} onClick={() => onOpenMedia(msg.media_url!)}>
                 <div className={cn(isSensitive && 'blur-2xl grayscale brightness-50 transition-all group-hover:blur-xl')}>
-                  <ChatVideoPlayer src={msg.media_url} />
+                  <ChatVideoPlayer src={msg.media_url} disableTap />
                 </div>
                 {isSensitive && (
                   <div className='absolute inset-0 flex flex-col items-center justify-center text-white p-4 text-center'>

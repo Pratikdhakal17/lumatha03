@@ -31,7 +31,7 @@ export function MarketplaceCommentsDialog({ open, onOpenChange, listingId, onCou
 
     if (data) {
       const userIds = [...new Set(data.map(c => c.user_id))];
-      const { data: profiles } = await supabase.from('profiles').select('id, name, avatar_url').in('id', userIds);
+      const { data: profiles } = await supabase.from('profiles').select('id, name, username, avatar_url').in('id', userIds);
       const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p]));
       setComments(data.map(c => ({ ...c, profile: profileMap[c.user_id] })));
       onCountChange?.(data.length);
@@ -68,11 +68,15 @@ export function MarketplaceCommentsDialog({ open, onOpenChange, listingId, onCou
             <div key={c.id} className="flex gap-2 group">
               <Avatar className="w-7 h-7">
                 <AvatarImage src={c.profile?.avatar_url} />
-                <AvatarFallback className="text-[10px] bg-primary/20">{c.profile?.name?.[0] || '?'}</AvatarFallback>
+                <AvatarFallback className="text-[10px] bg-primary/20">
+                  {(c.profile?.username || c.profile?.name || '?').charAt(0).toUpperCase()}
+                </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="bg-muted/50 rounded-xl px-3 py-1.5">
-                  <span className="font-semibold text-xs">{c.profile?.name || 'User'}</span>
+                  <span className="font-semibold text-xs">
+                    {c.profile?.username ? `@${c.profile.username}` : c.profile?.name || 'User'}
+                  </span>
                   <p className="text-xs">{c.content}</p>
                 </div>
                 <span className="text-[10px] text-muted-foreground ml-3">

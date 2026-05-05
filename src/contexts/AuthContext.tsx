@@ -27,6 +27,7 @@ interface AuthContextType {
   switchAccount: (accountUserId: string) => Promise<boolean>;
   removeAccount: (accountUserId: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  refreshProfile: (userId?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -224,6 +225,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data) updateStoredAccountProfile(userId, data);
   };
 
+  const refreshProfile = async (targetUserId?: string) => {
+    const resolvedId = targetUserId || user?.id;
+    if (!resolvedId) return;
+    await loadProfile(resolvedId);
+  };
+
   const switchAccount = async (accountUserId: string): Promise<boolean> => {
     const target = accountSessions.find((item) => item.userId === accountUserId);
     if (!target) return false;
@@ -344,7 +351,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const canAddAccount = accountSessions.length < MAX_SWITCH_ACCOUNTS;
 
   return (
-    <AuthContext.Provider value={{ user, profile, accountSessions, activeAccountId, canAddAccount, switchAccount, removeAccount, logout }}>
+    <AuthContext.Provider value={{ user, profile, accountSessions, activeAccountId, canAddAccount, switchAccount, removeAccount, logout, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
@@ -370,6 +377,7 @@ export const useAuth = () => {
       switchAccount: async () => false,
       removeAccount: async () => false,
       logout: async () => {},
+      refreshProfile: async () => {},
     };
     return fallback;
   }

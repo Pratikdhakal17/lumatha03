@@ -293,6 +293,7 @@ export function ChatSettingsSheet({
   }, [activeMediaTab]);
 
   const saveMutePrefs = (nextCalls: boolean, nextCategories: boolean) => {
+    console.debug('[ChatSettingsSheet] saveMutePrefs', { nextCalls, nextCategories });
     localStorage.setItem(mutePrefsKey, JSON.stringify({ calls: nextCalls, categories: nextCategories }));
   };
 
@@ -312,6 +313,7 @@ export function ChatSettingsSheet({
   };
 
   const handleQuickReaction = (emoji: string) => {
+    console.debug('[ChatSettingsSheet] handleQuickReaction', emoji);
     if ('vibrate' in navigator) {
       try {
         navigator.vibrate(8);
@@ -327,6 +329,7 @@ export function ChatSettingsSheet({
   };
 
   const openMedia = (url: string) => {
+    console.debug('[ChatSettingsSheet] openMedia', url);
     if (onOpenMediaByUrl) {
       onOpenMediaByUrl(url);
       return;
@@ -335,6 +338,7 @@ export function ChatSettingsSheet({
   };
 
   const saveNickname = () => {
+    console.debug('[ChatSettingsSheet] saveNickname', nickInput.trim());
     onNicknameChange(nickInput.trim());
     setEditingNickname(false);
   };
