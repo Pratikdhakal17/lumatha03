@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useChat } from '@/hooks/useChat';
 import { useAuth } from '@/contexts/AuthContext';
+import type { ChatConversation } from '@/types/chat';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -186,6 +187,120 @@ const dataUrlToFile = async (sticker: ImportedSticker): Promise<File> => {
   const ext = sticker.mimeType.includes('gif') ? 'gif' : sticker.mimeType.includes('webp') ? 'webp' : 'png';
   return new File([blob], sticker.name || `sticker.${ext}`, { type: sticker.mimeType || 'image/png' });
 };
+
+interface ChatConversationRowProps {
+  conv: ChatConversation;
+  isMobile: boolean;
+  nickname?: string;
+  isPinned: boolean;
+  isMuted: boolean;
+  isPrivate: boolean;
+  hasUnread: boolean;
+  preview: string;
+  onRowClick: (event: React.MouseEvent<Element>, userId: string) => void;
+  onNavigate: (userId: string) => void;
+  onOpenOptions: (userId: string) => void;
+  formatTime: (dateStr?: string | null) => string;
+}
+
+const ChatConversationRow = React.memo(function ChatConversationRow({
+  conv,
+  isMobile,
+  nickname,
+  isPinned,
+  isMuted,
+  isPrivate,
+  hasUnread,
+  preview,
+  onRowClick,
+  onNavigate,
+  onOpenOptions,
+  formatTime,
+}: ChatConversationRowProps) {
+  const pressTimerMapRef = useRef<WeakMap<Element, ReturnType<typeof setTimeout>>>(new WeakMap());
+
+  const clearPressTimer = useCallback((element: Element) => {
+    const timer = pressTimerMapRef.current.get(element);
+    if (timer) {
+      clearTimeout(timer);
+      pressTimerMapRef.current.delete(element);
+    }
+  }, []);
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      className="w-full flex items-center gap-3 px-4 md:px-5 active:bg-[rgba(124,58,237,0.05)] transition-colors"
+      style={{ height: isMobile ? 72 : 84, borderBottom: '1px solid #1f2937' }}
+      onClick={(e) => onRowClick(e, conv.user_id)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onNavigate(conv.user_id);
+        }
+      }}
+      onContextMenu={(e) => { e.preventDefault(); onOpenOptions(conv.user_id); }}
+      onTouchStart={(e) => {
+        const timer = setTimeout(() => {
+          if (navigator.vibrate) {
+            try { navigator.vibrate(24); } catch { /* no-op */ }
+          }
+          onOpenOptions(conv.user_id);
+        }, 520);
+        pressTimerMapRef.current.set(e.currentTarget, timer);
+      }}
+      onTouchEnd={(e) => clearPressTimer(e.currentTarget)}
+      onTouchMove={(e) => clearPressTimer(e.currentTarget)}
+    >
+      <div className="relative shrink-0">
+        <Avatar className="w-[52px] h-[52px]">
+          <AvatarImage src={conv.user_avatar || undefined} />
+          <AvatarFallback style={{ background: 'rgba(124,58,237,0.15)', color: '#A78BFA', fontSize: 16, fontWeight: 700 }}>
+            {conv.user_name?.charAt(0)?.toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+      </div>
+
+      <div className="flex-1 min-w-0 py-1">
+        <div className="flex items-center justify-between mb-0.5">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <p className={cn(
+              "text-[15px] truncate",
+              hasUnread ? "font-bold text-white" : "font-medium"
+            )} style={{ fontFamily: "'Space Grotesk', sans-serif", color: hasUnread ? undefined : '#CBD5E1' }}>
+              {nickname || conv.user_name}
+            </p>
+            {isPrivate && <Lock className="w-3 h-3 shrink-0" style={{ color: '#C4B5FD' }} />}
+            {isMuted && <BellOff className="w-3 h-3 shrink-0" style={{ color: '#4B5563' }} />}
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+            {isPinned && <Pin className="w-3 h-3" style={{ color: '#4B5563' }} />}
+            <span className="text-[12px]" style={{ color: hasUnread ? '#7C3AED' : '#4B5563' }}>
+              {formatTime(conv.last_message_time || undefined)}
+            </span>
+          </div>
+        </div>
+        <p className={cn(
+          "text-[14px] truncate",
+          hasUnread ? "font-medium text-[#CBD5E1]" : "font-normal text-[#64748B]"
+        )}>
+          {preview}
+        </p>
+      </div>
+
+      <button
+        onClick={(e) => { e.stopPropagation(); e.preventDefault(); onOpenOptions(conv.user_id); }}
+        onPointerUp={(e) => { e.stopPropagation(); e.preventDefault(); onOpenOptions(conv.user_id); }}
+        className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all z-10"
+        aria-label="Chat options"
+        style={{ WebkitTapHighlightColor: 'transparent' }}
+      >
+        <MoreVertical className="w-5 h-5" style={{ color: '#64748B' }} />
+      </button>
+    </div>
+  );
+});
 
 export default function Chat() {
   const { userId } = useParams();
@@ -1614,23 +1729,44 @@ export default function Chat() {
     console.error('[Chat] filteredConversations useMemo guard', err);
   }
 
-  const mediaMessages = messages.filter(m => m.media_url);
-  const imageMessages = mediaMessages.filter(m => m.media_type === 'image' || m.media_type === 'images');
-  const videoMessages = mediaMessages.filter(m => m.media_type === 'video');
-  const audioMessages = mediaMessages.filter(m => m.media_type === 'audio');
-  const fileMessages = mediaMessages.filter(m => m.media_type === 'document');
-  const pdfMessages = fileMessages.filter(m => (m.media_url || '').toLowerCase().includes('.pdf'));
-  const sharedMessages = messages.filter((m) => {
-    const content = (m.content || '').toLowerCase();
-    return content.startsWith('📤 shared a post:'.toLowerCase()) || content.includes('post=');
-  });
-  const mediaHubCounts = {
-    all: mediaMessages.length + sharedMessages.length,
-    pics: imageMessages.length,
-    videos: videoMessages.length,
-    shared: sharedMessages.length,
-    pdf: pdfMessages.length,
-  };
+  const {
+    mediaMessages,
+    imageMessages,
+    videoMessages,
+    audioMessages,
+    fileMessages,
+    pdfMessages,
+    sharedMessages,
+    mediaHubCounts,
+  } = useMemo(() => {
+    const nextMediaMessages = messages.filter(m => m.media_url);
+    const nextImageMessages = nextMediaMessages.filter(m => m.media_type === 'image' || m.media_type === 'images');
+    const nextVideoMessages = nextMediaMessages.filter(m => m.media_type === 'video');
+    const nextAudioMessages = nextMediaMessages.filter(m => m.media_type === 'audio');
+    const nextFileMessages = nextMediaMessages.filter(m => m.media_type === 'document');
+    const nextPdfMessages = nextFileMessages.filter(m => (m.media_url || '').toLowerCase().includes('.pdf'));
+    const nextSharedMessages = messages.filter((m) => {
+      const content = (m.content || '').toLowerCase();
+      return content.startsWith('📤 shared a post:'.toLowerCase()) || content.includes('post=');
+    });
+
+    return {
+      mediaMessages: nextMediaMessages,
+      imageMessages: nextImageMessages,
+      videoMessages: nextVideoMessages,
+      audioMessages: nextAudioMessages,
+      fileMessages: nextFileMessages,
+      pdfMessages: nextPdfMessages,
+      sharedMessages: nextSharedMessages,
+      mediaHubCounts: {
+        all: nextMediaMessages.length + nextSharedMessages.length,
+        pics: nextImageMessages.length,
+        videos: nextVideoMessages.length,
+        shared: nextSharedMessages.length,
+        pdf: nextPdfMessages.length,
+      },
+    };
+  }, [messages]);
 
   const extractSharedPostId = useCallback((text: string) => {
     const match = text.match(/[?&]post=([a-f0-9-]{36})/i);
@@ -2129,13 +2265,13 @@ export default function Chat() {
 
   if (currentChatUser) {
     return (
-      <div
-        className={cn(
-          "flex flex-col chat-protected bg-[#0a0f1e]",
-          "fixed inset-0 z-[100] w-full overflow-hidden"
-        )}
-        style={{ height: '100dvh', maxHeight: '100dvh' }}
-      >
+        <div
+          className={cn(
+            "flex flex-col chat-protected bg-[#0a0f1e]",
+            "fixed inset-0 z-40 w-full overflow-hidden"
+          )}
+          style={{ height: '100dvh', maxHeight: '100dvh' }}
+        >
         <WatermarkOverlay username={username} enabled={false} />
         {isBlurred && <BlurOverlay />}
 
@@ -2152,7 +2288,7 @@ export default function Chat() {
             {/* Back button */}
             <button
               onClick={handleBackToChats}
-              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all shrink-0"
+              className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all shrink-0"
               aria-label="Back to messages"
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
@@ -2177,7 +2313,7 @@ export default function Chat() {
             {/* Action buttons */}
             <div className="shrink-0 flex items-center gap-0.5" style={{ touchAction: 'manipulation' }}>
               <button
-                className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
+                className="w-11 h-11 flex items-center justify-center rounded-full transition-colors"
                 title="Start video call"
                 onClick={() => { console.debug('[Chat] header: start video call', currentChatUser); setCallState({ open: true, isVideo: true }); }}
                 aria-label="Start video call"
@@ -2186,7 +2322,7 @@ export default function Chat() {
                 <VideoIcon className="w-5 h-5 text-white/90" strokeWidth={2} />
               </button>
               <button
-                className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
+                className="w-11 h-11 flex items-center justify-center rounded-full transition-colors"
                 title="Start voice call"
                 onClick={() => { console.debug('[Chat] header: start voice call', currentChatUser); setCallState({ open: true, isVideo: false }); }}
                 aria-label="Start voice call"
@@ -2195,7 +2331,7 @@ export default function Chat() {
                 <Phone className="w-5 h-5 text-white/90" strokeWidth={2} />
               </button>
               <button
-                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
+                className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
                 title="Chat options"
                 onClick={() => { console.debug('[Chat] header: open settings', currentChatUser); setShowSettings(true); }}
                 aria-label="Chat options"
@@ -2927,86 +3063,22 @@ export default function Chat() {
             const isYou = conv.last_message?.startsWith('You:') || false;
             const preview = conv.last_message || '';
 
-            // Unified swipeable conversation row - works on BOTH mobile and desktop
-            const conversationRow = (
-              <div
-                role="button"
-                tabIndex={0}
-                className="w-full flex items-center gap-3 px-4 md:px-5 active:bg-[rgba(124,58,237,0.05)] transition-colors"
-                style={{ height: isMobile ? 72 : 84, borderBottom: '1px solid #1f2937' }}
-                onClick={(e) => handleConversationRowClick(e, conv.user_id)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    navigate(`/chat/${conv.user_id}`);
-                  }
-                }}
-                onContextMenu={(e) => { e.preventDefault(); openConversationOptions(conv.user_id); }}
-                onTouchStart={(e) => {
-                  const timer = setTimeout(() => {
-                    if (navigator.vibrate) {
-                      try { navigator.vibrate(24); } catch { /* no-op */ }
-                    }
-                    openConversationOptions(conv.user_id);
-                  }, 520);
-                  (e.currentTarget as any).chatRowPressTimer = timer;
-                }}
-                onTouchEnd={(e) => clearTimeout((e.currentTarget as any).chatRowPressTimer)}
-                onTouchMove={(e) => clearTimeout((e.currentTarget as any).chatRowPressTimer)}
-              >
-                {/* Avatar */}
-                <div className="relative shrink-0">
-                  <Avatar className="w-[52px] h-[52px]">
-                    <AvatarImage src={conv.user_avatar || undefined} />
-                    <AvatarFallback style={{ background: 'rgba(124,58,237,0.15)', color: '#A78BFA', fontSize: 16, fontWeight: 700 }}>
-                      {conv.user_name?.charAt(0)?.toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0 py-1">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <p className={cn(
-                        "text-[15px] truncate",
-                        hasUnread ? "font-bold text-white" : "font-medium"
-                      )} style={{ fontFamily: "'Space Grotesk', sans-serif", color: hasUnread ? undefined : '#CBD5E1' }}>
-                        {chatNicknames[conv.user_id] || conv.user_name}
-                      </p>
-                      {isPrivate && <Lock className="w-3 h-3 shrink-0" style={{ color: '#C4B5FD' }} />}
-                      {isMuted && <BellOff className="w-3 h-3 shrink-0" style={{ color: '#4B5563' }} />}
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                      {isPinned && <Pin className="w-3 h-3" style={{ color: '#4B5563' }} />}
-                      <span className="text-[12px]" style={{ color: hasUnread ? '#7C3AED' : '#4B5563' }}>
-                        {formatTime(conv.last_message_time || undefined)}
-                      </span>
-                    </div>
-                  </div>
-                  <p className={cn(
-                    "text-[14px] truncate",
-                    hasUnread ? "font-medium text-[#CBD5E1]" : "font-normal text-[#64748B]"
-                  )}>
-                    {preview}
-                  </p>
-                </div>
-                {/* Three-dot menu button */}
-                <button
-                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); openConversationOptions(conv.user_id); }}
-                  onPointerUp={(e) => { e.stopPropagation(); e.preventDefault(); openConversationOptions(conv.user_id); }}
-                  className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all z-10"
-                  aria-label="Chat options"
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
-                >
-                  <MoreVertical className="w-5 h-5" style={{ color: '#64748B' }} />
-                </button>
-              </div>
-            );
-
             return (
               <div key={conv.user_id}>
-                {conversationRow}
+                <ChatConversationRow
+                  conv={conv}
+                  isMobile={isMobile}
+                  nickname={chatNicknames[conv.user_id]}
+                  isPinned={isPinned}
+                  isMuted={isMuted}
+                  isPrivate={isPrivate}
+                  hasUnread={hasUnread}
+                  preview={preview}
+                  onRowClick={handleConversationRowClick}
+                  onNavigate={(targetUserId) => navigate(`/chat/${targetUserId}`)}
+                  onOpenOptions={openConversationOptions}
+                  formatTime={formatTime}
+                />
               </div>
             );
           })}
