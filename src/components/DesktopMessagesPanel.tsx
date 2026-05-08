@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageCircle, Search, Plus, Archive, ChevronDown, ChevronRight } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -21,6 +21,47 @@ const getArchivedIds = (): Set<string> => {
     return new Set();
   }
 };
+
+const formatConversationTime = (value?: string) => {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return formatDistanceToNow(d, { addSuffix: false });
+};
+
+const ConversationRow = memo(function ConversationRow({ conv, onClick }: { conv: any; onClick: (id: string) => void }) {
+  return (
+    <button
+      onClick={() => onClick(conv.user_id)}
+      className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-muted/50 text-left transition-colors duration-150"
+    >
+      <div className="relative">
+        <Avatar className="w-9 h-9 border border-border/50">
+          <AvatarImage src={conv.user_avatar || undefined} />
+          <AvatarFallback className="text-[10px] bg-primary/20 text-primary font-bold">
+            {conv.user_name?.[0]?.toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        {conv.unread_count > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-primary-foreground text-[8px] rounded-full flex items-center justify-center font-bold ring-2 ring-background">
+            {conv.unread_count}
+          </span>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between">
+          <p className={`text-[11px] truncate ${conv.unread_count > 0 ? 'font-bold text-foreground' : 'font-medium text-muted-foreground'}`}>{conv.user_name}</p>
+          <span className={`text-[9px] shrink-0 ${conv.unread_count > 0 ? 'text-primary' : 'text-muted-foreground'}`}>
+            {formatConversationTime(conv.last_message_time)}
+          </span>
+        </div>
+        <p className={`text-[10px] truncate ${conv.unread_count > 0 ? 'text-foreground/70 font-medium' : 'text-muted-foreground'}`}>
+          {conv.last_message}
+        </p>
+      </div>
+    </button>
+  );
+});
 
 export function DesktopMessagesPanel() {
   const navigate = useNavigate();
@@ -183,7 +224,9 @@ export function DesktopMessagesPanel() {
             </div>
           ) : (
             <>
-              {activeConversations.map(renderConvRow)}
+              {activeConversations.map(conv => (
+                <ConversationRow key={conv.user_id} conv={conv} onClick={() => navigate(`/chat/${conv.user_id}`)} />
+              ))}
 
               {/* Archived subsection */}
               {archivedConversations.length > 0 && (
@@ -203,7 +246,9 @@ export function DesktopMessagesPanel() {
                   </button>
                   {showArchived && (
                     <div className="mt-0.5 space-y-0.5">
-                      {archivedConversations.map(renderConvRow)}
+                      {archivedConversations.map(conv => (
+                        <ConversationRow key={conv.user_id} conv={conv} onClick={() => navigate(`/chat/${conv.user_id}`)} />
+                      ))}
                     </div>
                   )}
                 </div>
