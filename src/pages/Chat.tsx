@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useChat } from '@/hooks/useChat';
 import { useAuth } from '@/contexts/AuthContext';
+import type { ChatConversation } from '@/types/chat';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -188,7 +189,7 @@ const dataUrlToFile = async (sticker: ImportedSticker): Promise<File> => {
 };
 
 interface ChatConversationRowProps {
-  conv: any;
+  conv: ChatConversation;
   isMobile: boolean;
   nickname?: string;
   isPinned: boolean;
@@ -216,6 +217,16 @@ const ChatConversationRow = React.memo(function ChatConversationRow({
   onOpenOptions,
   formatTime,
 }: ChatConversationRowProps) {
+  const pressTimerMapRef = useRef<WeakMap<Element, ReturnType<typeof setTimeout>>>(new WeakMap());
+
+  const clearPressTimer = useCallback((element: Element) => {
+    const timer = pressTimerMapRef.current.get(element);
+    if (timer) {
+      clearTimeout(timer);
+      pressTimerMapRef.current.delete(element);
+    }
+  }, []);
+
   return (
     <div
       role="button"
@@ -237,10 +248,10 @@ const ChatConversationRow = React.memo(function ChatConversationRow({
           }
           onOpenOptions(conv.user_id);
         }, 520);
-        (e.currentTarget as any).chatRowPressTimer = timer;
+        pressTimerMapRef.current.set(e.currentTarget, timer);
       }}
-      onTouchEnd={(e) => clearTimeout((e.currentTarget as any).chatRowPressTimer)}
-      onTouchMove={(e) => clearTimeout((e.currentTarget as any).chatRowPressTimer)}
+      onTouchEnd={(e) => clearPressTimer(e.currentTarget)}
+      onTouchMove={(e) => clearPressTimer(e.currentTarget)}
     >
       <div className="relative shrink-0">
         <Avatar className="w-[52px] h-[52px]">
