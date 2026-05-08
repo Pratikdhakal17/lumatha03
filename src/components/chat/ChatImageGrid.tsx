@@ -16,7 +16,7 @@ interface ChatImageGridProps {
  * 4 → 2×2
  * 5+ → 2×2 + "+N more" overlay
  */
-export function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGridProps) {
+export const ChatImageGrid = React.memo(function ChatImageGrid({ urls, isOwn = false, onImageTap }: ChatImageGridProps) {
   if (!urls.length) return null;
 
   const count = urls.length;

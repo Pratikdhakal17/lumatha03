@@ -29,6 +29,8 @@ import { useChatProtection, WatermarkOverlay, BlurOverlay } from '@/components/c
 import { EmojiReactionPicker } from '@/components/chat/EmojiReactionPicker';
 import { UploadProgressBar } from '@/components/chat/UploadProgressBar';
 import { MessageList } from '@/components/chat/MessageList';
+import { ChatInput } from '@/components/chat/ChatInput';
+import { MessageActionMenu } from '@/components/chat/MessageActionMenu';
 import { useRateLimit } from '@/hooks/useRateLimit';
 import { RateLimitWarning } from '@/components/chat/RateLimitWarning';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -196,15 +198,14 @@ export default function Chat() {
   const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
   const isLowEndMobile = useMemo(() => {
     if (!isMobile || !isAndroid) return false;
-        try {
-          if (!isMobile || !isAndroid) return false;
-          const cpu = typeof navigator !== 'undefined' && 'hardwareConcurrency' in navigator ? navigator.hardwareConcurrency : 8;
-          const mem = typeof navigator !== 'undefined' && 'deviceMemory' in navigator ? Number((navigator as Navigator & { deviceMemory?: number }).deviceMemory || 4) : 4;
-          return isAndroid && (cpu <= 8 || mem <= 4);
-        } catch (err) {
-          console.error('[Chat] isLowEndMobile useMemo failed', err);
-          return false;
-        }
+    try {
+      const cpu = typeof navigator !== 'undefined' && 'hardwareConcurrency' in navigator ? navigator.hardwareConcurrency : 8;
+      const mem = typeof navigator !== 'undefined' && 'deviceMemory' in navigator ? Number((navigator as Navigator & { deviceMemory?: number }).deviceMemory || 4) : 4;
+      return cpu <= 4 || mem <= 4;
+    } catch (err) {
+      console.error('[Chat] isLowEndMobile calculation failed', err);
+      return false;
+    }
   }, [isMobile, isAndroid]);
 
   // Expose a safe global fallback for legacy callers that still invoke `openChat(userId)`
@@ -1670,6 +1671,9 @@ export default function Chat() {
     }
   }, [messages]);
 
+  const allMediaUrls = useMemo(() => allChatMedia.map(m => m.url), [allChatMedia]);
+  const allMediaTypes = useMemo(() => allChatMedia.map(m => m.type), [allChatMedia]);
+
   const openChatMediaViewer = useCallback((targetUrl: string) => {
     if (!targetUrl) return;
     const idx = allChatMedia.findIndex(m => m.url === targetUrl);
@@ -2274,124 +2278,24 @@ export default function Chat() {
           </div>
         </div>
 
-        {/* Message long-press action menu with enhanced animations and safe areas */}
-        <AnimatePresence>
-          {longPressTarget && longPressMenuPos && messages.some((m) => m.id === longPressTarget) && (
-            <motion.div
-              id="chat-message-action-menu"
-              initial={{ opacity: 0, scale: 0.9, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 5 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              className="fixed z-40 max-h-[74svh] md:max-h-[74vh] rounded-2xl p-0 border border-white/10 overflow-hidden shadow-2xl"
-              style={{ 
-                background: 'rgba(15, 23, 42, 0.98)', 
-                backdropFilter: 'blur(14px)',
-                left: longPressMenuPos?.left ?? undefined, 
-                top: longPressMenuPos?.top ?? undefined,
-                width: Math.min(292, (longPressMenuPos?.width ?? 268)),
-                maxWidth: 'calc(100vw - 24px)',
-                transformOrigin: 'top center',
-                willChange: 'transform, opacity',
-                paddingLeft: 'max(0, env(safe-area-inset-left))',
-                paddingRight: 'max(0, env(safe-area-inset-right))'
-              }}
-            >
-              {/* Reaction Tray with Haptics */}
-              <div className="flex items-center justify-between gap-1 px-2 py-2" style={{ borderBottom: '1px solid #334155' }}>
-                <div className="flex items-center gap-0.5">
-                  {longPressQuickReactions.map((emoji, index) => (
-                    <motion.button 
-                      key={emoji} 
-                      initial={{ opacity: 0, scale: 0, y: 10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      transition={{ delay: index * 0.05, type: 'spring', stiffness: 500 }}
-                      whileHover={{ scale: 1.2 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="text-[22px] leading-none p-2.5 rounded-xl hover:bg-white/10 transition-colors relative"
-                      onClick={() => { 
-                        if (navigator.vibrate) navigator.vibrate(20);
-                        if (longPressTarget) handleReactToMessage(longPressTarget, emoji); 
-                        setLongPressTarget(null); 
-                      }}
-                    >
-                      {emoji}
-                    </motion.button>
-                  ))}
-                </div>
-                <div className="flex items-center gap-1">
-                  <motion.button 
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.3 }}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="w-8 h-8 rounded-full flex items-center justify-center bg-primary/20 text-primary text-base font-semibold hover:bg-primary/30 transition-colors"
-                    onClick={() => { 
-                      if (navigator.vibrate) navigator.vibrate(20);
-                      setShowEmojiStickerPanel(true); 
-                      setLongPressTarget(null); 
-                    }}
-                  >
-                    +
-                  </motion.button>
-                  <motion.button 
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.35 }}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/5 transition-colors"
-                    onClick={() => setLongPressTarget(null)}
-                  >
-                    <X className="w-4 h-4" style={{ color: '#94A3B8' }} />
-                  </motion.button>
-                </div>
-              </div>
-              
-              {/* Action Menu Items with Stagger */}
-              <div className="py-1 max-h-[52vh] overflow-y-auto">
-                {[
-                  { icon: <CornerUpLeft className="w-5 h-5" />, label: 'Reply', action: () => { const m = messages.find((x) => x.id === longPressTarget); if (m) setReplyTo({ id: m.id, content: m.content || '', senderName: m.sender_id === user?.id ? 'You' : displayName || '' }); }, color: '#94A3B8' },
-                  { icon: <Copy className="w-5 h-5" />, label: 'Copy', action: () => { const m = messages.find((x) => x.id === longPressTarget); if (m) navigator.clipboard.writeText(m.content || ''); }, color: '#94A3B8' },
-                  { icon: <Forward className="w-5 h-5" />, label: 'Forward', action: () => { const m = messages.find((x) => x.id === longPressTarget); if (m) setForwardMsg({ content: m.content || '', mediaUrl: m.media_url || undefined, mediaType: m.media_type || undefined }); }, color: '#94A3B8' },
-                  { icon: <Pin className="w-5 h-5" />, label: pinnedMessages.has(longPressTarget || '') ? 'Unpin' : 'Pin', action: () => { if (longPressTarget) togglePinMessage(longPressTarget); }, color: '#94A3B8' },
-                  ...(messages.find((m) => m.id === longPressTarget)?.sender_id === user?.id
-                    ? [{ icon: <Pencil className="w-5 h-5" />, label: 'Edit', action: () => { const m = messages.find((x) => x.id === longPressTarget); if (m) { setEditingMsg({ id: m.id, content: m.content || '' }); setNewMessage(m.content || ''); } }, color: '#94A3B8' }]
-                    : []),
-                  {
-                    icon: <Trash2 className="w-5 h-5" />,
-                    label: messages.find((m) => m.id === longPressTarget)?.sender_id === user?.id ? 'Unsend' : 'Delete for me',
-                    action: () => {
-                      if (!longPressTarget) return;
-                      if (messages.find((m) => m.id === longPressTarget)?.sender_id === user?.id) deleteForEveryone(longPressTarget);
-                      else deleteForMe(longPressTarget);
-                    },
-                    color: '#EF4444',
-                  },
-                ].map((item, i) => (
-                  <motion.button
-                    key={i}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 + i * 0.05 }}
-                    onClick={() => { 
-                      if (navigator.vibrate) navigator.vibrate(15);
-                      item.action(); 
-                      setLongPressTarget(null); 
-                    }}
-                    whileHover={{ x: 4, backgroundColor: 'rgba(255,255,255,0.05)' }}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-full flex items-center gap-3.5 px-4 py-3 transition-colors"
-                  >
-                    <span style={{ color: item.color }}>{item.icon}</span>
-                    <span className="text-[14px] font-medium" style={{ color: item.color }}>{item.label}</span>
-                  </motion.button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* New Optimized Message Action Menu Component */}
+        <MessageActionMenu
+          targetId={longPressTarget}
+          menuPos={longPressMenuPos as any}
+          messages={messages}
+          currentUserId={user?.id || ''}
+          onReact={handleReactToMessage}
+          onClose={() => setLongPressTarget(null)}
+          onEmojiPanel={() => setShowEmojiStickerPanel(true)}
+          onReply={(m) => setReplyTo({ id: m.id, content: m.content || '', senderName: m.sender_id === user?.id ? 'You' : displayName || '' })}
+          onCopy={(m) => navigator.clipboard.writeText(m.content || '')}
+          onForward={(m) => setForwardMsg({ content: m.content || '', mediaUrl: m.media_url || undefined, mediaType: m.media_type || undefined })}
+          onTogglePin={(id) => togglePinMessage(id)}
+          onEdit={(m) => { setEditingMsg({ id: m.id, content: m.content || '' }); setNewMessage(m.content || ''); }}
+          onDelete={(id, isOwn) => isOwn ? deleteForEveryone(id) : deleteForMe(id)}
+          isPinned={(id) => pinnedMessages.has(id)}
+          displayName={displayName}
+        />
 
         <div className="relative shrink-0">
           {/* Reply / Edit banner */}
@@ -2490,114 +2394,45 @@ export default function Chat() {
             />
           )}
 
-          {/* Instagram-Style Input Bar with proper mobile safe areas */}
+          {/* New Optimized Chat Input Component */}
           {!isRecording && !audioBlob && (
-            <div className="relative z-40 shrink-0 flex items-center gap-2 px-3 md:px-4 py-2.5" style={{
-              background: '#0a0f1e',
-              borderTop: '1px solid #1f2937',
-              minHeight: 60,
+            <div className="relative z-40 shrink-0 px-3 md:px-4 py-2.5 bg-[#0a0f1e] border-t border-white/5" style={{
               paddingLeft: 'max(0.75rem, env(safe-area-inset-left))',
               paddingRight: 'max(0.75rem, env(safe-area-inset-right))',
               paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
-              position: 'relative'
             }}>
-              <input type="file" ref={fileInputRef} className="hidden" accept="image/*,video/*,audio/*,.pdf,.doc,.docx" multiple onChange={handleFileSelect} />
-
-              {/* Plus Button - 44dp touch target */}
-              <motion.button
-                className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
-                onClick={() => setShowAttachments(true)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.9 }}
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                <Plus className="w-5 h-5" style={{ color: '#94A3B8' }} />
-              </motion.button>
-
-              {/* Message Input Field - Instagram-style pill */}
-              <div className="flex-1 flex items-center rounded-full px-4 py-2.5" style={{ background: '#1e293b', border: '1px solid #334155', minHeight: 44 }}>
-                <input
-                  value={newMessage}
-                  onChange={e => setNewMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder={rateLimit.isRateLimited ? `Wait ${rateLimit.secondsUntilReset}s` : (editingMsg ? "Edit message..." : "Message...")}
-                  className="flex-1 bg-transparent text-[15px] text-white placeholder:text-[#64748B] outline-none"
-                  disabled={uploading || rateLimit.isRateLimited}
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
-                />
-              </div>
-
-              {/* Right Side: Send or Primary Reaction */}
-              {(newMessage.trim() || mediaPreviews.length > 0) ? (
-                <motion.button
-                  className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 active:scale-95 transition-all"
-                  style={{ background: !rateLimit.isRateLimited ? '#7C3AED' : '#1e293b' }}
-                  onClick={handleSend}
-                  disabled={uploading || rateLimit.isRateLimited}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <Send className="w-5 h-5" style={{ color: !rateLimit.isRateLimited ? 'white' : '#4B5563' }} />
-                </motion.button>
-              ) : (
-                /* Primary Reaction Button - Tap to send, Long press for panel */
-                <motion.button
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-[22px] relative hover:bg-white/10 active:bg-white/20 active:scale-95 transition-all"
-                  onClick={() => {
-                    if (navigator.vibrate) navigator.vibrate(20);
-                    void sendPrimaryReaction();
-                  }}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setShowEmojiStickerPanel(true);
-                  }}
-                  onTouchStart={(e) => {
-                    const timer = setTimeout(() => {
-                      if (navigator.vibrate) navigator.vibrate(30);
-                      setShowEmojiStickerPanel(true);
-                    }, 400);
-                    (e.currentTarget as any).primaryReactionPressTimer = timer;
-                  }}
-                  onTouchEnd={(e) => clearTimeout((e.currentTarget as any).primaryReactionPressTimer)}
-                  onTouchMove={(e) => clearTimeout((e.currentTarget as any).primaryReactionPressTimer)}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  title="Tap to send, hold for more"
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
-                >
-                  <motion.span
-                    className="inline-flex items-center justify-center"
-                    initial={{ scale: 0.85 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-                  >
-                    {primaryStickerPreview ? (
-                      <img
-                        src={primaryStickerPreview.dataUrl}
-                        alt="Primary"
-                        className="w-6 h-6 rounded object-cover"
-                      />
-                    ) : (
-                      quickStickers[0] || '❤️'
-                    )}
-                  </motion.span>
-                  {/* Small indicator dot when using sticker */}
-                  {primaryStickerPreview && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#7C3AED] rounded-full" />
-                  )}
-                </motion.button>
-              )}
+              <ChatInput
+                onSend={async (text) => {
+                  if (!currentChatUser) return;
+                  if (!rateLimit.trySend()) {
+                    toast.error(`Message limit reached. Try again in ${rateLimit.secondsUntilReset}s`);
+                    return;
+                  }
+                  await sendMessage(currentChatUser, text, undefined, undefined, replyTo?.id);
+                  setReplyTo(null);
+                  triggerInteractionFx('send');
+                }}
+                onFileClick={() => setShowAttachments(true)}
+                onPrimaryReaction={sendPrimaryReaction}
+                onPrimaryReactionLongPress={() => {
+                  if (navigator.vibrate) navigator.vibrate(30);
+                  setShowEmojiStickerPanel(true);
+                }}
+                rateLimit={rateLimit}
+                uploading={uploading}
+                editingMsg={editingMsg}
+                initialValue={newMessage}
+              />
             </div>
           )}
         </div>
 
-        {/* Shared full-screen media viewer for ALL chat media */}
         <Suspense fallback={null}>
           <LazyFullScreenMediaViewer
             open={chatMediaViewer.open}
             onOpenChange={(open) => setChatMediaViewer(prev => ({ ...prev, open }))}
-            mediaUrls={allChatMedia.map(m => m.url)}
-            mediaTypes={allChatMedia.map(m => m.type)}
+            mediaUrls={allMediaUrls}
+            mediaTypes={allMediaTypes}
             initialIndex={chatMediaViewer.index}
             minimal
           />
