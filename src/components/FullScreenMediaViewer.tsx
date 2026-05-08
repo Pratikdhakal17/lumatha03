@@ -559,14 +559,34 @@ export function FullScreenMediaViewer({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="w-screen h-screen max-w-none max-h-none p-0 m-0 bg-black border-none rounded-none [&>button]:hidden fixed inset-0 translate-x-0 translate-y-0 top-0 left-0"
-        style={{ pointerEvents: open ? 'auto' : 'none', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', touchAction: 'none' }}
+        className="w-screen h-screen max-w-none max-h-none p-0 m-0 bg-black border-none rounded-none [&>button]:hidden fixed inset-0 translate-x-0 translate-y-0 top-0 left-0 z-[9999]"
+        style={{ 
+          pointerEvents: open ? 'auto' : 'none', 
+          WebkitTouchCallout: 'none', 
+          WebkitUserSelect: 'none', 
+          touchAction: 'none',
+          visibility: open ? 'visible' : 'hidden'
+        }}
       >
         <DialogTitle className="sr-only">Media Viewer</DialogTitle>
         <DialogDescription id="fs-media-desc" className="sr-only">Full screen media viewer with image and video support</DialogDescription>
 
+        <style>{`
+          /* Force release scroll lock if dialog is closed but body remains locked */
+          [data-radix-scroll-area-viewport] {
+            overflow: auto !important;
+          }
+          
+          /* Ensure the overlay doesn't block when closed */
+          .fs-media-overlay[data-state="closed"] {
+            pointer-events: none !important;
+            display: none !important;
+          }
+        `}</style>
+
         <div
-          className="fixed inset-0 w-screen h-screen"
+          className="fs-media-overlay fixed inset-0 w-screen h-screen"
+          data-state={open ? 'open' : 'closed'}
           style={{
             background: '#000000',
             opacity: overlayOpacity * openOpacity,

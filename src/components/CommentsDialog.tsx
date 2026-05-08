@@ -55,8 +55,8 @@ export function CommentsDialog({ postId, postTitle, type = 'post', open, onOpenC
 
   const getDisplayName = (p?: Profile) => {
     if (!p) return 'Lumatha Member';
+    if (p.username) return p.username.startsWith('@') ? p.username : `@${p.username}`;
     const fullName = p.first_name && p.last_name ? `${p.first_name} ${p.last_name}` : p.first_name || p.last_name;
-    if (p.username) return `@${p.username}`;
     return fullName || p.name || 'Lumatha Member';
   };
 

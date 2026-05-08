@@ -16,6 +16,7 @@ import { DocViewer } from './docs/DocViewer';
 import { DocUploadSheet } from './docs/DocUploadSheet';
 import { CommunityDocs } from './docs/CommunityDocs';
 import { openDocumentTarget } from './docs/docTools';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Document = Database['public']['Tables']['documents']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -36,6 +37,19 @@ const SECTION_TABS = [
   { id: 'liked', label: 'Liked', icon: Heart },
   { id: 'reviewed', label: 'Reviewed', icon: Star },
 ];
+
+function DocSkeleton() {
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 animate-pulse">
+      <Skeleton className="w-12 h-16 rounded-lg bg-white/10" />
+      <div className="flex-1 space-y-2">
+        <Skeleton className="h-4 w-3/4 bg-white/10" />
+        <Skeleton className="h-3 w-1/2 bg-white/10" />
+      </div>
+      <Skeleton className="w-8 h-8 rounded-full bg-white/10" />
+    </div>
+  );
+}
 
 export function EducationModule() {
   const { user, profile: userProfile } = useAuth();
@@ -62,6 +76,8 @@ export function EducationModule() {
   const [likedDocIds, setLikedDocIds] = useState<Set<string>>(new Set());
   const [commentedDocIds, setCommentedDocIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [showSkeleton, setShowSkeleton] = useState(false);
+  const skeletonTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Viewer state
   const [viewingDoc, setViewingDoc] = useState<DocumentWithProfile | null>(null);
@@ -99,10 +115,12 @@ export function EducationModule() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    // Only show skeleton if loading takes more than 300ms
+    if (skeletonTimerRef.current) clearTimeout(skeletonTimerRef.current);
+    skeletonTimerRef.current = setTimeout(() => setShowSkeleton(true), 300);
+
     try {
       if (!user) return;
-      // Limit to the 100 most-recent docs to avoid fetching the entire table on
-      // every load (was previously unbounded).
       const { data: docs, error: docsError } = await supabase
         .from('documents')
         .select('*')
@@ -112,7 +130,6 @@ export function EducationModule() {
       
       if (docs) {
         const userIds = [...new Set(docs.map(d => d.user_id))];
-        // Only select the columns that DocCard actually needs to avoid over-fetching.
         const { data: profiles } = await supabase
           .from('profiles')
           .select('id, name, avatar_url, username')
@@ -121,9 +138,6 @@ export function EducationModule() {
         setAllDocs(docs.map(doc => ({ ...doc, profiles: profilesMap.get(doc.user_id) })));
       }
       
-      // Load saved, liked, and commented info
-      // Some Supabase REST endpoints can reject the `not('document_id','is',null)` encoding
-      // in some environments; fetch plain and filter client-side for robustness.
       const [savedRes, likedRes, commentedRes] = await Promise.all([
         supabase.from('saved').select('document_id').eq('user_id', user.id).limit(500),
         supabase.from('document_reactions').select('document_id').eq('user_id', user.id).eq('reaction', 'heart'),
@@ -141,7 +155,11 @@ export function EducationModule() {
     } catch (error) {
       console.error('Failed to load education data:', error);
       toast.error('Something went wrong loading your docs');
-    } finally { setLoading(false); }
+    } finally { 
+      if (skeletonTimerRef.current) clearTimeout(skeletonTimerRef.current);
+      setLoading(false); 
+      setShowSkeleton(false);
+    }
   }, [user]);
 
   useEffect(() => { if (user) void loadData(); }, [user, loadData]);
@@ -273,7 +291,8 @@ export function EducationModule() {
     const q = search.toLowerCase();
     return docs.filter(d => 
       (d.title || '').toLowerCase().includes(q) || 
-      (d.profiles?.name || '').toLowerCase().includes(q)
+      (d.profiles?.name || '').toLowerCase().includes(q) ||
+      (d.profiles?.username || '').toLowerCase().includes(q)
     );
   };
 
@@ -382,21 +401,27 @@ export function EducationModule() {
       <div className="w-full">
         {activeSection === 'community' ? (
           <div className="mt-6">
-            <CommunityDocs
-              docs={allDocs.filter(d => d.visibility === 'public')}
-              onOpenDoc={setViewingDoc}
-              onSaveDoc={toggleSaveDoc}
-              savedDocIds={savedDocIds}
-              onOpenComments={(id, title) => {
-                setCommentsDocId(id);
-                setCommentsTitle(title);
-                setCommentsOpen(true);
-              }}
-              currentUserId={user?.id}
-              onRenameDoc={(doc) => { setRenameDoc(doc); setRenameTitle(doc.title); }}
-              onMoveToFolderDoc={(doc) => setMoveToFolderDocId(doc.id)}
-              onDeleteDoc={(doc) => deleteDoc(doc.id, doc.file_url)}
-            />
+            {showSkeleton ? (
+              <div className="px-4 space-y-4">
+                {[1, 2, 3, 4].map(i => <DocSkeleton key={i} />)}
+              </div>
+            ) : (
+              <CommunityDocs
+                docs={allDocs.filter(d => d.visibility === 'public')}
+                onOpenDoc={setViewingDoc}
+                onSaveDoc={toggleSaveDoc}
+                savedDocIds={savedDocIds}
+                onOpenComments={(id, title) => {
+                  setCommentsDocId(id);
+                  setCommentsTitle(title);
+                  setCommentsOpen(true);
+                }}
+                currentUserId={user?.id}
+                onRenameDoc={(doc) => { setRenameDoc(doc); setRenameTitle(doc.title); }}
+                onMoveToFolderDoc={(doc) => setMoveToFolderDocId(doc.id)}
+                onDeleteDoc={(doc) => deleteDoc(doc.id, doc.file_url)}
+              />
+            )}
           </div>
         ) : selectedFolder ? (
           /* Folder view */
@@ -477,9 +502,9 @@ export function EducationModule() {
 
             {/* Doc cards */}
             <div className="px-0 sm:px-4 space-y-4">
-              {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-3">
-                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              {showSkeleton ? (
+                <div className="space-y-4">
+                  {[1, 2, 3, 4].map(i => <DocSkeleton key={i} />)}
                 </div>
               ) : filteredDocs.length === 0 ? (
                 <div className="text-center py-20 bg-slate-900/20 rounded-[32px] border border-dashed border-white/5">

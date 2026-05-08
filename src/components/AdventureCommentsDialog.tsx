@@ -208,7 +208,7 @@ export function AdventureCommentsDialog({
                 <div className="bg-slate-900/50 border border-white/5 rounded-2xl p-3 relative group">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[13px] font-bold text-white">
-                      {comment.profiles?.username ? `@${comment.profiles.username}` : comment.profiles?.name || 'Explorer'}
+                      {comment.profiles?.username ? (comment.profiles.username.startsWith('@') ? comment.profiles.username : `@${comment.profiles.username}`) : comment.profiles?.name || 'Explorer'}
                     </span>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-medium text-slate-500">
@@ -218,7 +218,7 @@ export function AdventureCommentsDialog({
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button className="p-1 hover:bg-white/5 rounded-full transition-colors text-slate-500">
-                              <MoreVertical className="w-3 h-3" />
+                              <MoreVertical className="w-3" />
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" side="top" className="bg-slate-900 border-white/10 rounded-2xl">

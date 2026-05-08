@@ -122,6 +122,8 @@ export function useChat() {
     if (!user) return;
     
     let hasCachedMessages = false;
+    setHasMoreMessages(false);
+    setMessages([]);
     
     // Check cache first for "instant" feel
     try {
@@ -284,20 +286,23 @@ export function useChat() {
         content: `${user.user_metadata?.name || 'Someone'} sent you a message`,
         link: `/chat/${user.id}`,
       }).then(() => {});
+
+      scheduleConversationsRefresh();
     } catch {
       // Silent fail
     }
-  }, [user]);
+  }, [scheduleConversationsRefresh, user]);
 
   const deleteMessage = useCallback(async (messageId: string) => {
     try {
       const { error } = await db.from('messages').delete().eq('id', messageId);
       if (error) throw error;
       setMessages(prev => prev.filter(m => m.id !== messageId));
+      scheduleConversationsRefresh();
     } catch {
       // Silent fail
     }
-  }, []);
+  }, [scheduleConversationsRefresh]);
 
   const clearChatHistory = useCallback(async (otherUserId: string) => {
     if (!user) return false;
@@ -313,11 +318,12 @@ export function useChat() {
       await db.from('message_reactions').delete().in('message_id', idsToDelete);
       await db.from('messages').delete().in('id', idsToDelete);
       setMessages(prev => prev.filter(m => m.id === firstMsgId));
+      scheduleConversationsRefresh();
       return true;
     } catch {
       return false;
     }
-  }, [user]);
+  }, [scheduleConversationsRefresh, user]);
 
   useEffect(() => {
     if (!user) return;

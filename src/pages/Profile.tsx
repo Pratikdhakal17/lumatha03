@@ -55,7 +55,6 @@ function AnimatedNumber({ value }: { value: number }) {
 function ProfileSkeleton() {
   return (
     <div className="min-h-screen pb-24" style={{ background: '#0a0f1e' }}>
-      {/* Profile pic higher up with no cover image space */}
       <div className="px-5 pt-5">
         <div className="flex items-start gap-4">
           <Skeleton className="w-[86px] h-[86px] rounded-full shrink-0" style={{ boxShadow: '0 0 0 2px #7C3AED' }} />
@@ -84,16 +83,42 @@ function ProfileSkeleton() {
   );
 }
 
+function MarketplaceSkeleton() {
+  return (
+    <div className="space-y-4 px-2">
+      <div className="p-4 rounded-2xl bg-white/5 space-y-4">
+        <div className="flex justify-between items-center">
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-20 bg-white/10" />
+            <Skeleton className="h-5 w-32 bg-white/10" />
+          </div>
+          <Skeleton className="h-6 w-16 rounded-full bg-white/10" />
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-10 flex-1 rounded-lg bg-white/10" />
+          <Skeleton className="h-10 w-20 rounded-lg bg-white/10" />
+        </div>
+      </div>
+      {[1, 2].map(i => (
+        <div key={i} className="flex gap-3 p-3 rounded-xl bg-white/5">
+          <Skeleton className="w-14 h-14 rounded-lg bg-white/10" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-4 w-3/4 bg-white/10" />
+            <Skeleton className="h-3 w-1/2 bg-white/10" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Profile() {
   const { userId: rawUserId } = useParams();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, profile: currentUserProfile } = useAuth();
   const navigate = useNavigate();
 
-  // Resolve the special "me" alias to the authenticated user's real ID.
-  // This allows /profile/me to work for the logged-in user from nav shortcuts.
-  // Falls back to undefined (not the literal string 'me') so that the query
-  // effect stays dormant until currentUser is available.
   const userId = rawUserId === 'me' ? (currentUser?.id ?? undefined) : rawUserId;
+  const isOwnProfile = currentUser?.id === userId;
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -120,7 +145,9 @@ export default function Profile() {
   const [savedStories, setSavedStories] = useState<SavedTravelStory[]>([]);
   const [marketplaceListings, setMarketplaceListings] = useState<any[]>([]);
 
-  // Cleanup timers on unmount to prevent lock warnings
+  // Effective profile: source of truth for UI. If own profile, use global AuthContext profile.
+  const displayProfile = isOwnProfile ? (currentUserProfile || profile) : profile;
+
   useEffect(() => {
     return () => {
       if (skeletonTimerRef.current) {
@@ -144,7 +171,6 @@ export default function Profile() {
   const [marketplaceLoading, setMarketplaceLoading] = useState(false);
   const [documentsLoading, setDocumentsLoading] = useState(false);
 
-  // Wait for currentUser to resolve before fetching when userId is 'me'
   useEffect(() => { if (userId && userId !== 'me') fetchProfileData(); }, [userId]);
 
   const downloadDocument = async (fileUrl: string, fileName: string) => {
@@ -207,13 +233,10 @@ export default function Profile() {
   };
 
   const fetchProfileData = async () => {
-    // Only show skeleton if loading takes more than 400ms (slow internet)
-    skeletonTimerRef.current = setTimeout(() => {
-      setShowSkeleton(true);
-    }, 400);
+    if (skeletonTimerRef.current) clearTimeout(skeletonTimerRef.current);
+    skeletonTimerRef.current = setTimeout(() => setShowSkeleton(true), 400);
     
     try {
-      // CRITICAL PATH: Load only essential data first for fast initial render
       const [profileResult, postsResult, friendsCountResult, followersResult, followingResult] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).single(),
         supabase.from('posts').select('*, profiles(*)').eq('user_id', userId).eq('visibility', 'public').neq('category', 'ghost').order('created_at', { ascending: false }).limit(12),
@@ -228,7 +251,6 @@ export default function Profile() {
       setFollowersCount(followersResult.count || 0);
       setFollowingCount(followingResult.count || 0);
 
-      // Calculate likes for displayed posts
       if ((postsResult.data || []).length > 0) {
         const postIds = (postsResult.data || []).map(p => p.id);
         const { data: allLikes } = await supabase.from('likes').select('post_id').in('post_id', postIds);
@@ -238,7 +260,6 @@ export default function Profile() {
         setLikesCount(counts);
       }
 
-      // Fetch follow/save/like data for current user
       if (currentUser && currentUser.id !== userId) {
         const [followResult, followBackResult, savedResult, likesResult, mutualResult, blockResult] = await Promise.all([
           supabase.from('follows').select('id').eq('follower_id', currentUser.id).eq('following_id', userId).maybeSingle(),
@@ -265,7 +286,6 @@ export default function Profile() {
         setLikes(likesResult.data || []);
       }
 
-      // Fetch profile stories
       {
         const { data: modernStoriesData } = await supabase
           .from('posts')
@@ -297,8 +317,6 @@ export default function Profile() {
         })));
       }
 
-      // DEFERRED: Load marketplace and documents only when tab is visible
-      // This happens via lazy loading hooks, not here
       setMarketplaceListings([]);
       setDocuments([]);
 
@@ -306,10 +324,7 @@ export default function Profile() {
       console.error('Error fetching profile:', error);
       toast.error('Failed to load profile');
     } finally { 
-      // Clear skeleton timer and hide skeleton immediately when data is ready
-      if (skeletonTimerRef.current) {
-        clearTimeout(skeletonTimerRef.current);
-      }
+      if (skeletonTimerRef.current) clearTimeout(skeletonTimerRef.current);
       setShowSkeleton(false);
       setLoading(false); 
     }
@@ -392,7 +407,6 @@ export default function Profile() {
     if (!currentUser) return;
     try {
       if (isFollowing) {
-        // If mutual, show confirmation
         if (isFollowedBy && !unfollowConfirm) {
           setUnfollowConfirm(true);
           return;
@@ -444,7 +458,7 @@ export default function Profile() {
   const visibleTabs = useVisibleTabContent(activeTab, profileTabIds);
 
   if (showSkeleton || loading || !userId) return <ProfileSkeleton />;
-  if (!profile) {
+  if (!displayProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a0f1e' }}>
         <div className="text-center">
@@ -455,13 +469,11 @@ export default function Profile() {
     );
   }
 
-  const isOwnProfile = currentUser?.id === userId;
-  const canMessage = !!currentUser && isFollowing && isFollowedBy;
   const mediaPosts = posts.filter(p => p.file_url || (p.media_urls && p.media_urls.length > 0));
   const videoPosts = posts.filter(p => p.file_type?.includes('video'));
 
   const getInterestGradient = () => {
-    const interest = profile.primary_interest;
+    const interest = displayProfile.primary_interest;
     if (interest === 'connect') return 'linear-gradient(135deg, #7C3AED, #3B82F6)';
     if (interest === 'learn') return 'linear-gradient(135deg, #0F766E, #065F46)';
     if (interest === 'games') return 'linear-gradient(135deg, #B45309, #92400E)';
@@ -469,7 +481,6 @@ export default function Profile() {
     return 'linear-gradient(135deg, #1e293b, #334155)';
   };
 
-  // People list modal with follow buttons
   const PeopleList = ({ people, title, onClose }: { people: Profile[]; title: string; onClose: () => void }) => {
     const [localFollowing, setLocalFollowing] = useState<Set<string>>(new Set());
     const [loadedFollowing, setLoadedFollowing] = useState(false);
@@ -569,26 +580,25 @@ export default function Profile() {
   const marketplaceListingsCount = marketplaceListings.length;
 
   const hasOpenableAvatar = Boolean(
-    profile.avatar_url &&
-      profile.avatar_url.trim() &&
-      !/dicebear|ui-avatars|avatar\.vercel|placeholder/i.test(profile.avatar_url),
+    displayProfile.avatar_url &&
+      displayProfile.avatar_url.trim() &&
+      !/dicebear|ui-avatars|avatar\.vercel|placeholder/i.test(displayProfile.avatar_url),
   );
 
-  // Extra data can live in DB JSON fields or local fallback storage for schema compatibility
-  const profileVisibilitySource = (profile as any).profile_visibility || {};
-  const storedExtras = loadProfileExtras(userId);
+  const profileVisibilitySource = (displayProfile as any).profile_visibility || {};
+  const storedExtras = loadProfileExtras(userId!);
   const dbExtras = {
-    school_name: profile.school_name || '',
-    hobbies: profile.hobbies || '',
-    contact_email: profile.contact_email || '',
-    favorite_club: profile.favorite_club || '',
-    favorite_show_movie_song: profile.favorite_show_movie_song || '',
-    favorite_actor_athlete_person: profile.favorite_actor_athlete_person || '',
-    games: profile.games || '',
-    contact_phone: profile.contact_phone || '',
-    relationship: profile.relationship || '',
-    occupation: profile.occupation || '',
-    profile_visibility: profile.profile_visibility || profileVisibilitySource.extra_data?.profile_visibility || {},
+    school_name: displayProfile.school_name || '',
+    hobbies: displayProfile.hobbies || '',
+    contact_email: displayProfile.contact_email || '',
+    favorite_club: displayProfile.favorite_club || '',
+    favorite_show_movie_song: displayProfile.favorite_show_movie_song || '',
+    favorite_actor_athlete_person: displayProfile.favorite_actor_athlete_person || '',
+    games: displayProfile.games || '',
+    contact_phone: displayProfile.contact_phone || '',
+    relationship: displayProfile.relationship || '',
+    occupation: displayProfile.occupation || '',
+    profile_visibility: displayProfile.profile_visibility || profileVisibilitySource.extra_data?.profile_visibility || {},
   };
   const extraData = {
     ...DEFAULT_PROFILE_EXTRAS,
@@ -626,23 +636,17 @@ export default function Profile() {
       return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
     });
 
-  const mediaOnlyPosts = profileVisiblePosts.filter(post => {
-    const urls = post.media_urls?.length ? post.media_urls : (post.file_url ? [post.file_url] : []);
-    return urls.some((url) => typeof url === 'string' && url.trim().length > 0);
-  });
-
   return (
     <div className="min-h-screen pb-24" style={{ background: '#0a0f1e' }}>
-      {/* Unfollow confirmation */}
       {unfollowConfirm && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setUnfollowConfirm(false)}>
           <div className="w-72 rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" style={{ background: '#111827' }} onClick={e => e.stopPropagation()}>
             <div className="p-5 text-center">
               <Avatar className="w-16 h-16 mx-auto mb-3 ring-2 ring-primary/20">
-                <AvatarImage src={profile?.avatar_url} />
-                <AvatarFallback>{profile?.name?.[0]}</AvatarFallback>
+                <AvatarImage src={displayProfile?.avatar_url} />
+                <AvatarFallback>{displayProfile?.name?.[0]}</AvatarFallback>
               </Avatar>
-              <p className="text-white text-sm font-semibold mb-1">Unfollow {profile?.name}?</p>
+              <p className="text-white text-sm font-semibold mb-1">Unfollow {displayProfile?.name}?</p>
               <p className="text-xs" style={{ color: '#94A3B8' }}>You are currently mutual friends.</p>
             </div>
             <button onClick={handleFollow} className="w-full py-3 text-sm font-bold active:bg-red-500/10 transition-colors" style={{ color: '#ef4444', borderTop: '1px solid #1f2937' }}>
@@ -655,7 +659,6 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Modals */}
       {showFollowers && <PeopleList people={followersList} title="Followers" onClose={() => setShowFollowers(false)} />}
       {showFollowing && <PeopleList people={followingList} title="Following" onClose={() => setShowFollowing(false)} />}
       {showFriends && <PeopleList people={friendsList} title="Friends" onClose={() => setShowFriends(false)} />}
@@ -665,8 +668,8 @@ export default function Profile() {
           <div
             className={cn('w-[86px] h-[86px] rounded-full overflow-hidden relative shrink-0', hasOpenableAvatar ? 'cursor-pointer' : 'cursor-default')}
             onClick={() => {
-              if (!hasOpenableAvatar || !profile.avatar_url) return;
-              setProfileMediaViewer({ open: true, urls: [profile.avatar_url], types: ['image'], index: 0 });
+              if (!hasOpenableAvatar || !displayProfile.avatar_url) return;
+              setProfileMediaViewer({ open: true, urls: [displayProfile.avatar_url], types: ['image'], index: 0 });
             }}
             style={{
               border: '2px solid #111827',
@@ -674,9 +677,9 @@ export default function Profile() {
             }}
           >
             <Avatar className="w-full h-full">
-              <AvatarImage src={profile.avatar_url || undefined} className="object-cover" />
+              <AvatarImage src={displayProfile.avatar_url || undefined} className="object-cover" />
               <AvatarFallback className="text-3xl font-bold text-white" style={{ background: 'linear-gradient(135deg, #7C3AED, #3B82F6)' }}>
-                {profile.name?.[0]?.toUpperCase()}
+                {displayProfile.name?.[0]?.toUpperCase()}
               </AvatarFallback>
             </Avatar>
             {isOwnProfile && (
@@ -689,8 +692,8 @@ export default function Profile() {
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="min-w-0 flex-1">
-                <h1 className="text-white truncate" style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 20 }}>{profile.name}</h1>
-                {profile.username && <p style={{ color: '#94A3B8', fontSize: 13, fontFamily: "'Inter'" }}>@{profile.username}</p>}
+                <h1 className="text-white truncate" style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 20 }}>{displayProfile.name}</h1>
+                {displayProfile.username && <p style={{ color: '#94A3B8', fontSize: 13, fontFamily: "'Inter'" }}>@{displayProfile.username}</p>}
               </div>
               
               <div className="flex items-center gap-2">
@@ -726,14 +729,12 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Bio */}
-      {profile.bio && (
+      {displayProfile.bio && (
         <p className="px-5 mt-8 text-[14px] text-slate-200 leading-relaxed font-medium" style={{ fontFamily: "'Inter'" }}>
-          {profile.bio}
+          {displayProfile.bio}
         </p>
       )}
 
-      {/* Action Buttons */}
       <div className="px-5 mt-8">
         {hasBlockedMe ? (
           <div className="p-3 rounded-xl text-center" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
@@ -764,7 +765,7 @@ export default function Profile() {
             <button 
               onClick={() => {
                 if (navigator.share) {
-                  navigator.share({ title: profile.name, url: window.location.href });
+                  navigator.share({ title: displayProfile.name, url: window.location.href });
                 }
               }} 
               className="py-2.5 px-4 rounded-xl active:scale-[0.98] transition-transform" 
@@ -804,7 +805,7 @@ export default function Profile() {
                onClick={() => {
                  if (navigator.share) {
                    navigator.share({
-                     title: profile.name,
+                     title: displayProfile.name,
                      url: window.location.href
                    });
                  }
@@ -818,7 +819,6 @@ export default function Profile() {
         )}
       </div>
 
-      {/* Profile Tabs - Consistent pill-style navigation */}
       <div className="w-full shrink-0 px-3 py-2 mt-4" style={{ background: '#0a0f1e' }}>
         <div className="relative flex items-center rounded-xl overflow-hidden shrink-0" style={{ background: '#0d1220', border: '1px solid #1f2937' }}>
           <div
@@ -847,7 +847,6 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Tab Content */}
       <div className="mt-0.5">
         {visibleTabs.has('posts') && activeTab === 'posts' && (
           <div>
@@ -857,12 +856,8 @@ export default function Profile() {
                   { id: 'pictures', label: 'Pictures' },
                   { id: 'videos', label: 'Videos' },
                   { id: 'thoughts', label: 'Thoughts' },
-                  { id: 'news', label: 'News' },
-                  { id: 'nature', label: 'Nature' },
-                  { id: 'fun', label: 'Fun' },
-                  { id: 'love', label: 'Love' },
-                  { id: 'nepal', label: 'Nepal' },
-                  { id: 'popular', label: 'Popular' },
+                  { id: 'travel_stories', label: 'Stories' },
+                  { id: 'documents', label: 'Docs' },
                 ].map((item) => (
                   <button
                     key={item.id}
@@ -923,7 +918,17 @@ export default function Profile() {
             ) : postFilter === 'documents' ? (
               <div className="px-4 py-4 space-y-3">
                 {documentsLoading ? (
-                  <div className="text-center py-20 text-slate-500">Loading documents...</div>
+                  <div className="space-y-3">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="bg-white/5 rounded-xl p-3 flex gap-3 animate-pulse">
+                        <Skeleton className="w-16 h-20 rounded-lg bg-white/10" />
+                        <div className="flex-1 space-y-2 py-1">
+                          <Skeleton className="h-4 w-3/4 bg-white/10" />
+                          <Skeleton className="h-3 w-1/4 bg-white/10" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <>
                 {documents.length === 0 ? (
@@ -993,8 +998,6 @@ export default function Profile() {
                   const isVideo = types.some((type) => typeof type === 'string' && type.includes('video'));
 
                   if (!hasMedia) return null;
-
-                  // Preload first 9 images for instant display
                   const shouldPreload = index < 9;
 
                   return (
@@ -1017,16 +1020,10 @@ export default function Profile() {
                           index: idx >= 0 ? idx : 0
                         });
                       }}
-                      className="relative aspect-square bg-slate-900 overflow-hidden group cursor-pointer will-change-transform"
+                      className="relative aspect-square bg-slate-900 overflow-hidden group cursor-pointer"
                     >
                       {isVideo ? (
-                         <video
-                           src={urls[0]}
-                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                           muted
-                           playsInline
-                           preload={shouldPreload ? "auto" : "metadata"}
-                         />
+                         <video src={urls[0]} className="w-full h-full object-cover" muted playsInline preload={shouldPreload ? "auto" : "metadata"} />
                       ) : (
                         <img
                           src={urls[0]}
@@ -1034,7 +1031,6 @@ export default function Profile() {
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                           loading={shouldPreload ? "eager" : "lazy"}
                           decoding={shouldPreload ? "sync" : "async"}
-                          fetchPriority={shouldPreload ? "high" : "auto"}
                         />
                       )}
                       {isVideo && (
@@ -1047,7 +1043,6 @@ export default function Profile() {
                            <Star className="w-4 h-4 text-white fill-white" />
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-black/0 group-active:bg-black/20 transition-colors" />
                     </div>
                   );
                 })}
@@ -1058,7 +1053,7 @@ export default function Profile() {
 
         {visibleTabs.has('info') && activeTab === 'info' && (
           <div className="space-y-3">
-            <div className="flex gap-2 overflow-x-auto no-scrollbar">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar px-4">
               {[
                 { label: 'Posts', value: posts.length },
                 { label: 'Stories', value: profileStories.length },
@@ -1074,15 +1069,14 @@ export default function Profile() {
               ))}
             </div>
 
-            {/* Profile Info Fields */}
-            <div className="space-y-2">
+            <div className="space-y-2 px-4">
               {[
-                isOwnProfile && profile.id && { key: 'user_id', icon: '🪪', label: 'User ID', value: profile.id.slice(0, 8) + '...', isPublic: true },
-                profile.location && canShowProfileField('location') && { key: 'location', icon: '📍', label: 'Location', value: profile.location, isPublic: profileVisibility.location !== false },
-                profile.country && canShowProfileField('country') && { key: 'country', icon: '🌍', label: 'Country', value: profile.country, isPublic: profileVisibility.country !== false },
-                profile.age_group && canShowProfileField('age_group') && { key: 'age_group', icon: '👤', label: 'Age Group', value: profile.age_group, isPublic: profileVisibility.age_group !== false },
-                profile.gender && canShowProfileField('gender') && { key: 'gender', icon: '⚧️', label: 'Gender', value: profile.gender, isPublic: profileVisibility.gender !== false },
-                profile.website && canShowProfileField('website') && { key: 'website', icon: '🔗', label: 'Website', value: profile.website, isLink: true, isPublic: profileVisibility.website !== false },
+                isOwnProfile && displayProfile.id && { key: 'user_id', icon: '🪪', label: 'User ID', value: displayProfile.id.slice(0, 8) + '...', isPublic: true },
+                displayProfile.location && canShowProfileField('location') && { key: 'location', icon: '📍', label: 'Location', value: displayProfile.location, isPublic: profileVisibility.location !== false },
+                displayProfile.country && canShowProfileField('country') && { key: 'country', icon: '🌍', label: 'Country', value: displayProfile.country, isPublic: profileVisibility.country !== false },
+                displayProfile.age_group && canShowProfileField('age_group') && { key: 'age_group', icon: '👤', label: 'Age Group', value: displayProfile.age_group, isPublic: profileVisibility.age_group !== false },
+                displayProfile.gender && canShowProfileField('gender') && { key: 'gender', icon: '⚧️', label: 'Gender', value: displayProfile.gender, isPublic: profileVisibility.gender !== false },
+                displayProfile.website && canShowProfileField('website') && { key: 'website', icon: '🔗', label: 'Website', value: displayProfile.website, isLink: true, isPublic: profileVisibility.website !== false },
                 extraData.school_name && canShowProfileField('school_name') && { key: 'school_name', icon: '🏫', label: 'School name', value: extraData.school_name, isPublic: profileVisibility.school_name !== false },
                 extraData.hobbies && canShowProfileField('hobbies') && { key: 'hobbies', icon: '🎯', label: 'Hobbies', value: extraData.hobbies, isPublic: profileVisibility.hobbies !== false },
                 extraData.favorite_club && canShowProfileField('favorite_club') && { key: 'favorite_club', icon: '⚽', label: 'Favourite Club', value: extraData.favorite_club, isPublic: profileVisibility.favorite_club !== false },
@@ -1091,7 +1085,7 @@ export default function Profile() {
                 extraData.games && canShowProfileField('games') && { key: 'games', icon: '🎮', label: 'Games', value: extraData.games, isPublic: profileVisibility.games !== false },
                 extraData.contact_email && canShowProfileField('contact_email') && { key: 'contact_email', icon: '✉️', label: 'Contact email', value: extraData.contact_email, isPublic: profileVisibility.contact_email !== false },
                 extraData.contact_phone && canShowProfileField('contact_phone') && { key: 'contact_phone', icon: '📱', label: 'Contact phone', value: extraData.contact_phone, isPublic: profileVisibility.contact_phone !== false },
-                profile.created_at && { key: 'joined', icon: '📅', label: 'Joined', value: new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }), isPublic: true },
+                displayProfile.created_at && { key: 'joined', icon: '📅', label: 'Joined', value: new Date(displayProfile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }), isPublic: true },
               ].filter(Boolean).map((item: any, i) => (
                 <div key={i} className="flex items-center gap-3 p-3 rounded-xl min-w-0" style={{ background: '#111827' }}>
                   <span className="text-lg shrink-0">{item.icon}</span>
@@ -1116,118 +1110,17 @@ export default function Profile() {
           </div>
         )}
 
-        {activeTab === 'medias' && (
-          <div className="space-y-4">
-            <div className="rounded-xl p-3" style={{ background: '#111827', border: '1px solid #1f2937' }}>
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-white">Media Hub</p>
-                <p className="text-xs" style={{ color: '#94A3B8' }}>
-                  {imageCount} pics • {videoCount} videos
-                </p>
-              </div>
-              <div className="mt-3 flex items-center justify-between gap-2">
-                <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                  {[
-                    { id: 'all', label: `All (${mediaEntries.length})` },
-                    { id: 'pictures', label: `Pic (${imageCount})` },
-                    { id: 'videos', label: `Vdos (${videoCount})` },
-                  ].map((filter) => (
-                    <button
-                      key={filter.id}
-                      onClick={() => setMediaFilter(filter.id as 'all' | 'pictures' | 'videos')}
-                      className="shrink-0 px-3 py-1.5 rounded-full text-xs"
-                      style={{
-                        background: mediaFilter === filter.id ? '#7C3AED' : '#0b1220',
-                        color: mediaFilter === filter.id ? 'white' : '#94A3B8',
-                        border: mediaFilter === filter.id ? '1px solid #7C3AED' : '1px solid #1f2937',
-                      }}
-                    >
-                      {filter.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex gap-1 text-[11px]">
-                  {[
-                    { id: 'latest', label: 'Latest' },
-                    { id: 'oldest', label: 'Oldest' },
-                    { id: 'popular', label: 'Popular' },
-                  ].map((sort) => (
-                    <button
-                      key={sort.id}
-                      onClick={() => setMediaSort(sort.id as 'latest' | 'oldest' | 'popular')}
-                      className="px-2 py-1 rounded"
-                      style={{
-                        color: mediaSort === sort.id ? 'white' : '#94A3B8',
-                        background: mediaSort === sort.id ? '#334155' : 'transparent',
-                      }}
-                    >
-                      {sort.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {filteredMediaEntries.length === 0 ? (
-              <div className="text-center py-12 rounded-xl" style={{ background: '#111827', border: '1px solid #1f2937' }}>
-                {mediaFilter === 'videos' ? (
-                  <Play className="w-8 h-8 mx-auto mb-2" style={{ color: '#374151' }} />
-                ) : (
-                  <Image className="w-8 h-8 mx-auto mb-2" style={{ color: '#374151' }} />
-                )}
-                <p style={{ color: '#94A3B8', fontSize: 13 }}>No media in this section yet</p>
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-3 gap-2 px-2">
-                  {filteredMediaEntries.slice(0, 6).map((entry) => (
-                    <button
-                      key={entry.id}
-                      className="relative rounded-md overflow-hidden hover:opacity-80 transition-opacity"
-                      style={{ aspectRatio: '1/1', contentVisibility: 'auto', contain: 'layout' }}
-                      onClick={() => {
-                        const urls = filteredMediaEntries.map((item) => item.url);
-                        const types = filteredMediaEntries.map((item) => (item.isVideo ? 'video' : 'image'));
-                        const index = urls.findIndex((url) => url === entry.url);
-                        setProfileMediaViewer({ open: true, urls, types, index: index >= 0 ? index : 0 });
-                      }}
-                    >
-                      {entry.isVideo ? (
-                        <video src={entry.url} className="w-full h-full object-cover" preload="none" />
-                      ) : (
-                        <img src={entry.url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-                      )}
-                      {entry.isVideo && (
-                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                          <Play className="w-6 h-6 text-white" />
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-                {filteredMediaEntries.length > 6 && (
-                  <div className="text-center mt-4">
-                    <button className="px-6 py-2 rounded-lg text-sm font-medium" style={{ background: '#7C3AED', color: 'white' }}>
-                      See All
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
-
         {visibleTabs.has('marketplace') && activeTab === 'marketplace' && (
-          <div className="space-y-3">
+          <div className="space-y-3 px-4">
             {marketplaceLoading ? (
-              <div className="text-center py-20 text-slate-500">Loading marketplace...</div>
+              <MarketplaceSkeleton />
             ) : (
               <>
             <div className="rounded-xl p-3" style={{ background: '#111827', border: '1px solid #1f2937' }}>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs" style={{ color: '#94A3B8' }}>Seller profile</p>
-                  <p className="text-sm font-semibold text-white">{marketplaceProfile?.username || profile?.name || 'Unnamed Seller'}</p>
+                  <p className="text-sm font-semibold text-white">{marketplaceProfile?.username || displayProfile?.name || 'Unnamed Seller'}</p>
                 </div>
                 <span
                   className="px-2.5 py-1 rounded-full text-[11px]"
@@ -1297,17 +1190,15 @@ export default function Profile() {
 
       </div>
 
-      {/* Edit Profile Sheet */}
-      {isOwnProfile && profile && (
+      {isOwnProfile && displayProfile && (
         <EditProfileSheet
           open={editOpen}
           onOpenChange={setEditOpen}
-          profile={profile}
+          profile={displayProfile}
           onSaved={fetchProfileData}
         />
       )}
 
-      {/* Profile Media Fullscreen Viewer — download + close only */}
       <FullScreenMediaViewer
         open={profileMediaViewer.open}
         onOpenChange={(open) => setProfileMediaViewer(prev => ({ ...prev, open }))}
@@ -1315,22 +1206,6 @@ export default function Profile() {
         mediaTypes={profileMediaViewer.types}
         initialIndex={profileMediaViewer.index}
         minimal
-        onSave={async () => {
-          const url = profileMediaViewer.urls[profileMediaViewer.index];
-          try {
-            const response = await fetch(url);
-            const blob = await response.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = blobUrl;
-            const ext = profileMediaViewer.types[profileMediaViewer.index]?.includes('video') ? 'mp4' : 'jpg';
-            a.download = `profile-media-${Date.now()}.${ext}`;
-            a.click();
-            URL.revokeObjectURL(blobUrl);
-          } catch {
-            toast.error('Failed to download media');
-          }
-        }}
       />
     </div>
   );

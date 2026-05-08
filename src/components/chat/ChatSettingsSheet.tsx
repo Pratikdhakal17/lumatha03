@@ -215,6 +215,7 @@ export function ChatSettingsSheet({
   const swipeIntentThresholdPx = 10;
   const horizontalIntentRatio = 1.25;
 
+  const appRootRef = useRef<HTMLDivElement>(null);
   const mutePrefsKey = `chatMutePrefs:${chatUserId}`;
   const premiumPrefsKey = `chatPremiumPrefs:${chatUserId}`;
 
@@ -330,11 +331,21 @@ export function ChatSettingsSheet({
 
   const openMedia = (url: string) => {
     console.debug('[ChatSettingsSheet] openMedia', url);
+    // Smoothly close sheet before opening viewer
+    onOpenChange(false);
+    
+    // Increased timeout for better "opening so well" feel and to avoid freezing
+    const openDelay = 220;
+    
     if (onOpenMediaByUrl) {
-      onOpenMediaByUrl(url);
+      setTimeout(() => {
+        onOpenMediaByUrl(url);
+      }, openDelay);
       return;
     }
-    onMediaGallery();
+    setTimeout(() => {
+      onMediaGallery();
+    }, openDelay);
   };
 
   const saveNickname = () => {
@@ -403,11 +414,15 @@ export function ChatSettingsSheet({
 
     const next = Math.max(0, Math.min(window.innerWidth, dragBaseXRef.current + delta));
 
-    // Throttle updates to once per animation frame to avoid excessive re-renders
+    // Throttle updates via RAF and use direct DOM manipulation to avoid React re-renders
     pendingDragXRef.current = next;
     if (rafRef.current === null) {
       rafRef.current = requestAnimationFrame(() => {
-        setDragX(pendingDragXRef.current ?? 0);
+        const x = pendingDragXRef.current ?? 0;
+        if (appRootRef.current) {
+          appRootRef.current.style.transform = `translateX(${x}px)`;
+        }
+        setDragX(x);
         pendingDragXRef.current = null;
         rafRef.current = null;
       });
@@ -441,14 +456,26 @@ export function ChatSettingsSheet({
     if (shouldClose) {
       setDragTransition('transform 280ms cubic-bezier(0.32, 0, 0.15, 1)');
       setDragX(width);
+      if (appRootRef.current) {
+        appRootRef.current.style.transform = `translateX(${width}px)`;
+        appRootRef.current.style.transition = 'transform 280ms cubic-bezier(0.32, 0, 0.15, 1)';
+      }
       window.setTimeout(() => {
         onOpenChange(false);
         setDragX(0);
         setDragTransition('transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)');
+        if (appRootRef.current) {
+          appRootRef.current.style.transform = 'translateX(0px)';
+          appRootRef.current.style.transition = 'transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        }
       }, 240);
     } else {
       setDragTransition('transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)');
       setDragX(0);
+      if (appRootRef.current) {
+        appRootRef.current.style.transform = 'translateX(0px)';
+        appRootRef.current.style.transition = 'transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+      }
     }
     dragStartXRef.current = null;
     dragStartYRef.current = null;
@@ -539,24 +566,56 @@ export function ChatSettingsSheet({
 
     if (activeMediaTab === 'videos') {
       if (data.videos.length === 0) return renderEmptyState('Nothing here yet');
+      const visibleVideos = data.videos.slice(0, 6);
+      const extraVideos = Math.max(0, data.videos.length - 6);
       return (
-        <div className="h-60 sm:h-72 md:h-80 rounded-xl overflow-hidden" style={{ border: '0.5px solid var(--separator)', background: 'var(--card)' }}>
-          <div className="grid grid-cols-3 gap-[2px] h-full">
-            {data.videos.slice(0, 30).map((item) => (
-              <button key={item.id} onClick={() => openMedia(item.url)} className="relative active:opacity-90 touch-target-44">
-                <video src={item.url} className="absolute inset-0 w-full h-full object-cover bg-black" muted playsInline preload="metadata" />
-                <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.18)' }}>
-                  <Play className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                </div>
-                <span
-                  className="absolute bottom-1 right-1 px-1.5 py-0.5 text-[11px] rounded-md"
-                  style={{ background: 'rgba(2,6,23,0.72)', color: '#E5E7EB' }}
+        <div className="rounded-xl overflow-hidden" style={{ border: '0.5px solid var(--separator)', background: 'var(--card)' }}>
+          <div className="grid grid-cols-3 gap-1 p-1">
+            {visibleVideos.map((item, index) => {
+              const showOverflowOverlay = extraVideos > 0 && index === 5;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => (showOverflowOverlay ? onMediaGallery() : openMedia(item.url))}
+                  className="relative aspect-square rounded-lg overflow-hidden active:opacity-90 touch-target-44 bg-black"
                 >
-                  {item.duration || 'Video'}
-                </span>
-              </button>
-            ))}
+                  <video src={item.url} className="absolute inset-0 w-full h-full object-cover" muted playsInline preload="metadata" />
+                  <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.22)' }}>
+                    {showOverflowOverlay ? (
+                      <span className="text-white text-xl font-semibold">+{extraVideos}</span>
+                    ) : (
+                      <Play className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                    )}
+                  </div>
+                  {!showOverflowOverlay && (
+                    <span
+                      className="absolute bottom-1 right-1 px-1.5 py-0.5 text-[10px] rounded-md"
+                      style={{ background: 'rgba(2,6,23,0.72)', color: '#E5E7EB' }}
+                    >
+                      {item.duration || 'Video'}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
+          {extraVideos > 0 ? (
+            <div className="px-2 pb-2">
+              <button
+                onClick={() => {
+                  if (onOpenMediaTab) {
+                    onOpenMediaTab('videos');
+                    return;
+                  }
+                  onMediaGallery();
+                }}
+                className="w-full h-9 sm:h-10 rounded-lg text-xs sm:text-sm touch-target-44"
+                style={{ background: 'var(--icon-bg)', color: 'var(--text)', border: '0.5px solid var(--separator)' }}
+              >
+                See More
+              </button>
+            </div>
+          ) : null}
         </div>
       );
     }
@@ -1448,7 +1507,7 @@ export function ChatSettingsSheet({
   );
 }
 
-function SectionHeading({ title }: { title: string }) {
+const SectionHeading = React.memo(function SectionHeading({ title }: { title: string }) {
   return (
     <h4
       className="pt-5 pb-2 px-4 text-[11px] font-semibold uppercase tracking-[0.06em]"
@@ -1457,9 +1516,9 @@ function SectionHeading({ title }: { title: string }) {
       {title}
     </h4>
   );
-}
+});
 
-function CardGroup({ children }: { children: React.ReactNode }) {
+const CardGroup = React.memo(function CardGroup({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="card-group mx-3 mb-2 rounded-xl overflow-hidden"
@@ -1468,9 +1527,9 @@ function CardGroup({ children }: { children: React.ReactNode }) {
       {children}
     </div>
   );
-}
+});
 
-function ActionPill({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+const ActionPill = React.memo(function ActionPill({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
@@ -1489,9 +1548,9 @@ function ActionPill({ icon, label, onClick }: { icon: React.ReactNode; label: st
       <span className="mt-0.5 text-[11px] font-medium text-center" style={{ color: 'var(--text)' }}>{label}</span>
     </button>
   );
-}
+});
 
-function ListRow({
+const ListRow = React.memo(function ListRow({
   icon,
   label,
   sublabel,
@@ -1520,9 +1579,9 @@ function ListRow({
       {rightNode || <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />}
     </button>
   );
-}
+});
 
-function ToggleRow({
+const ToggleRow = React.memo(function ToggleRow({
   icon,
   label,
   sublabel,
@@ -1547,9 +1606,9 @@ function ToggleRow({
       <Switch checked={checked} onCheckedChange={onCheckedChange} />
     </div>
   );
-}
+});
 
-function DisabledBadgeRow({ icon, label, badgeLabel }: { icon: React.ReactNode; label: string; badgeLabel: string }) {
+const DisabledBadgeRow = React.memo(function DisabledBadgeRow({ icon, label, badgeLabel }: { icon: React.ReactNode; label: string; badgeLabel: string }) {
   return (
     <div className="w-full min-h-[48px] px-[14px] py-2 flex items-center gap-3 opacity-50">
       <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--icon-bg)', color: 'var(--text-muted)' }}>
@@ -1568,9 +1627,9 @@ function DisabledBadgeRow({ icon, label, badgeLabel }: { icon: React.ReactNode; 
       </span>
     </div>
   );
-}
+});
 
-function DangerRow({
+const DangerRow = React.memo(function DangerRow({
   icon,
   label,
   sublabel,
@@ -1597,9 +1656,9 @@ function DangerRow({
       <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: '#FCA5A5' }} />
     </button>
   );
-}
+});
 
-function StatusChip({ label }: { label: string }) {
+const StatusChip = React.memo(function StatusChip({ label }: { label: string }) {
   return (
     <span
       className="px-2 py-0.5 rounded-lg text-[11px] font-medium"
@@ -1608,7 +1667,7 @@ function StatusChip({ label }: { label: string }) {
       {label}
     </span>
   );
-}
+});
 
 function getThemeColor(theme: string): string {
   const found = CHAT_THEMES.find((item) => item.id === theme);

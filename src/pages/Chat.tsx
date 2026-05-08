@@ -1677,7 +1677,12 @@ export default function Chat() {
       window.open(targetUrl, '_blank', 'noopener,noreferrer');
       return;
     }
-    setChatMediaViewer({ open: true, index: idx });
+    
+    // Robustness fix: Ensure any existing dialogs/sheets have a moment to close
+    // Increased delay to 180ms to ensure the settings sheet transition is well underway
+    setTimeout(() => {
+      setChatMediaViewer({ open: true, index: idx });
+    }, 180);
   }, [allChatMedia]);
 
   const detailMediaData = useMemo(() => {

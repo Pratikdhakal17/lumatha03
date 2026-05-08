@@ -8,6 +8,8 @@ export function ProfileStrip() {
   const navigate = useNavigate();
   const { profile } = useAuth();
 
+  const displayName = profile?.username ? `@${profile.username.replace('@', '')}` : profile?.name || 'Welcome!';
+
   return (
     <div className="glass-card rounded-2xl p-4 border border-border/50 hover-lift">
       <div className="flex items-center gap-4">
@@ -34,10 +36,10 @@ export function ProfileStrip() {
             className="text-left group"
           >
             <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors truncate">
-              {profile?.name || 'Welcome!'}
+              {displayName}
             </h3>
-            <p className="text-sm text-muted-foreground">
-              Share your thoughts with the world
+            <p className="text-sm text-muted-foreground truncate">
+              {profile?.bio || 'Share your thoughts with the world'}
             </p>
           </button>
         </div>

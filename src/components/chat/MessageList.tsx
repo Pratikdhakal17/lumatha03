@@ -608,8 +608,16 @@ export const MessageList = memo(function MessageList({
     });
   }, [messages.length]);
 
+  // Optimized scroll-to-bottom: use 'auto' for initial load/instant feel, 'smooth' for new incoming messages if near bottom
   useEffect(() => {
-    if (shouldScrollToBottom && messagesEndRef.current) {
+    if (!shouldScrollToBottom || !messagesEndRef.current) return;
+    
+    const isInitialLoad = messages.length > 0 && messages.length <= INITIAL_WINDOW_SIZE;
+    
+    if (isInitialLoad) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
+    } else {
+      // Use smooth only for subsequent new messages to maintain context
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, shouldScrollToBottom]);
