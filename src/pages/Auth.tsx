@@ -744,7 +744,7 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 overflow-y-auto relative bg-[#0B0D1F]" style={{ maxHeight: '100vh' }}>
+    <div className="w-full flex flex-col items-center justify-center p-4 overflow-y-auto relative bg-[#0B0D1F]" style={{ minHeight: '100vh' }}>
       {/* Injected keyframes */}
       <style>{floatingDotsStyle}</style>
 
@@ -765,8 +765,11 @@ export default function Auth() {
           border: '1px solid rgba(255,255,255,0.1)',
           borderRadius: 20,
           padding: 40,
+          paddingBottom: 60,
           boxShadow: '0 25px 60px rgba(0,0,0,0.4), 0 0 40px rgba(59,130,246,0.1)',
           animation: 'auth-card-in 0.5s 0.3s cubic-bezier(0.4,0,0.2,1) both',
+          marginTop: 'auto',
+          marginBottom: 'auto',
         }}>
 
         {isLogin ? (
