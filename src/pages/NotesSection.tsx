@@ -8,7 +8,7 @@ import {
   Heading1, Heading2, CaseSensitive, ChevronRight,
   Clock, Calendar, Star, Save, ArrowLeft, ArrowRight,
   Smile, MinusCircle, ChevronUp, ChevronDown, GraduationCap, Zap,
-  Eraser, Brush, Square, AlertCircle
+  Eraser, Brush, Square, AlertCircle, Video
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -50,7 +50,7 @@ interface Sticker {
 
 interface MediaItem {
   id: string;
-  type: 'image';
+  type: 'image' | 'video';
   url: string;
 }
 
@@ -96,14 +96,12 @@ export function NotesSection() {
 
   // Auto-Save Effect
   useEffect(() => {
-    if (notes.length > 0) {
-      setIsSaving(true);
-      const timer = setTimeout(() => {
-        localStorage.setItem('premium_notes_v2', JSON.stringify(notes));
-        setIsSaving(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
+    setIsSaving(true);
+    const timer = setTimeout(() => {
+      localStorage.setItem('premium_notes_v2', JSON.stringify(notes));
+      setIsSaving(false);
+    }, 350);
+    return () => clearTimeout(timer);
   }, [notes]);
 
   const activeNote = useMemo(() => notes.find(n => n.id === selectedId) || null, [notes, selectedId]);
@@ -154,7 +152,7 @@ export function NotesSection() {
   }
 
   return (
-    <div className="h-full w-full bg-[#070B14] text-[#E6E9F2] font-sans selection:bg-[#7B61FF]/30 overflow-hidden relative">
+    <div className="min-h-[100dvh] w-full bg-[#070B14] text-[#E6E9F2] font-sans selection:bg-[#7B61FF]/30 overflow-hidden relative">
       <AnimatePresence mode="wait">
         {!selectedId ? (
           <NotesListView 
@@ -624,6 +622,49 @@ function EditorView({ note, isSaving, onClose, onUpdate, onDelete, onNext, onPre
             </div>
           </SlidePanel>
         )}
+        {activePanel === 'drawing' && (
+          <SlidePanel onClose={() => setActivePanel(null)}>
+            <div className="p-8 space-y-6">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => onUpdate({ drawingMode: 'free' })}
+                  className={cn("flex-1 py-3 rounded-full text-xs font-bold", note.drawingMode === 'free' ? 'bg-[#7B61FF] text-white' : 'bg-white/5 text-white/70')}
+                >
+                  Draw
+                </button>
+                <button
+                  onClick={() => onUpdate({ drawingMode: 'none' })}
+                  className={cn("flex-1 py-3 rounded-full text-xs font-bold", note.drawingMode === 'none' ? 'bg-[#7B61FF] text-white' : 'bg-white/5 text-white/70')}
+                >
+                  View
+                </button>
+              </div>
+              <div className="space-y-2">
+                <p className="text-[10px] uppercase tracking-widest opacity-50">Brush size</p>
+                <input type="range" min="1" max="14" value={brushSize} onChange={(e) => setBrushSize(Number(e.target.value))} className="w-full" />
+              </div>
+              <div className="space-y-2">
+                <p className="text-[10px] uppercase tracking-widest opacity-50">Ink color</p>
+                <div className="flex gap-2">
+                  {['#FFFFFF', '#7B61FF', '#4ADE80', '#FBBF24', '#F2565A'].map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => setDrawColor(color)}
+                      className={cn("w-9 h-9 rounded-full border-2", drawColor === color ? 'border-white' : 'border-white/20')}
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <button
+                onClick={() => onUpdate({ strokes: [] })}
+                className="w-full py-3 rounded-full text-xs font-bold bg-white/10 hover:bg-white/20 transition-colors"
+              >
+                Clear drawing
+              </button>
+            </div>
+          </SlidePanel>
+        )}
         {activePanel === 'color' && (
           <SlidePanel onClose={() => setActivePanel(null)}>
             <div className="p-8 space-y-10">
@@ -645,7 +686,7 @@ function EditorView({ note, isSaving, onClose, onUpdate, onDelete, onNext, onPre
               <div className="space-y-4">
                 <h4 className="text-[10px] font-black tracking-[0.3em] opacity-40 uppercase">Text Color</h4>
                 <div className="flex gap-5 overflow-x-auto no-scrollbar pb-2">
-                  {['#E6E9F2', '#7B61FF', '#4ADE80', '#FBBF24', '#F2565A', '#C084FC', '#000000', '#FFFFFF'].map(c => (
+                  {['#E6E9F2', '#7B61FF', '#4ADE80', '#FBBF24', '#F2565A', '#C084FC', '#FFFFFF'].map(c => (
                     <button 
                       key={c}
                       onClick={() => { onUpdate({ textColor: c }); setActivePanel(null); }}
@@ -819,10 +860,14 @@ function NoteCard({ note, onClick }: { note: Note, onClick: () => void }) {
 
 // --- 📝 EDITOR VIEW ---
 function EditorView({ note, isSaving, onClose, onUpdate, onDelete, onNext, onPrev, onDone }: any) {
-  const [activePanel, setActivePanel] = useState<'add' | 'color' | 'typo' | 'menu' | 'stickers' | 'mood' | null>(null);
+  const [activePanel, setActivePanel] = useState<'add' | 'color' | 'typo' | 'menu' | 'stickers' | 'mood' | 'drawing' | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [brushSize, setBrushSize] = useState(4);
+  const [drawColor, setDrawColor] = useState('#FFFFFF');
   const theme = THEMES.find(t => t.id === note.theme) || THEMES[0];
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const drawingLayerRef = useRef<HTMLDivElement>(null);
 
   // Auto-expand textarea
   useEffect(() => {
@@ -836,6 +881,48 @@ function EditorView({ note, isSaving, onClose, onUpdate, onDelete, onNext, onPre
     onUpdate({ stickers: [...(note.stickers || []), { id: Date.now().toString(), emoji, x: 50, y: 50 }] });
     setActivePanel(null);
   };
+
+  const getCanvasPoint = (event: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    const rect = drawingLayerRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    const point = 'touches' in event ? event.touches[0] : event;
+    const x = ((point.clientX - rect.left) / rect.width) * 100;
+    const y = ((point.clientY - rect.top) / rect.height) * 100;
+    return {
+      x: Math.max(0, Math.min(100, x)),
+      y: Math.max(0, Math.min(100, y)),
+    };
+  };
+
+  const startDraw = (event: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    if (note.drawingMode === 'none') return;
+    const point = getCanvasPoint(event);
+    if (!point) return;
+    setIsDrawing(true);
+    const newStroke: DrawingStroke = {
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      points: [point],
+      color: drawColor,
+      width: brushSize,
+      mode: 'draw',
+    };
+    onUpdate({ strokes: [...(note.strokes || []), newStroke] });
+  };
+
+  const moveDraw = (event: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    if (!isDrawing || note.drawingMode === 'none') return;
+    const point = getCanvasPoint(event);
+    if (!point) return;
+    const strokes = note.strokes || [];
+    if (strokes.length === 0) return;
+    const nextStrokes = [...strokes];
+    const activeStroke = nextStrokes[nextStrokes.length - 1];
+    nextStrokes[nextStrokes.length - 1] = { ...activeStroke, points: [...activeStroke.points, point] };
+    onUpdate({ strokes: nextStrokes });
+  };
+
+  const stopDraw = () => setIsDrawing(false);
+  const textColor = theme.bg === '#000000' && note.textColor === '#000000' ? '#FFFFFF' : note.textColor;
 
   return (
     <motion.div 
@@ -916,7 +1003,7 @@ function EditorView({ note, isSaving, onClose, onUpdate, onDelete, onNext, onPre
             value={note.body}
             onChange={(e) => onUpdate({ body: e.target.value })}
             placeholder="Start your story..."
-            style={{ fontSize: note.fontSize, color: note.textColor }}
+            style={{ fontSize: note.fontSize, color: textColor }}
             className="w-full bg-transparent border-none resize-none focus:outline-none placeholder:opacity-20 leading-relaxed min-h-[50vh]"
           />
 
@@ -942,6 +1029,34 @@ function EditorView({ note, isSaving, onClose, onUpdate, onDelete, onNext, onPre
               </motion.div>
             ))}
           </AnimatePresence>
+
+          <div
+            ref={drawingLayerRef}
+            className={cn("absolute inset-0 z-30", note.drawingMode === 'none' ? 'pointer-events-none' : 'pointer-events-auto')}
+            onMouseDown={startDraw}
+            onMouseMove={moveDraw}
+            onMouseUp={stopDraw}
+            onMouseLeave={stopDraw}
+            onTouchStart={startDraw}
+            onTouchMove={moveDraw}
+            onTouchEnd={stopDraw}
+            style={{ touchAction: note.drawingMode === 'none' ? 'auto' : 'none' }}
+          >
+            <svg className="w-full h-full">
+              {(note.strokes || []).map((stroke: DrawingStroke) => (
+                <polyline
+                  key={stroke.id}
+                  points={stroke.points.map((point) => `${point.x},${point.y}`).join(' ')}
+                  fill="none"
+                  stroke={stroke.color || '#FFFFFF'}
+                  strokeWidth={stroke.width || 3}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+              ))}
+            </svg>
+          </div>
         </div>
       </div>
 
@@ -973,6 +1088,7 @@ function EditorView({ note, isSaving, onClose, onUpdate, onDelete, onNext, onPre
         <div className="bg-white/5 backdrop-blur-3xl rounded-[32px] px-8 py-5 flex items-center gap-10 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           <button onClick={() => setActivePanel(activePanel === 'add' ? null : 'add')} className={`transition-all ${activePanel === 'add' ? 'text-[#7B61FF] scale-110' : 'opacity-40 hover:opacity-100'}`}><Plus className="w-7 h-7" /></button>
           <button onClick={() => setActivePanel(activePanel === 'stickers' ? null : 'stickers')} className={`transition-all ${activePanel === 'stickers' ? 'text-[#7B61FF] scale-110' : 'opacity-40 hover:opacity-100'}`}><Smile className="w-7 h-7" /></button>
+          <button onClick={() => setActivePanel(activePanel === 'drawing' ? null : 'drawing')} className={`transition-all ${activePanel === 'drawing' || note.drawingMode !== 'none' ? 'text-[#7B61FF] scale-110' : 'opacity-40 hover:opacity-100'}`}><Brush className="w-7 h-7" /></button>
           <button onClick={() => setActivePanel(activePanel === 'color' ? null : 'color')} className={`transition-all ${activePanel === 'color' ? 'text-[#7B61FF] scale-110' : 'opacity-40 hover:opacity-100'}`}><Palette className="w-7 h-7" /></button>
           <button onClick={() => setActivePanel(activePanel === 'typo' ? null : 'typo')} className={`transition-all ${activePanel === 'typo' ? 'text-[#7B61FF] scale-110' : 'opacity-40 hover:opacity-100'}`}><Type className="w-7 h-7" /></button>
           <div className="flex gap-6 px-8 border-x border-white/10">
@@ -988,15 +1104,38 @@ function EditorView({ note, isSaving, onClose, onUpdate, onDelete, onNext, onPre
         {activePanel === 'add' && (
           <SlidePanel onClose={() => setActivePanel(null)}>
             <div className="grid grid-cols-3 gap-8 p-8">
-              <PanelItem icon={ImageIcon} label="Photos Only" onClick={() => {
-                onUpdate({ media: [...note.media, { id: Date.now().toString(), type: 'image', url: 'https://picsum.photos/800/800?random=' + Math.random() }] });
-                setActivePanel(null);
+              <PanelItem icon={ImageIcon} label="Add Image" onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (evt: any) => {
+                  const file = evt.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    onUpdate({ media: [...note.media, { id: Date.now().toString(), type: 'image', url: String(reader.result || '') }] });
+                    toast.success('Image added');
+                    setActivePanel(null);
+                  };
+                  reader.readAsDataURL(file);
+                };
+                input.click();
               }} />
-              <PanelItem icon={Video} label="Videos Only" onClick={() => {
-                onUpdate({ media: [...note.media, { id: Date.now().toString(), type: 'video', url: 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4' }] });
-                setActivePanel(null);
+              <PanelItem icon={Video} label="Add Video" onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'video/*';
+                input.onchange = (evt: any) => {
+                  const file = evt.target.files?.[0];
+                  if (!file) return;
+                  const videoUrl = URL.createObjectURL(file);
+                  onUpdate({ media: [...note.media, { id: Date.now().toString(), type: 'video', url: videoUrl }] });
+                  toast.success('Video added');
+                  setActivePanel(null);
+                };
+                input.click();
               }} />
-              <PanelItem icon={Pencil} label="Sketch" onClick={() => setActivePanel(null)} />
+              <PanelItem icon={Pencil} label="Sketch" onClick={() => { onUpdate({ drawingMode: 'free' }); setActivePanel('drawing'); }} />
             </div>
           </SlidePanel>
         )}
@@ -1039,7 +1178,7 @@ function EditorView({ note, isSaving, onClose, onUpdate, onDelete, onNext, onPre
               <div className="space-y-4">
                 <h4 className="text-[10px] font-black tracking-[0.3em] opacity-40 uppercase">Ink Color</h4>
                 <div className="flex gap-5 overflow-x-auto no-scrollbar pb-2">
-                  {['#E6E9F2', '#7B61FF', '#4ADE80', '#FBBF24', '#F2565A', '#C084FC', '#000000', '#FFFFFF'].map(c => (
+                  {['#E6E9F2', '#7B61FF', '#4ADE80', '#FBBF24', '#F2565A', '#C084FC', '#FFFFFF'].map(c => (
                     <button 
                       key={c}
                       onClick={() => onUpdate({ textColor: c })}
@@ -1182,4 +1321,3 @@ function MenuItem({ icon: Icon, label, onClick, color }: any) {
     </button>
   );
 }
-

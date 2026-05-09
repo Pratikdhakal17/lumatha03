@@ -744,7 +744,7 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 overflow-y-auto relative bg-[#0B0D1F]" style={{ maxHeight: '100vh' }}>
+    <div className="min-h-[100dvh] w-full flex flex-col items-center justify-start md:justify-center px-4 py-6 overflow-y-auto overflow-x-hidden relative bg-[#0B0D1F]">
       {/* Injected keyframes */}
       <style>{floatingDotsStyle}</style>
 
@@ -759,12 +759,11 @@ export default function Auth() {
       </div>
 
       {/* Navy Card */}
-      <div className={`w-full relative z-10 ${isLogin ? 'max-w-[420px]' : 'max-w-[440px]'}`}
+      <div className={`w-full relative z-10 my-auto p-6 sm:p-10 ${isLogin ? 'max-w-[420px]' : 'max-w-[440px]'}`}
         style={{
           background: 'linear-gradient(145deg, #0f172a 0%, #1e293b 100%)',
           border: '1px solid rgba(255,255,255,0.1)',
           borderRadius: 20,
-          padding: 40,
           boxShadow: '0 25px 60px rgba(0,0,0,0.4), 0 0 40px rgba(59,130,246,0.1)',
           animation: 'auth-card-in 0.5s 0.3s cubic-bezier(0.4,0,0.2,1) both',
         }}>
