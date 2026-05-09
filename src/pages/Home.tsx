@@ -249,6 +249,16 @@ export default function Home() {
         processedPosts = [...processedPosts].sort(() => Math.random() - 0.5);
       }
 
+      // Keep travel stories primarily in the dedicated Travel Stories section.
+      // Show only a small sample in the main feed for discovery.
+      let visibleTravelCount = 0;
+      processedPosts = processedPosts.filter((post) => {
+        const isTravelStory = post.post_type === 'travel_story' || post.category === 'travel_story' || post.category === 'travel';
+        if (!isTravelStory) return true;
+        visibleTravelCount += 1;
+        return visibleTravelCount <= 2;
+      });
+
       setPosts(processedPosts);
       const [savedResult, likedResult] = await Promise.all([
         supabase.from('saved').select('post_id').eq('user_id', user.id),

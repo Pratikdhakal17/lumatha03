@@ -105,17 +105,17 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
     };
 
     const profileExtras: ProfileExtras = {
-      school_name: profile.school_name || '',
-      hobbies: profile.hobbies || '',
-      contact_email: profile.contact_email || '',
-      favorite_club: profile.favorite_club || '',
-      favorite_show_movie_song: profile.favorite_show_movie_song || '',
-      favorite_actor_athlete_person: profile.favorite_actor_athlete_person || '',
-      games: profile.games || '',
-      contact_phone: profile.contact_phone || '',
-      relationship: profile.relationship || '',
-      occupation: profile.occupation || '',
-      profile_visibility: normalizeVisibility(profile.profile_visibility as unknown) as Record<string, boolean>,
+      school_name: profile.school_name || storedExtras.school_name || '',
+      hobbies: profile.hobbies || storedExtras.hobbies || '',
+      contact_email: profile.contact_email || storedExtras.contact_email || '',
+      favorite_club: profile.favorite_club || storedExtras.favorite_club || '',
+      favorite_show_movie_song: profile.favorite_show_movie_song || storedExtras.favorite_show_movie_song || '',
+      favorite_actor_athlete_person: profile.favorite_actor_athlete_person || storedExtras.favorite_actor_athlete_person || '',
+      games: profile.games || storedExtras.games || '',
+      contact_phone: profile.contact_phone || storedExtras.contact_phone || '',
+      relationship: profile.relationship || storedExtras.relationship || '',
+      occupation: profile.occupation || storedExtras.occupation || '',
+      profile_visibility: normalizeVisibility((profile.profile_visibility || storedExtras.profile_visibility) as unknown) as Record<string, boolean>,
     };
     const resolvedExtras: ProfileExtras = {
       ...DEFAULT_PROFILE_EXTRAS,
@@ -231,7 +231,6 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
       };
 
       saveProfileExtras(storageUserId, nextExtras);
-      await refreshProfile(user.id);
 
       // Build update data for core profile fields and extended profile fields.
       // If the live schema rejects the extended columns, we fall back to core-only.
@@ -283,13 +282,10 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
       }
 
       saveProfileExtras(storageUserId, nextExtras);
-      
-      // Wait a moment to ensure data persistence before closing
+      await refreshProfile(user.id);
       toast.success('Profile updated successfully');
-      setTimeout(() => {
-        onSaved();
-        onOpenChange(false);
-      }, 150);
+      onSaved();
+      onOpenChange(false);
     } catch (err: any) {
       console.error('Save error:', err);
       toast.error(err.message || 'Failed to save profile');
