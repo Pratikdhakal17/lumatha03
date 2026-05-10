@@ -26,7 +26,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { SYSTEM_CHALLENGES } from '@/data/adventureChallenges';
 import type { Challenge } from '@/data/adventureChallenges';
 import { cn } from '@/lib/utils';
-
 const FALLBACK_PLACE_IMAGE = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=800';
 
 // --- localStorage helpers ---
@@ -154,6 +153,8 @@ export default function MusicAdventureFixed() {
   const [travelReaderStoryId, setTravelReaderStoryId] = useState<string | null>(null);
   const [travelReaderOpen, setTravelReaderOpen] = useState(false);
   const [storiesFilterMenuOpen, setStoriesFilterMenuOpen] = useState(false);
+  const [exploreScope, setExploreScope] = useState<'global' | 'regional' | 'following' | 'ghost'>('global');
+  const exploreInputRef = useRef<HTMLInputElement | null>(null);
 
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
@@ -612,8 +613,9 @@ export default function MusicAdventureFixed() {
     }, []);
 
     const itemSize = Math.floor(containerWidth / columns);
-    const rowCount = Math.ceil(visiblePlaces.length / columns);
-    const height = Math.min(800, Math.max(400, Math.floor((window.innerHeight || 800) * 0.7)));
+    const rowCount = Math.max(1, Math.ceil(visiblePlaces.length / columns));
+    // Expand grid to content height so the page (window) scrolls instead of the grid
+    const height = Math.max(200, rowCount * itemSize);
 
     const Cell = ({ columnIndex, rowIndex, style, data }: any) => {
       const idx = rowIndex * columns + columnIndex;
@@ -707,6 +709,13 @@ export default function MusicAdventureFixed() {
   const currentTab = getCurrentTabInfo();
   const CurrentTabIcon = currentTab.icon;
 
+  const SCOPE_ICON_MAP: Record<string, any> = {
+    global: Globe,
+    regional: Flag,
+    following: Users,
+    ghost: UserCircle2,
+  };
+
   // Subsection Navigation Component - Shared across all tabs
   // Mobile: Small icons in front of text (horizontal layout) to save space like Learn section
   const SubsectionNavigation = () => (
@@ -741,7 +750,7 @@ export default function MusicAdventureFixed() {
                 "text-[11px] font-bold transition-colors whitespace-nowrap flex items-center gap-1",
                 isActive ? 'text-primary' : 'text-slate-500'
               )}>
-                {tab.label} <ChevronRight className="w-3 h-3" />
+                {tab.label}
               </span>
             </button>
           );
@@ -775,11 +784,18 @@ export default function MusicAdventureFixed() {
           {/* Profile Pic with Filter Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 shrink-0 active:scale-90 transition-all shadow-lg">
+              <button className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 shrink-0 active:scale-90 transition-all shadow-lg">
                 <Avatar className="w-full h-full rounded-full">
                   <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
                   <AvatarFallback className="bg-slate-800 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
                 </Avatar>
+                {/* scope badge */}
+                <span className="absolute -right-0 -bottom-0 bg-slate-800/80 p-0.5 rounded-full border border-white/10">
+                  {(() => {
+                    const Icon = SCOPE_ICON_MAP[exploreScope] || Globe;
+                    return <Icon className="w-3 h-3 text-white" />;
+                  })()}
+                </span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56 bg-slate-900 border-white/10 rounded-xl p-2 shadow-2xl">
@@ -803,6 +819,24 @@ export default function MusicAdventureFixed() {
               <DropdownMenuItem onClick={() => setQuestViewFilter('done')} className="rounded-lg py-2.5 gap-3">
                 <Check className="w-4 h-4 text-emerald-500" /> <span className="font-bold text-xs uppercase">Done Work</span>
               </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-white/10" />
+              <div className="p-2">
+                <div className="text-xs font-black text-slate-400 uppercase mb-1">Scope</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <DropdownMenuItem onClick={() => setExploreScope('global')} className="rounded-lg py-2 gap-2">
+                    <Globe className="w-4 h-4 text-sky-400" /> <span className="text-xs font-bold">Global</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setExploreScope('regional')} className="rounded-lg py-2 gap-2">
+                    <Flag className="w-4 h-4 text-emerald-400" /> <span className="text-xs font-bold">Regional</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setExploreScope('following')} className="rounded-lg py-2 gap-2">
+                    <Users className="w-4 h-4 text-violet-400" /> <span className="text-xs font-bold">Following</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setExploreScope('ghost')} className="rounded-lg py-2 gap-2">
+                    <UserCircle2 className="w-4 h-4 text-slate-400" /> <span className="text-xs font-bold">Ghost</span>
+                  </DropdownMenuItem>
+                </div>
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -1356,12 +1390,15 @@ export default function MusicAdventureFixed() {
       {/* Search Bar with Profile - True Full Width */}
       <div className="w-full flex gap-2 overflow-x-auto no-scrollbar px-0 py-3 border-b border-white/5 bg-[#0a0f1e]/50 items-center">
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 shrink-0 active:scale-90 transition-all shadow-lg flex touch-manipulation">
+            <DropdownMenuTrigger asChild>
+              <button className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 shrink-0 active:scale-90 transition-all shadow-lg flex touch-manipulation">
               <Avatar className="w-full h-full rounded-full">
                 <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
                 <AvatarFallback className="bg-slate-800 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
               </Avatar>
+              <span className="absolute -right-0 -bottom-0 bg-slate-800/80 p-0.5 rounded-full border border-white/10">
+                {(() => { const Icon = SCOPE_ICON_MAP[exploreScope] || Globe; return <Icon className="w-3 h-3 text-white" />; })()}
+              </span>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56 bg-slate-900 border-white/10 rounded-[24px] p-2 shadow-2xl">
@@ -1377,15 +1414,39 @@ export default function MusicAdventureFixed() {
             <DropdownMenuItem onClick={() => setProfileViewFilter('visited')} className="rounded-xl py-3 gap-3">
               <MapPin className="w-4 h-4 text-emerald-500" /> <span className="font-bold text-xs uppercase tracking-widest text-white">Visited</span>
             </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-white/5" />
+            <div className="p-2">
+              <div className="text-xs font-black text-slate-400 uppercase mb-1">Scope</div>
+              <div className="grid grid-cols-2 gap-2">
+                <DropdownMenuItem onClick={() => setExploreScope('global')} className="rounded-lg py-2 gap-2">
+                  <Globe className="w-4 h-4 text-sky-400" /> <span className="text-xs font-bold">Global</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setExploreScope('regional')} className="rounded-lg py-2 gap-2">
+                  <Flag className="w-4 h-4 text-emerald-400" /> <span className="text-xs font-bold">Regional</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setExploreScope('following')} className="rounded-lg py-2 gap-2">
+                  <Users className="w-4 h-4 text-violet-400" /> <span className="text-xs font-bold">Following</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setExploreScope('ghost')} className="rounded-lg py-2 gap-2">
+                  <UserCircle2 className="w-4 h-4 text-slate-400" /> <span className="text-xs font-bold">Ghost</span>
+                </DropdownMenuItem>
+              </div>
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
 
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <Input
+            ref={exploreInputRef}
             placeholder="Find your next adventure..."
             value={exploreSearchQuery}
-            onChange={(e) => setExploreSearchQuery(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value;
+              startTransition(() => setExploreSearchQuery(v));
+              // keep focus stable when re-renders occur
+              requestAnimationFrame(() => exploreInputRef.current?.focus());
+            }}
             className="w-full h-12 bg-slate-900/50 border-white/5 rounded-full pl-11 pr-4 text-white placeholder:text-slate-600 font-bold focus-visible:ring-primary"
           />
         </div>
@@ -1430,11 +1491,14 @@ export default function MusicAdventureFixed() {
       <div className="w-full flex gap-2 overflow-x-auto no-scrollbar px-0 py-2 mb-2 items-center">
         <DropdownMenu open={storiesFilterMenuOpen} onOpenChange={setStoriesFilterMenuOpen}>
           <DropdownMenuTrigger asChild>
-            <button className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 shrink-0">
+            <button className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 shrink-0">
               <Avatar className="w-full h-full rounded-full">
                 <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
                 <AvatarFallback className="bg-slate-800 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
               </Avatar>
+              <span className="absolute -right-0 -bottom-0 bg-slate-800/80 p-0.5 rounded-full border border-white/10">
+                {(() => { const Icon = SCOPE_ICON_MAP[exploreScope] || Globe; return <Icon className="w-3 h-3 text-white" />; })()}
+              </span>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-64 bg-slate-900 border-white/10 rounded-[24px] p-2 shadow-2xl">
@@ -1450,6 +1514,24 @@ export default function MusicAdventureFixed() {
             <DropdownMenuItem onClick={() => setTravelViewFilter('saved')} className="rounded-xl py-3 gap-3">
               <Bookmark className="w-4 h-4 text-violet-500" /> <span className="font-bold text-xs uppercase tracking-widest text-white">Saved Posts</span>
             </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-white/5" />
+            <div className="p-2">
+              <div className="text-xs font-black text-slate-400 uppercase mb-1">Scope</div>
+              <div className="grid grid-cols-2 gap-2">
+                <DropdownMenuItem onClick={() => setExploreScope('global')} className="rounded-lg py-2 gap-2">
+                  <Globe className="w-4 h-4 text-sky-400" /> <span className="text-xs font-bold">Global</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setExploreScope('regional')} className="rounded-lg py-2 gap-2">
+                  <Flag className="w-4 h-4 text-emerald-400" /> <span className="text-xs font-bold">Regional</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setExploreScope('following')} className="rounded-lg py-2 gap-2">
+                  <Users className="w-4 h-4 text-violet-400" /> <span className="text-xs font-bold">Following</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setExploreScope('ghost')} className="rounded-lg py-2 gap-2">
+                  <UserCircle2 className="w-4 h-4 text-slate-400" /> <span className="text-xs font-bold">Ghost</span>
+                </DropdownMenuItem>
+              </div>
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
 
