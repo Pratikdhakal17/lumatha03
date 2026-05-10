@@ -961,8 +961,8 @@ export function EnhancedPostCard({
     return null;
   }
 
-  const username = post.profiles?.username || post.profiles?.name?.toLowerCase().replace(/\s+/g, '') || 'user';
-  const displayName = (post.profiles as any)?.username || (post.profiles as any)?.name || (post.profiles as any)?.username || post.profiles?.name || 'Lumatha Member';
+  const rawUsername = post.profiles?.username || post.profiles?.name || 'Lumatha Member';
+  const username = String(rawUsername).startsWith('@') ? String(rawUsername).slice(1) : String(rawUsername);
 
   return (
     <>
@@ -993,12 +993,12 @@ export function EnhancedPostCard({
                 style={{ width: 10, height: 10, background: '#22C55E', borderColor: 'var(--bg-card)' }}
               />
             </div>
-            <div className="flex flex-col min-w-0">
+              <div className="flex flex-col min-w-0">
               <p
                 className="font-semibold text-[15px] truncate"
                 style={{ fontFamily: "'Space Grotesk', sans-serif", color: 'var(--text-1)' }}
               >
-                {displayName}
+                {username}
               </p>
                 {(post.category === 'travel_story' || post.post_type === 'travel_story') && (
                   <span 
