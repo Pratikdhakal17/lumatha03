@@ -83,3 +83,4 @@ export const ChatImageGrid = React.memo(function ChatImageGrid({ urls, isOwn = f
     </div>
   );
 }
+);
