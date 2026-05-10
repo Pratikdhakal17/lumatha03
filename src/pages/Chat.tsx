@@ -793,17 +793,30 @@ export default function Chat() {
   }, []);
 
   // Auto-scroll conversations to top when opening /chat route (no user selected)
-  // Sync chatTab with URL query params
+  // Sync chatTab with URL query params - optimized to prevent freezing
   useEffect(() => {
     if (currentChatUser) return; // Don't sync when in active chat
-    const params = new URLSearchParams(window.location.search);
-    const tab = params.get('tab');
-    if (tab && ['find', 'hidden', 'market'].includes(tab)) {
-      setChatTab(tab as 'find' | 'hidden' | 'market');
-    } else if (!tab && window.location.pathname === '/chat') {
-      setChatTab('main');
-    }
-  }, [window.location.search, currentChatUser]);
+    
+    const handleUrlChange = () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get('tab');
+        if (tab && ['find', 'hidden', 'market'].includes(tab)) {
+          setChatTab(tab as 'find' | 'hidden' | 'market');
+        } else if (!tab && window.location.pathname === '/chat') {
+          setChatTab('main');
+        }
+      } catch (error) {
+        console.error('[Chat] URL sync error:', error);
+      }
+    };
+
+    handleUrlChange();
+    
+    // Listen for popstate changes
+    window.addEventListener('popstate', handleUrlChange);
+    return () => window.removeEventListener('popstate', handleUrlChange);
+  }, [currentChatUser]);
 
   useEffect(() => {
     // Removed: scrollIntoView was causing layout shifting
@@ -819,17 +832,37 @@ export default function Chat() {
   // Removed: window.scrollTo was causing header shifting when switching tabs
   // Header stability is now handled by Layout.tsx
 
-  // User search
+  // User search - optimized with debouncing and error handling
   useEffect(() => {
-    if (!userSearchQuery.trim()) { setSearchResults([]); return; }
-    const t = setTimeout(async () => {
-      const { data } = await supabase.from('profiles').select('id, name, username, avatar_url, country, created_at')
-        .or(`name.ilike.%${userSearchQuery}%,username.ilike.%${userSearchQuery}%`)
-        .neq('id', user?.id).limit(15);
-      setSearchResults(data || []);
+    if (!userSearchQuery.trim()) { 
+      setSearchResults([]); 
+      return; 
+    }
+    
+    const searchTimeout = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, name, username, avatar_url, country, created_at')
+          .or(`name.ilike.%${userSearchQuery}%,username.ilike.%${userSearchQuery}%`)
+          .neq('id', user?.id || '')
+          .limit(15);
+          
+        if (error) {
+          console.error('[Chat] Search error:', error);
+          setSearchResults([]);
+          return;
+        }
+        
+        setSearchResults(data || []);
+      } catch (error) {
+        console.error('[Chat] Search failed:', error);
+        setSearchResults([]);
+      }
     }, 300);
-    return () => clearTimeout(t);
-  }, [userSearchQuery, user]);
+    
+    return () => clearTimeout(searchTimeout);
+  }, [userSearchQuery, user?.id]);
 
   useEffect(() => {
     if (chatTab !== 'find') return;
@@ -2463,7 +2496,13 @@ export default function Chat() {
         {selectedAttachmentType === 'gallery' && (
           <GalleryAttachment
             onSelect={async (file, isSensitive) => {
-              await uploadAndSendAttachment(file, isSensitive);
+              try {
+                await uploadAndSendAttachment(file, isSensitive);
+                toast.success('Media sent successfully');
+              } catch (err) {
+                console.error('Gallery upload failed:', err);
+                toast.error('Failed to send media');
+              }
             }}
             onClose={() => {
               setShowAttachments(false);
@@ -2476,7 +2515,13 @@ export default function Chat() {
         {selectedAttachmentType === 'docs' && (
           <DocumentAttachment
             onSelect={async (file, isSensitive) => {
-              await uploadAndSendAttachment(file, isSensitive);
+              try {
+                await uploadAndSendAttachment(file, isSensitive);
+                toast.success('Document sent successfully');
+              } catch (err) {
+                console.error('Document upload failed:', err);
+                toast.error('Failed to send document');
+              }
             }}
             onClose={() => {
               setShowAttachments(false);
@@ -2566,12 +2611,29 @@ export default function Chat() {
         {selectedAttachmentType === 'poll' && (
           <PollAttachment
             onSubmit={async (poll) => {
-              if (!currentChatUser) return;
+              if (!currentChatUser || !user) return;
               try {
-                const pollContent = `[Poll] ${poll.question}\nOptions: ${poll.options.join(', ')}`;
+                // Create structured poll data
+                const pollData = {
+                  id: `poll-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                  question: poll.question,
+                  options: poll.options.map((option, index) => ({
+                    id: `option-${index}`,
+                    text: option,
+                    votes: 0,
+                    voters: []
+                  })),
+                  createdBy: user.id,
+                  createdAt: new Date().toISOString(),
+                  isActive: true
+                };
+                
+                // Send poll as structured JSON
+                const pollContent = `[POLL]${JSON.stringify(pollData)}`;
                 await sendMessage(currentChatUser, pollContent);
                 setShowAttachments(false);
                 setSelectedAttachmentType(null);
+                toast.success('Poll sent successfully');
               } catch (err) {
                 console.error('Poll send failed:', err);
                 toast.error('Failed to send poll');

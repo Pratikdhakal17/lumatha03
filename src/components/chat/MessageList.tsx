@@ -5,6 +5,7 @@ import { ChatImageGrid } from '@/components/chat/ChatImageGrid';
 import { ChatVideoPlayer } from '@/components/chat/ChatVideoPlayer';
 import { LinkPreviewCard, extractUrls } from '@/components/chat/LinkPreviewCard';
 import { SharedPostPreview, extractInternalPostId, isSharedPostMessage } from '@/components/chat/SharedPostPreview';
+import { PollMessage } from '@/components/chat/PollMessage';
 import type { Message } from '@/types/chat';
 import { VariableSizeList as List } from 'react-window';
 
@@ -352,6 +353,16 @@ const MessageItem = memo(function MessageItem({
               </div>
             )}
 
+            {/* Poll Message */}
+            {msg.content && msg.content.startsWith('[POLL]') && (
+              <PollMessage
+                content={msg.content}
+                messageId={msg.id}
+                senderId={msg.sender_id}
+                isOwn={isOwn}
+              />
+            )}
+
             {/* Shared post */}
             {msg.content && isSharedPostMessage(msg.content) && (() => {
               const postId = extractInternalPostId(msg.content);
@@ -359,7 +370,7 @@ const MessageItem = memo(function MessageItem({
             })()}
 
             {/* Text */}
-            {msg.content && !locationCoords && !msg.content.startsWith('📎 ') && msg.content !== '🎤 Voice message' && msg.content.trim() !== '' && msg.content.trim() !== ' ' && !isSharedPostMessage(msg.content) && !msg.content.trim().toLowerCase().startsWith('sketch drawing') && (
+            {msg.content && !locationCoords && !msg.content.startsWith('📎 ') && msg.content !== '🎤 Voice message' && msg.content.trim() !== '' && msg.content.trim() !== ' ' && !isSharedPostMessage(msg.content) && !msg.content.trim().toLowerCase().startsWith('sketch drawing') && !msg.content.startsWith('[POLL]') && (
               <p className={cn('text-[15px] break-words leading-relaxed text-white', msg.media_url ? 'px-3.5 py-2.5' : '')}>
                 {msg.content}
               </p>
