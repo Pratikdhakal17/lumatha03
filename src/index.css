@@ -1100,3 +1100,14 @@ img,
   scrollbar-width: none;
 }
 
+/* Hide react-window explore grid scrollbars on desktop while keeping scroll behavior */
+.adventure-explore-grid-scroll {
+  scrollbar-width: none;
+}
+
+.adventure-explore-grid-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+

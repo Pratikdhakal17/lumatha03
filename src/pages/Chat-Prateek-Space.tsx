@@ -2163,9 +2163,9 @@ export default function Chat() {
       <div
         className={cn(
           "flex flex-col chat-protected bg-[#0a0f1e]",
-          "fixed inset-0 z-[100] w-full overflow-hidden"
+          "fixed inset-0 z-[100] w-full overflow-hidden min-h-0"
         )}
-        style={{ height: '100dvh', maxHeight: '100dvh' }}
+        style={{ height: '100svh', maxHeight: '100dvh' }}
       >
         <WatermarkOverlay username={username} enabled={false} />
         {isBlurred && <BlurOverlay />}
@@ -2241,14 +2241,15 @@ export default function Chat() {
         {/* Messages — Instagram-style: scrollable middle area with zero-lag scrolling */}
         <div
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto chat-messages scrollbar-hide w-full"
+          className="flex-1 min-h-0 overflow-y-auto chat-messages scrollbar-hide w-full"
           style={{
             overscrollBehavior: 'contain',
             minHeight: 0,
             WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y',
             display: 'flex',
             flexDirection: 'column',
-            scrollBehavior: 'smooth',
+            scrollBehavior: 'auto',
             willChange: 'scroll-position',
             transform: 'translateZ(0)',
             backfaceVisibility: 'hidden'
@@ -3222,8 +3223,9 @@ export default function Chat() {
         /* Mobile chat optimizations for smooth scrolling */
         .chat-messages {
           -webkit-overflow-scrolling: touch;
-          scroll-behavior: smooth;
+          scroll-behavior: auto;
           overscroll-behavior-y: contain;
+          touch-action: pan-y;
           transform: translateZ(0);
           will-change: transform;
         }

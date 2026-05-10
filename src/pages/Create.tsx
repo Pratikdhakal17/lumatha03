@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { safeGetUser } from '@/lib/supabaseAuth';
 import { getPublicUrlSafe } from '@/lib/storageHelpers';
 import { toast } from 'sonner';
-import { ArrowLeft, Check, ChevronDown, Palette, Users, X } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, Globe, MapPin, Users, Ghost, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
@@ -66,6 +66,14 @@ const AUDIENCE_OPTIONS = [
     badgeColor: 'hsl(0 84% 60%)',
   },
 ] as const;
+
+const AUDIENCE_ICON: Record<(typeof AUDIENCE_OPTIONS)[number]['value'], typeof Globe | typeof MapPin | typeof Users | typeof Ghost> = {
+  global: Globe,
+  regional: MapPin,
+  following: Users,
+  ghost: Ghost,
+  private: MapPin,
+};
 
 const FEELINGS = ['😊', '😢', '😠', '🤩', '😴', '🥰', '😲', '😎', '🤔'];
 const EXPIRE_OPTIONS = ['Never', '24h', '7 days', '30 days'] as const;
@@ -163,6 +171,7 @@ export default function Create() {
   }, [tagSearch, showTagPicker, taggedUsers]);
 
   const activeAudience = useMemo(() => AUDIENCE_OPTIONS.find((opt) => opt.value === audience) || AUDIENCE_OPTIONS[0], [audience]);
+  const ActiveAudienceIcon = AUDIENCE_ICON[activeAudience.value];
 
   const autoResize = (el: HTMLTextAreaElement) => {
     el.style.height = 'auto';
@@ -542,7 +551,9 @@ export default function Create() {
           {/* Who can see this */}
           <div className="px-4 mt-3">
             <button onClick={() => setShowAudiencePicker(true)} className="w-full flex items-center gap-3 rounded-xl px-4 py-3 bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all">
-              <span className="text-lg">{activeAudience.emoji}</span>
+              <span className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: activeAudience.iconBg }}>
+                <ActiveAudienceIcon className="w-4 h-4 text-white" />
+              </span>
               <span style={{ color: 'var(--text-2)', fontSize: 14 }}>Who can see this? {activeAudience.title}</span>
             </button>
           </div>
