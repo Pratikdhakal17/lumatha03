@@ -153,6 +153,7 @@ export default function MusicAdventureFixed() {
   const [showQuestCreate, setShowQuestCreate] = useState(false);
   const [travelReaderStoryId, setTravelReaderStoryId] = useState<string | null>(null);
   const [travelReaderOpen, setTravelReaderOpen] = useState(false);
+  const [storiesFilterMenuOpen, setStoriesFilterMenuOpen] = useState(false);
 
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
