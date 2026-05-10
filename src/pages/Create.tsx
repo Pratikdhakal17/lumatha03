@@ -185,7 +185,7 @@ export default function Create() {
     setMediaTypes((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleDrawingSubmit = (blob: Blob) => {
+  const handleDrawingSubmit = (blob: Blob, exportType?: 'story' | 'post' | 'chat' | 'private') => {
     const file = new File([blob], `free-draw-${Date.now()}.jpg`, {
       type: blob.type || 'image/jpeg',
     });
