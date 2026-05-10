@@ -806,22 +806,6 @@ export default function MusicAdventureFixed() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Search Bar - Full Width */}
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-            <Input
-              placeholder="Search quests..."
-                value={questSearchQuery}
-                onChange={e => setQuestSearchQuery(e.target.value)}
-              className="w-full h-12 bg-slate-900/50 border-white/5 rounded-full pl-11 pr-10 text-white placeholder:text-slate-600 font-bold focus-visible:ring-primary"
-            />
-              {questSearchQuery && (
-                <button onClick={() => setQuestSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-
           {/* Create Button - Shows Category Icon when filters active */}
           <button 
             onClick={() => setShowQuestCreate(true)}
@@ -1380,15 +1364,6 @@ export default function MusicAdventureFixed() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-          <Input
-            placeholder="Find your next adventure..."
-            value={exploreSearchQuery}
-            onChange={(e) => setExploreSearchQuery(e.target.value)}
-            className="w-full h-12 bg-slate-900/50 border-white/5 rounded-full pl-11 pr-4 text-white placeholder:text-slate-600 font-bold focus-visible:ring-primary"
-          />
-        </div>
       </div>
 
       {/* Category Filters - Full Width Compact */}
@@ -1453,10 +1428,6 @@ export default function MusicAdventureFixed() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-          <Input placeholder="Search stories..." value={storySearchQuery} onChange={(e) => setStorySearchQuery(e.target.value)} className="w-full h-11 bg-slate-900/50 border-white/5 rounded-full pl-11 pr-4 text-white font-bold" />
-        </div>
       </div>
 
       {storiesLoading ? (
