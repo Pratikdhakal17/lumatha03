@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { CheckSquare, StickyNote, GraduationCap, BarChart3 } from 'lucide-react';
 import { TodoModule } from '@/components/productivity/TodoModule';
 import { NotesModule } from '@/components/productivity/NotesModule';
@@ -8,8 +8,6 @@ import { ProductivityAnalytics } from '@/components/productivity/ProductivityAna
 import { LearnStatsCard } from '@/components/learn/LearnStatsCard';
 import { SwipeableTabs } from '@/components/SwipeableTabs';
 import { useAuth } from '@/contexts/AuthContext';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { SearchBar } from '@/components/SearchBar';
 
 const STORAGE_KEY = 'lumatha_productivity_tab';
 
@@ -21,8 +19,7 @@ const TABS = [
 ];
 
 export default function Education() {
-  const { user, profile } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const location = useLocation();
   const tabStorageKey = user?.id ? `${STORAGE_KEY}:${user.id}` : STORAGE_KEY;
 
@@ -142,32 +139,6 @@ export default function Education() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#0a0f1e' }}>
-      <div className="w-full px-3 sm:px-4 md:px-6 pt-3 pb-2">
-        <div className="flex items-center gap-3 rounded-[28px] border border-white/5 bg-white/[0.03] px-3 py-3 backdrop-blur-xl shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
-          {user && (
-            <button
-              onClick={() => navigate(`/profile/${user.id}`)}
-              className="shrink-0 rounded-2xl transition-transform active:scale-95"
-              aria-label="Open profile"
-            >
-              <Avatar className="h-10 w-10 border border-white/10">
-                <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
-                <AvatarFallback className="bg-gradient-to-br from-blue-600 to-violet-600 text-[11px] font-black uppercase text-white">
-                  {(profile?.name || profile?.username || 'U').slice(0, 2)}
-                </AvatarFallback>
-              </Avatar>
-            </button>
-          )}
-
-          <div className="min-w-0 flex-1">
-            <SearchBar
-              wrapperClassName="max-w-none"
-              placeholder="Search quests, explore places, stories, people..."
-            />
-          </div>
-        </div>
-      </div>
-
       <div className="flex-1 w-full max-w-none mx-auto px-0 sm:px-4 md:px-6 pt-1 pb-32">
         <SwipeableTabs tabs={TABS} activeTab={activeModule} onTabChange={setActiveModule}>
           <div className="pt-1"><TodoModule /></div>

@@ -19,6 +19,7 @@ import { SubNavigation } from '@/components/SubNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import { LumathaAssistant } from '@/components/LumathaAssistant';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 const lumathaLogo = '/lumatha-logo-new.png';
 import { type LucideIcon, LayoutGrid } from 'lucide-react';
 import { requestPushPermission, showMessagePushNotification, showPushNotification } from '@/lib/pushNotifications';
@@ -604,6 +605,26 @@ function LayoutContent({ children }: LayoutProps) {
                       : location.pathname.startsWith('/settings')
                         ? 'Settings'
                         : 'Home';
+      const feedScopes = [
+        { id: 'global', icon: Globe, label: 'Global', desc: 'From every corner' },
+        { id: 'regional', icon: Flag, label: 'Regional', desc: 'Regional feed' },
+        { id: 'following', icon: Heart, label: 'Following', desc: 'From you follow' },
+        { id: 'ghost', icon: Ghost, label: 'Ghost', desc: 'Disappears in 24h' },
+      ] as const;
+      const [activeFeedScope, setActiveFeedScope] = useState(() => (localStorage.getItem('lumatha_feed_scope') || 'global'));
+
+      useEffect(() => {
+        const syncScope = () => setActiveFeedScope(localStorage.getItem('lumatha_feed_scope') || 'global');
+        window.addEventListener('lumatha_feed_scope_change', syncScope as EventListener);
+        return () => window.removeEventListener('lumatha_feed_scope_change', syncScope as EventListener);
+      }, []);
+
+      const setFeedScope = (scope: string) => {
+        setActiveFeedScope(scope);
+        localStorage.setItem('lumatha_feed_scope', scope);
+        window.dispatchEvent(new CustomEvent('lumatha_feed_scope_change', { detail: scope }));
+      };
+
   const APP_HEADER_PX = 88;
   return (
   <div className="app-layout w-full relative min-h-screen bg-[#0B0D1F]" style={{ ['--lumatha-app-header-height' as any]: headerVisible ? '88px' : '0px' }}>
@@ -714,7 +735,48 @@ function LayoutContent({ children }: LayoutProps) {
                 // Chat list: Show Messages label on right
                 <span className="text-sm font-bold text-white/70 truncate ml-2">Messages</span>
               ) : isFeedPage ? (
-                null
+                <>
+                  <button
+                    onClick={() => setCreateSheetOpen(true)}
+                    className="h-10 w-10 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-all active:scale-90 border-0"
+                    aria-label="Create"
+                  >
+                    <Plus className="w-5 h-5" strokeWidth={2.5} />
+                  </button>
+                  <button
+                    onClick={() => setAssistantOpen(true)}
+                    className="h-10 w-10 flex items-center justify-center rounded-lg transition-all active:scale-90 hover:bg-white/5"
+                    aria-label="Open Lumatha AI"
+                    title="Lumatha AI"
+                  >
+                    <Sparkles className="w-5 h-5 text-cyan-300" />
+                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="h-10 w-10 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-all active:scale-90 border-0"
+                        aria-label="Feed categories"
+                        title="Feed categories"
+                      >
+                        <Globe className="w-5 h-5" strokeWidth={2.5} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-[#0d1117] border-[#23324a] rounded-xl p-2 w-56 shadow-none">
+                      {feedScopes.map((scope) => {
+                        const Icon = scope.icon;
+                        const active = activeFeedScope === scope.id;
+                        return (
+                          <DropdownMenuItem key={scope.id} onClick={() => setFeedScope(scope.id)} className="rounded-lg py-2 gap-2">
+                            <Icon className={cn("w-4 h-4", active ? "text-primary" : "text-muted-foreground")} />
+                            <div className="min-w-0">
+                              <p className={cn("font-bold text-[11px] uppercase tracking-wider", active ? "text-white" : "text-slate-300")}>{scope.label}</p>
+                              <p className="text-[9px] text-slate-600 truncate">{scope.desc}</p>
+                            </div>
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
               ) : (
                 <span className="text-sm font-bold text-white/70 truncate ml-2">{sectionLabel}</span>
               )}
