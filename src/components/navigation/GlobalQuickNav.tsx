@@ -733,22 +733,39 @@ const EXPLORE_PLACES = [
 
 export function ExplorePlacesSection() {
   const navigate = useNavigate();
+  const [isExpanded, setIsExpanded] = useState(false);
+  const displayPlaces = isExpanded ? EXPLORE_PLACES : EXPLORE_PLACES.slice(0, 15);
+
   return (
     <div className="w-full mb-4">
-      <div className="slabel">Explore — discover places</div>
-      <div className="mx-3 rounded-2xl border border-[#1e2d45] bg-[#0d1625] px-4 py-4">
+      <div className="slabel flex items-center justify-between">
+        <span>Explore — discover places</span>
+        <button 
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="text-[10px] font-bold text-[#3b82f6] uppercase tracking-wider hover:underline px-2"
+        >
+          {isExpanded ? 'Show Less' : 'See All'}
+        </button>
+      </div>
+      <div className="mx-3 rounded-2xl border border-[#1e2d45] bg-[#0d1625] px-4 py-4 transition-all duration-300">
         <div className="mb-2 flex items-center justify-between">
           <div className="rounded-lg bg-gradient-to-br from-[#1d4ed8] to-[#3b82f6] px-3 py-1 text-[11px] font-bold text-white">Explore</div>
-          <div className="rounded-full border border-[#3b82f628] bg-[#0d1e2e] px-2 py-1 text-[10px] font-bold text-[#60a5fa]">{EXPLORE_PLACES.length}+ Places</div>
+          <div className="rounded-full border border-[#3b82f628] bg-[#0d1e2e] px-2 py-1 text-[10px] font-bold text-[#60a5fa]">{EXPLORE_PLACES.length} Places</div>
         </div>
         <div className="mb-3 text-[10px] text-[#6b7fa0]">Discover amazing destinations around the world</div>
         
-        <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
-          {EXPLORE_PLACES.map((place) => (
+        <div className={cn(
+          "gap-2 pb-2 scrollbar-hide transition-all",
+          isExpanded ? "grid grid-cols-2 sm:grid-cols-3 max-h-[500px] overflow-y-auto" : "flex overflow-x-auto"
+        )}>
+          {displayPlaces.map((place) => (
             <button 
               key={place.id}
               onClick={() => navigate('/music-adventure')}
-              className="shrink-0 w-[120px] overflow-hidden rounded-xl border border-[#1e2d45] bg-[#111c2e] text-left hover:-translate-y-0.5 transition-transform"
+              className={cn(
+                "overflow-hidden rounded-xl border border-[#1e2d45] bg-[#111c2e] text-left hover:-translate-y-0.5 transition-all",
+                isExpanded ? "w-full" : "shrink-0 w-[120px]"
+              )}
             >
               <div className="relative h-[80px]">
                 <img src={place.image} className="h-full w-full object-cover" alt={place.name} loading="lazy" />
@@ -766,12 +783,14 @@ export function ExplorePlacesSection() {
           ))}
         </div>
         
-        <button 
-          className="mt-2 w-full rounded-2xl border border-[#3b82f628] bg-[#0d1e2e] py-2.5 text-[11px] font-bold text-[#60a5fa] active:scale-95 transition-all touch-manipulation" 
-          onClick={() => navigate('/music-adventure')}
-        >
-          Explore all places
-        </button>
+        {!isExpanded && (
+          <button 
+            className="mt-2 w-full rounded-2xl border border-[#3b82f628] bg-[#3b82f611] py-2.5 text-[11px] font-bold text-[#60a5fa] active:scale-95 transition-all touch-manipulation" 
+            onClick={() => setIsExpanded(true)}
+          >
+            See all places
+          </button>
+        )}
       </div>
     </div>
   );

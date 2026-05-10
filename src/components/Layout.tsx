@@ -6,19 +6,20 @@ import {
   Home, BookOpen, MessageSquare, Gamepad2,
   Mountain, Heart, ShoppingCart, Settings, Plus, Sparkles,
   ChevronDown, Menu, X, Globe, Search, Flag, Ghost,
-  Lock, BarChart3, Trophy, FileText, ArrowLeft
+  Lock, BarChart3, Trophy, FileText, ArrowLeft,
+  ChevronRight, LogOut, CreditCard, ShieldCheck, Zap, Compass, Library
 } from 'lucide-react';
 import { CreatePostSheet } from '@/components/CreatePostSheet';
 import { DesktopRightRail } from '@/components/DesktopRightRail';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { BackgroundOrnaments } from '@/components/BackgroundOrnaments';
 import { SidebarProvider, useSidebar } from '@/components/ui/sidebar';
 import { SubNavigation } from '@/components/SubNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import { LumathaAssistant } from '@/components/LumathaAssistant';
+import { SearchBar } from '@/components/SearchBar';
 const lumathaLogo = '/lumatha-logo-new.png';
 import { type LucideIcon, LayoutGrid } from 'lucide-react';
 import { requestPushPermission, showMessagePushNotification, showPushNotification } from '@/lib/pushNotifications';
@@ -728,11 +729,17 @@ function LayoutContent({ children }: LayoutProps) {
               )}
             </div>
             
-            {/* Center - reserved for centered content (kept empty for right-aligned labels) */}
-            <div className="flex items-center justify-center min-w-0 px-2" />
+            {/* Center - Desktop Search Bar */}
+            <div className="flex items-center justify-center min-w-0 px-2">
+              {!isMobile && (
+                <div className="w-full max-w-sm hidden lg:block">
+                  <SearchBar />
+                </div>
+              )}
+            </div>
             
-            {/* Right side - Create + AI + Globe only on Home (proper order) */}
-            <div className="flex items-center gap-1.5 justify-end min-w-0 justify-self-end">
+            {/* Right side - Create + AI + Feed Scopes (all 4 icons) */}
+            <div className="flex items-center gap-1 justify-end min-w-0 justify-self-end">
               {isChatListView ? (
                 // Chat list: Show Messages label on right
                 <span className="text-sm font-bold text-white/70 truncate ml-2">Messages</span>
@@ -740,7 +747,7 @@ function LayoutContent({ children }: LayoutProps) {
                 <>
                   <button
                     onClick={() => setCreateSheetOpen(true)}
-                    className="h-10 w-10 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-all active:scale-90 border-0 outline-none focus:outline-none focus-visible:ring-0"
+                    className="h-10 w-10 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-all active:scale-90 border-0"
                     aria-label="Create"
                   >
                     <Plus className="w-5 h-5" strokeWidth={2.5} />
@@ -749,28 +756,30 @@ function LayoutContent({ children }: LayoutProps) {
                     onClick={() => setAssistantOpen(true)}
                     className="h-10 w-10 flex items-center justify-center rounded-lg transition-all active:scale-90 hover:bg-white/5"
                     aria-label="Open Lumatha AI"
-                    title="Lumatha AI"
                   >
                     <Sparkles className="w-5 h-5 text-cyan-300" />
                   </button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="h-10 w-10 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-all active:scale-90 border-0 outline-none focus:outline-none focus-visible:ring-0" aria-label="Feed categories">
-                        <Globe className="w-5 h-5" strokeWidth={2.5} />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-[#0d1117] border-[#23324a] rounded-xl p-2 w-56 shadow-none">
-                      {feedScopes.map((scope) => (
-                        <DropdownMenuItem key={scope.id} onClick={() => setFeedScope(scope.id)} className="rounded-lg py-2 gap-2">
-                          <scope.icon className={cn("w-4 h-4", activeFeedScope === scope.id ? "text-primary" : "text-muted-foreground")} />
-                          <div className="min-w-0">
-                            <p className={cn("font-bold text-[10px] uppercase tracking-wider", activeFeedScope === scope.id ? "text-white" : "text-slate-400")}>{scope.label}</p>
-                            <p className="text-[9px] text-slate-600 truncate">{scope.desc}</p>
-                          </div>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  
+                  {/* Feed Scopes Icons */}
+                  <div className="flex items-center gap-0.5 ml-1 pl-1 border-l border-white/10">
+                    {feedScopes.map((scope) => {
+                      const Icon = scope.icon;
+                      const active = activeFeedScope === scope.id;
+                      return (
+                        <button
+                          key={scope.id}
+                          onClick={() => setFeedScope(scope.id)}
+                          className={cn(
+                            "h-9 w-9 flex items-center justify-center rounded-lg transition-all active:scale-90",
+                            active ? "text-primary bg-primary/10 shadow-[0_0_10px_rgba(59,130,246,0.2)]" : "text-white/40 hover:text-white/70 hover:bg-white/5"
+                          )}
+                          title={scope.label}
+                        >
+                          <Icon className={cn("w-4.5 h-4.5", active ? "stroke-[2.5px]" : "stroke-[2px]")} />
+                        </button>
+                      );
+                    })}
+                  </div>
                 </>
               ) : (
                 <span className="text-sm font-bold text-white/70 truncate ml-2">{sectionLabel}</span>
@@ -805,4 +814,3 @@ export function Layout({ children }: LayoutProps) {
     </SidebarProvider>
   );
 }
-

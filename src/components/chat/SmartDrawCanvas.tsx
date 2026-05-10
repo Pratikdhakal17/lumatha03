@@ -18,7 +18,7 @@ interface Stroke {
 }
 
 const PRIMARY_SOLID_COLORS = [
-  '#000000', '#ffffff', '#ef4444', '#f97316', '#facc15',
+  '#ffffff', '#000000', '#ef4444', '#f97316', '#facc15',
   '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899',
 ];
 

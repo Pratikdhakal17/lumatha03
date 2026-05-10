@@ -79,7 +79,7 @@ const FEELINGS = ['😊', '😢', '😠', '🤩', '😴', '🥰', '😲', '😎'
 const EXPIRE_OPTIONS = ['Never', '24h', '7 days', '30 days'] as const;
 
 const THOUGHT_BACKGROUNDS = [
-  '#0a0f1e', '#1a0533', '#071428', '#0c0805', '#071f1e', '#1a0d18', '#1a1200', '#0d1a00',
+  '#0a0f1e', '#ffffff', '#1a0533', '#071428', '#0c0805', '#071f1e', '#1a0d18', '#1a1200', '#0d1a00',
   'linear-gradient(135deg, #1a0533, #0a0f1e)',
   'linear-gradient(135deg, #071428, #020814)',
   'linear-gradient(135deg, #1f1409, #0c0805)',
@@ -133,6 +133,18 @@ export default function Create() {
 
   const [thoughtText, setThoughtText] = useState('');
   const [thoughtBg, setThoughtBg] = useState(THOUGHT_BACKGROUNDS[0]);
+
+  useEffect(() => {
+    if (isThoughtMode) {
+      document.body.style.background = thoughtBg;
+    } else {
+      document.body.style.background = '';
+    }
+    return () => {
+      document.body.style.background = '';
+    };
+  }, [isThoughtMode, thoughtBg]);
+
   const [thoughtStyle, setThoughtStyle] = useState<(typeof TEXT_STYLES)[number]['key']>('normal');
   const [thoughtColor, setThoughtColor] = useState(TEXT_COLORS[0]);
   const [showDrawingEditor, setShowDrawingEditor] = useState(isDrawingMode);
@@ -565,7 +577,7 @@ export default function Create() {
               {FEELINGS.map((f) => (
                 <button
                   key={f}
-                  onClick={() => setFeeling(f)}
+                  onClick={() => setFeeling(prev => prev === f ? '' : f)}
                   className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 transition-all active:scale-90"
                   style={{
                     background: feeling === f ? 'var(--accent-dim)' : 'rgba(255,255,255,0.03)',
