@@ -1386,13 +1386,24 @@ export default function MusicAdventureFixed() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <button
-          onClick={() => setShowStoryCreate(true)}
-          className="w-10 h-10 rounded-xl bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 flex items-center justify-center shrink-0 active:scale-90 transition-all"
-          aria-label="Create story"
-        >
-          <Plus className="w-5 h-5" />
-        </button>
+        <div className="flex-1 relative min-w-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <Input
+            value={exploreSearchQuery}
+            onChange={(e) => setExploreSearchQuery(e.target.value)}
+            placeholder="Explore place..."
+            className="h-11 pl-10 pr-10 rounded-2xl bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500"
+          />
+          {exploreSearchQuery && (
+            <button
+              onClick={() => setExploreSearchQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
+              aria-label="Clear explore search"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
 
       </div>
 
