@@ -216,7 +216,7 @@ export function useTravelStories() {
           media_types: mediaTypes,
           file_url: cleanPhotos[0] || null,
           file_type: cleanPhotos[0] ? 'image' : null,
-          visibility: 'private',
+          visibility: 'public',
           category: 'travel_story',
         };
 

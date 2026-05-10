@@ -619,33 +619,38 @@ export const MessageList = memo(function MessageList({
     });
   }, [messages.length]);
 
-  // Optimized scroll-to-bottom: use 'auto' for initial load/instant feel, 'smooth' for new incoming messages if near bottom
+  // Optimized scroll-to-bottom: Only use scrollIntoView in simpleMode (no react-window)
+  // For react-window mode, scrolling is handled by the List component
   useEffect(() => {
     if (!shouldScrollToBottom || !messagesEndRef.current) return;
+    if (!simpleMode) return; // react-window handles its own scrolling
     
     const isInitialLoad = messages.length > 0 && messages.length <= INITIAL_WINDOW_SIZE;
-    
-    if (isInitialLoad) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
-    } else {
-      // Use smooth only for subsequent new messages to maintain context
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, shouldScrollToBottom]);
+    messagesEndRef.current.scrollIntoView({ behavior: isInitialLoad ? 'auto' : 'smooth' });
+  }, [messages, shouldScrollToBottom, simpleMode]);
 
   const visibleMessages = useMemo(() => messages.slice(renderStartIndex), [messages, renderStartIndex]);
   const hiddenLoadedCount = renderStartIndex;
 
+  // Only auto-scroll to bottom when new messages are added (message count increases)
+  const prevMessageCountRef = useRef(0);
   useEffect(() => {
     if (simpleMode) return;
     if (!listRef.current) return;
     if (visibleMessages.length === 0) return;
 
-    const lastIndex = visibleMessages.length - 1;
-    requestAnimationFrame(() => {
-      listRef.current?.scrollToItem(lastIndex, 'end');
-    });
-  }, [visibleMessages.length, simpleMode]);
+    const currentCount = messages.length;
+    const isNewMessage = currentCount > prevMessageCountRef.current;
+    prevMessageCountRef.current = currentCount;
+
+    // Only scroll on new messages, not on initial mount or filter changes
+    if (isNewMessage && currentCount > 0) {
+      const lastIndex = visibleMessages.length - 1;
+      requestAnimationFrame(() => {
+        listRef.current?.scrollToItem(lastIndex, 'end');
+      });
+    }
+  }, [messages.length, visibleMessages.length, simpleMode]);
 
   const sizeMap = useRef<Map<number, number>>(new Map());
   const listRef = useRef<any>(null);

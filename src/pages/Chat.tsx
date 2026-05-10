@@ -360,26 +360,24 @@ export default function Chat() {
   }, []);
 
   const longPressQuickReactions = useMemo(() => {
-    return [...new Set([...Object.keys(reactionUsage), ...QUICK_REACTIONS, '😮', '😢', '😡'])]
-      try {
-        return [...new Set([...Object.keys(reactionUsage), ...QUICK_REACTIONS, '😮', '😢', '😡'])]
-          .sort((a, b) => (reactionUsage[b] || 0) - (reactionUsage[a] || 0))
-          .slice(0, 5);
-      } catch (err) {
-        console.error('[Chat] longPressQuickReactions useMemo failed', err);
-        return QUICK_REACTIONS.slice(0, 5);
-      }
+    try {
+      return [...new Set([...Object.keys(reactionUsage), ...QUICK_REACTIONS, '😮', '😢', '😡'])]
+        .sort((a, b) => (reactionUsage[b] || 0) - (reactionUsage[a] || 0))
+        .slice(0, 5);
+    } catch (err) {
+      console.error('[Chat] longPressQuickReactions useMemo failed', err);
+      return QUICK_REACTIONS.slice(0, 5);
+    }
   }, [reactionUsage]);
 
   const primaryStickerPreview = useMemo(() => {
     if (!primaryStickerId) return null;
-      try {
-        if (!primaryStickerId) return null;
-        return loadImportedStickers().find((item) => item.id === primaryStickerId) || null;
-      } catch (err) {
-        console.error('[Chat] primaryStickerPreview useMemo failed', err);
-        return null;
-      }
+    try {
+      return loadImportedStickers().find((item) => item.id === primaryStickerId) || null;
+    } catch (err) {
+      console.error('[Chat] primaryStickerPreview useMemo failed', err);
+      return null;
+    }
   }, [primaryStickerId, showEmojiStickerPanel]);
   // Defensive: guard theme mapping to avoid any unexpected runtime errors
   try {
