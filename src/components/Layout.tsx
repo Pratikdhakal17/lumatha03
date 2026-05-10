@@ -20,6 +20,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import { LumathaAssistant } from '@/components/LumathaAssistant';
 import { SearchBar } from '@/components/SearchBar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 const lumathaLogo = '/lumatha-logo-new.png';
 import { type LucideIcon, LayoutGrid } from 'lucide-react';
 import { requestPushPermission, showMessagePushNotification, showPushNotification } from '@/lib/pushNotifications';
@@ -611,8 +613,16 @@ function LayoutContent({ children }: LayoutProps) {
     { id: 'following', icon: Heart, label: 'Following', desc: 'From you follow' },
     { id: 'ghost', icon: Ghost, label: 'Ghost', desc: 'Disappears in 24h' },
   ] as const;
-  const activeFeedScope = (localStorage.getItem('lumatha_feed_scope') || 'global');
+  const [activeFeedScope, setActiveFeedScope] = useState(() => (localStorage.getItem('lumatha_feed_scope') || 'global'));
+
+  useEffect(() => {
+    const syncScope = () => setActiveFeedScope(localStorage.getItem('lumatha_feed_scope') || 'global');
+    window.addEventListener('lumatha_feed_scope_change', syncScope as EventListener);
+    return () => window.removeEventListener('lumatha_feed_scope_change', syncScope as EventListener);
+  }, []);
+
   const setFeedScope = (scope: string) => {
+    setActiveFeedScope(scope);
     localStorage.setItem('lumatha_feed_scope', scope);
     window.dispatchEvent(new CustomEvent('lumatha_feed_scope_change', { detail: scope }));
   };
@@ -732,7 +742,7 @@ function LayoutContent({ children }: LayoutProps) {
             {/* Center - Desktop Search Bar */}
             <div className="flex items-center justify-center min-w-0 px-2">
               {!isMobile && (
-                <div className="w-full max-w-sm hidden lg:block">
+                <div className="w-full max-w-md hidden md:block">
                   <SearchBar />
                 </div>
               )}
@@ -745,6 +755,20 @@ function LayoutContent({ children }: LayoutProps) {
                 <span className="text-sm font-bold text-white/70 truncate ml-2">Messages</span>
               ) : isFeedPage ? (
                 <>
+                  {!isMobile && user && (
+                    <button
+                      onClick={() => navigate(`/profile/${user.id}`)}
+                      className="mr-1 flex items-center gap-2 rounded-xl px-1.5 py-1.5 hover:bg-white/5 transition-all active:scale-95"
+                      aria-label="Open profile"
+                    >
+                      <Avatar className="h-8 w-8 border border-white/10">
+                        <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-600 to-violet-600 text-[10px] font-black uppercase text-white">
+                          {(profile?.name || profile?.username || 'U').slice(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </button>
+                  )}
                   <button
                     onClick={() => setCreateSheetOpen(true)}
                     className="h-10 w-10 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-all active:scale-90 border-0"
@@ -760,26 +784,40 @@ function LayoutContent({ children }: LayoutProps) {
                     <Sparkles className="w-5 h-5 text-cyan-300" />
                   </button>
                   
-                  {/* Feed Scopes Icons */}
-                  <div className="flex items-center gap-0.5 ml-1 pl-1 border-l border-white/10">
-                    {feedScopes.map((scope) => {
-                      const Icon = scope.icon;
-                      const active = activeFeedScope === scope.id;
-                      return (
-                        <button
-                          key={scope.id}
-                          onClick={() => setFeedScope(scope.id)}
-                          className={cn(
-                            "h-9 w-9 flex items-center justify-center rounded-lg transition-all active:scale-90",
-                            active ? "text-primary bg-primary/10 shadow-[0_0_10px_rgba(59,130,246,0.2)]" : "text-white/40 hover:text-white/70 hover:bg-white/5"
-                          )}
-                          title={scope.label}
-                        >
-                          <Icon className={cn("w-4.5 h-4.5", active ? "stroke-[2.5px]" : "stroke-[2px]")} />
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="ml-1 h-10 w-10 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-all active:scale-90 border-0"
+                        aria-label="Feed categories"
+                        title="Feed categories"
+                      >
+                        <Globe className="w-5 h-5" strokeWidth={2.5} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-[#0d1117] border-[#23324a] rounded-xl p-2 w-60 shadow-none">
+                      <div className="space-y-1">
+                        {feedScopes.map((scope) => {
+                          const Icon = scope.icon;
+                          const active = activeFeedScope === scope.id;
+                          return (
+                            <DropdownMenuItem
+                              key={scope.id}
+                              onClick={() => setFeedScope(scope.id)}
+                              className="rounded-lg py-2.5 gap-3 items-start"
+                            >
+                              <Icon className={cn("w-4 h-4 mt-0.5", active ? "text-primary" : "text-muted-foreground")} />
+                              <div className="min-w-0">
+                                <p className={cn("font-bold text-[11px] uppercase tracking-wider", active ? "text-white" : "text-slate-300")}>
+                                  {scope.label}
+                                </p>
+                                <p className="text-[9px] text-slate-600 truncate">{scope.desc}</p>
+                              </div>
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </>
               ) : (
                 <span className="text-sm font-bold text-white/70 truncate ml-2">{sectionLabel}</span>
