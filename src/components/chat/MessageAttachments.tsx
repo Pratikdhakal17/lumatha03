@@ -634,13 +634,13 @@ export function DrawingAttachment({
   onSubmit,
   onClose,
 }: {
-  onSubmit: (blob: Blob) => void;
+  onSubmit: (blob: Blob, exportType: 'story' | 'post' | 'chat' | 'private') => void;
   onClose: () => void;
 }) {
   return (
     <SmartDrawCanvas
       onSubmit={(blob, exportType) => {
-        onSubmit(blob);
+        onSubmit(blob, exportType);
       }}
       onClose={onClose}
       initialMood="creative"

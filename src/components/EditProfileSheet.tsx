@@ -187,6 +187,7 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
   const handleSave = async () => {
     if (!user || !name.trim()) { toast.error('Name is required'); return; }
     setSaving(true);
+    const toastId = toast.loading('Saving your profile...');
     try {
       const nextUsername = username.trim();
 
@@ -282,12 +283,17 @@ export function EditProfileSheet({ open, onOpenChange, profile, onSaved }: EditP
       }
 
       saveProfileExtras(storageUserId, nextExtras);
-      await refreshProfile(user.id);
-      toast.success('Profile updated successfully');
-      onSaved();
-      onOpenChange(false);
+      
+      // Wait a moment to ensure data persistence before closing
+      toast.dismiss(toastId);
+      toast.success('Profile updated! 🎉');
+      setTimeout(() => {
+        onSaved();
+        onOpenChange(false);
+      }, 800);
     } catch (err: any) {
       console.error('Save error:', err);
+      toast.dismiss(toastId);
       toast.error(err.message || 'Failed to save profile');
     } finally {
       setSaving(false);

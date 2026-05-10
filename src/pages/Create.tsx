@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { safeGetUser } from '@/lib/supabaseAuth';
+import { getPublicUrlSafe } from '@/lib/storageHelpers';
 import { toast } from 'sonner';
 import { ArrowLeft, Check, ChevronDown, Palette, Users, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -127,6 +128,7 @@ export default function Create() {
   const [thoughtStyle, setThoughtStyle] = useState<(typeof TEXT_STYLES)[number]['key']>('normal');
   const [thoughtColor, setThoughtColor] = useState(TEXT_COLORS[0]);
   const [showDrawingEditor, setShowDrawingEditor] = useState(isDrawingMode);
+  const [drawingExportType, setDrawingExportType] = useState<'story' | 'post' | 'chat' | 'private' | undefined>(undefined);
 
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -184,13 +186,18 @@ export default function Create() {
     setMediaTypes((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleDrawingSubmit = (blob: Blob) => {
+  const handleDrawingSubmit = (blob: Blob, exportType?: 'story' | 'post' | 'chat' | 'private') => {
     const file = new File([blob], `free-draw-${Date.now()}.jpg`, {
       type: blob.type || 'image/jpeg',
     });
     setFiles([file]);
     setMediaPreviewUrls([URL.createObjectURL(file)]);
     setMediaTypes(['image']);
+    if (exportType) {
+      setDrawingExportType(exportType);
+      if (exportType === 'private') setAudience('private');
+      else if (exportType === 'story') setAudience('global');
+    }
     setShowDrawingEditor(false);
   };
 
@@ -267,9 +274,9 @@ export default function Create() {
       }
 
       const isGhost = audience === 'ghost';
-      const isPrivate = audience === 'private';
+      let isPrivate = audience === 'private' || drawingExportType === 'private';
       const mediaType = uploadedTypes[0] || (isThoughtMode ? 'text' : 'image');
-      const postType = isThoughtMode
+      let postType = isThoughtMode
         ? 'thought'
         : isStoryMode
           ? 'story'
@@ -280,6 +287,14 @@ export default function Create() {
               : isDrawingMode
                 ? 'drawing'
                 : 'post';
+
+      // If the user exported a drawing with a specific target type, favor that
+      if (drawingExportType) {
+        if (drawingExportType === 'story') postType = 'story';
+        else if (drawingExportType === 'post') postType = 'post';
+        else if (drawingExportType === 'chat') postType = 'post';
+        else if (drawingExportType === 'private') postType = isDrawingMode ? 'drawing' : 'post';
+      }
 
       const payload: any = {
         user_id: authUser.id,

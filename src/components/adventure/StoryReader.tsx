@@ -64,8 +64,13 @@ export function StoryReader({
     const element = e.currentTarget;
     const scrollTop = element.scrollTop;
     const scrollHeight = element.scrollHeight - element.clientHeight;
+    if (scrollHeight <= 0) {
+      setScrollProgress(100);
+      return;
+    }
+
     const progress = (scrollTop / scrollHeight) * 100;
-    setScrollProgress(Math.min(progress, 100));
+    setScrollProgress(Math.min(Math.max(progress, 0), 100));
 
     // Check if reached end
     if (progress > 90 && !hasReachedEnd && story) {

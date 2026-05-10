@@ -56,6 +56,12 @@ input[type="text"], input[type="email"], input[type="password"], textarea {
   --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
   --story-ring-active: linear-gradient(135deg, #7C3AED, #3B82F6);
   --story-ring-unseen: linear-gradient(135deg, #F58529, #DD2A7B, #8134AF);
+  --theme-transition: background-color 0.08s ease-out, color 0.08s ease-out, border-color 0.08s ease-out;
+}
+
+/* Fast theme switching for all elements using CSS variables */
+body, html, * {
+  transition: var(--theme-transition);
 }
 
 [data-theme='light'], .light {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Globe, Flag, Video, RefreshCw, Image, MessageCircle, PlayCircle, Laugh, TreeDeciduous, Heart, Bookmark, Share2 } from 'lucide-react';
+import { Globe, Flag, Video, RefreshCw, Image, MessageCircle, PlayCircle, Laugh, TreeDeciduous, Heart, Bookmark, Share2, Plane } from 'lucide-react';
+import { TravelStories } from '@/components/explore/TravelStories';
 import { Button } from '@/components/ui/button';
 import { EnhancedPostCard } from '@/components/EnhancedPostCard';
 import { ShortsViewer } from '@/components/ShortsViewer';
@@ -73,6 +74,7 @@ const feedCategories = [
 
 type MobileFeedChipId =
   | 'all'
+  | 'travel'
   | 'videos'
   | 'thoughts'
   | 'pictures'
@@ -87,6 +89,7 @@ type MobileFeedChipId =
 
 const mobileFeedChips: Array<{ id: MobileFeedChipId; label: string; gradient: string }> = [
   { id: 'all', label: 'All', gradient: 'linear-gradient(135deg, #7C3AED, #3B82F6)' },
+  { id: 'travel', label: 'Travel', gradient: 'linear-gradient(135deg, #14B8A6, #0EA5E9)' },
   { id: 'videos', label: 'Videos', gradient: 'linear-gradient(135deg, #EF4444, #F59E0B)' },
   { id: 'thoughts', label: 'Thoughts', gradient: 'linear-gradient(135deg, #10B981, #3B82F6)' },
   { id: 'pictures', label: 'Pictures', gradient: 'linear-gradient(135deg, #EC4899, #8B5CF6)' },
@@ -343,9 +346,17 @@ export default function Home() {
 
       <div className="w-full md:max-w-[640px] md:mx-auto space-y-0 px-0 md:px-0">
         <FeedFilterTabs contentFilter={contentFilter} onContentFilterChange={setContentFilter} subFilter={subFilter} onSubFilterChange={(filter) => setSubFilter(filter as MobileFeedChipId)} />
-        {showSkeleton ? <FeedSkeleton count={3} /> : <FeedInterleaver posts={posts} renderPost={(post) => (
-          <EnhancedPostCard key={post.id} post={post} isSaved={savedPosts.has(post.id)} isLiked={likedPosts.has(post.id)} likesCount={likeCounts[post.id] || 0} currentUserId={user?.id || ''} onToggleSave={() => toggleSave(post.id)} onToggleLike={() => toggleLike(post.id)} onDelete={handleDelete} onUpdate={fetchPosts} />
-        )} widgets={widgets} />}
+        {subFilter === 'travel' ? (
+          <div className="mt-4">
+            <TravelStories />
+          </div>
+        ) : showSkeleton ? (
+          <FeedSkeleton count={3} />
+        ) : (
+          <FeedInterleaver posts={posts} renderPost={(post) => (
+            <EnhancedPostCard key={post.id} post={post} isSaved={savedPosts.has(post.id)} isLiked={likedPosts.has(post.id)} likesCount={likeCounts[post.id] || 0} currentUserId={user?.id || ''} onToggleSave={() => toggleSave(post.id)} onToggleLike={() => toggleLike(post.id)} onDelete={handleDelete} onUpdate={fetchPosts} />
+          )} widgets={widgets} />
+        )}
       </div>
 
       <CommentsDialog postId={selectedPostId} open={commentDialogOpen} onOpenChange={setCommentDialogOpen} postTitle="" />

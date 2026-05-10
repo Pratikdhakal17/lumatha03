@@ -71,6 +71,7 @@ export function useTravelStories() {
       const storyRows = legacyRows || [];
 
       const safeStoryRows = storyRows;
+
       console.log(`Fetched ${safeStoryRows.length} travel stories from posts`);
 
       const storyIds = safeStoryRows.map((story) => story.id).filter(Boolean);
@@ -189,20 +190,20 @@ export function useTravelStories() {
           media_types: mediaTypes,
           file_url: cleanPhotos[0] || null,
           file_type: cleanPhotos[0] ? 'image' : null,
-          visibility: 'private',
+          visibility: 'public',
           category: 'travel_story',
         };
 
         const { error: insertError } = await supabase.from('posts').insert(legacyPayload as any);
 
         if (insertError) {
-          const errorMsg = `Failed to create story: ${insertError.message}`;
-          console.error('Travel story insert error:', insertError);
+          const errorMsg = `Failed to create story in posts table: ${insertError.message}`;
+          console.error('Travel story insert error (posts):', insertError);
           setError(errorMsg);
           return false;
         }
 
-        console.log('Travel story created successfully, refreshing feed...');
+        console.log('Travel story created successfully (posts), refreshing feed...');
         await fetchStories();
         return true;
       } catch (err) {

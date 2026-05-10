@@ -114,7 +114,7 @@ export function TravelStoriesFeed({
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e] w-full [touch-action:pan-y]">
+    <div className="bg-[#0a0f1e] w-full pb-8 [touch-action:pan-y]">
       {/* Feed Header */}
       <div className="w-full flex gap-3 overflow-x-auto no-scrollbar px-4 py-6 border-b border-white/5 bg-[#0a0f1e]/50 items-center">
         <DropdownMenu>
