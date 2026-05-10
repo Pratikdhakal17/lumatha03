@@ -61,6 +61,8 @@ const EXPLORE_SEARCH_FILTERS = [
   { id: 'asia', label: 'Asia', icon: Globe },
   { id: 'nature', label: 'Nature', icon: MapPin },
   { id: 'europe', label: 'Europe', icon: Globe },
+  { id: 'park', label: 'Park', icon: MapIcon },
+  { id: 'culture', label: 'Culture', icon: Sparkles },
   { id: 'mountains', label: 'Mountains', icon: Compass },
   { id: 'hiddengems', label: 'Hidden Gems', icon: Compass },
 ];
@@ -629,7 +631,7 @@ export default function MusicAdventureFixed() {
     return (
       <div ref={containerRef} className="w-full">
         <Grid
-          className="adventure-explore-grid-scroll"
+          className="adventure-explore-grid-scroll no-scrollbar"
           columnCount={columns}
           columnWidth={itemSize}
           height={height}
@@ -741,7 +743,7 @@ export default function MusicAdventureFixed() {
                 "text-[11px] font-bold transition-colors whitespace-nowrap flex items-center gap-1",
                 isActive ? 'text-primary' : 'text-slate-500'
               )}>
-                {tab.label} <ChevronRight className="w-3 h-3" />
+                {tab.label}
               </span>
             </button>
           );
@@ -805,6 +807,26 @@ export default function MusicAdventureFixed() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Quests Search */}
+          <div className="flex-1 relative min-w-0">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <Input
+              value={questSearchQuery}
+              onChange={(e) => setQuestSearchQuery(e.target.value)}
+              placeholder="Search for challenges ..."
+              className="h-11 pl-10 pr-10 rounded-2xl bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500"
+            />
+            {questSearchQuery && (
+              <button
+                onClick={() => setQuestSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
+                aria-label="Clear quest search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
 
           {/* Create Button - Shows Category Icon when filters active */}
           <button 
@@ -1364,6 +1386,14 @@ export default function MusicAdventureFixed() {
           </DropdownMenuContent>
         </DropdownMenu>
 
+        <button
+          onClick={() => setShowStoryCreate(true)}
+          className="w-10 h-10 rounded-xl bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 flex items-center justify-center shrink-0 active:scale-90 transition-all"
+          aria-label="Create story"
+        >
+          <Plus className="w-5 h-5" />
+        </button>
+
       </div>
 
       {/* Category Filters - Full Width Compact */}
@@ -1428,6 +1458,33 @@ export default function MusicAdventureFixed() {
           </DropdownMenuContent>
         </DropdownMenu>
 
+        <div className="flex-1 relative min-w-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <Input
+            value={storySearchQuery}
+            onChange={(e) => setStorySearchQuery(e.target.value)}
+            placeholder="Search travel stories..."
+            className="h-11 pl-10 pr-10 rounded-2xl bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500"
+          />
+          {storySearchQuery && (
+            <button
+              onClick={() => setStorySearchQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
+              aria-label="Clear story search"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <button
+          onClick={() => setShowStoryCreate(true)}
+          className="w-10 h-10 rounded-xl bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 flex items-center justify-center shrink-0 active:scale-90 transition-all"
+          aria-label="Create story"
+        >
+          <Plus className="w-5 h-5" />
+        </button>
+
       </div>
 
       {storiesLoading ? (
@@ -1440,7 +1497,7 @@ export default function MusicAdventureFixed() {
         </div>
       ) : (
         <div className="w-full">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-full mx-auto px-3 md:px-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto px-3 md:px-0">
             {filteredTravelStories.map((story) => {
               if (!story || !story.id) return null;
               const authorName = story.profiles?.name || 'Explorer';
