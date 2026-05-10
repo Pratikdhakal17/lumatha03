@@ -61,8 +61,6 @@ const EXPLORE_SEARCH_FILTERS = [
   { id: 'asia', label: 'Asia', icon: Globe },
   { id: 'nature', label: 'Nature', icon: MapPin },
   { id: 'europe', label: 'Europe', icon: Globe },
-  { id: 'park', label: 'Park', icon: MapIcon },
-  { id: 'culture', label: 'Culture', icon: Sparkles },
   { id: 'mountains', label: 'Mountains', icon: Compass },
   { id: 'hiddengems', label: 'Hidden Gems', icon: Compass },
 ];
@@ -173,9 +171,6 @@ export default function MusicAdventureFixed() {
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [customQuests, setCustomQuests] = useState<CustomQuest[]>([]);
   const [questViewFilter, setQuestViewFilter] = useState<'system' | 'public' | 'private' | 'liked' | 'saved' | 'done'>('system');
-  const [questFilterMenuOpen, setQuestFilterMenuOpen] = useState(false);
-  const [exploreFilterMenuOpen, setExploreFilterMenuOpen] = useState(false);
-  const [storiesFilterMenuOpen, setStoriesFilterMenuOpen] = useState(false);
 
   // Points and gamification state
   const [userPoints, setUserPoints] = useState(0);
@@ -541,30 +536,10 @@ export default function MusicAdventureFixed() {
       return matchesSearch && matchesFilter;
     });
 
-    const byCountry = new Map<string, any[]>();
-    for (const place of filtered) {
-      const country = String(place.country || 'unknown');
-      if (!byCountry.has(country)) byCountry.set(country, []);
-      byCountry.get(country)!.push(place);
-    }
+    // Randomize places for better discovery
+    const shuffled = [...filtered].sort(() => Math.random() - 0.5);
 
-    const countries = Array.from(byCountry.keys()).sort();
-    const interleaved: any[] = [];
-    let added = true;
-    let round = 0;
-    while (added) {
-      added = false;
-      for (const country of countries) {
-        const list = byCountry.get(country)!;
-        if (round < list.length) {
-          interleaved.push(list[round]);
-          added = true;
-        }
-      }
-      round += 1;
-    }
-
-    return interleaved;
+    return shuffled;
   }, [places, exploreSearchQuery, exploreSearchFilter, profileViewFilter, placeMatchesExploreCategory, visitedPlaceIds, savedPlaceIds, lovedPlaceIds]);
 
   // Limit visible places to avoid rendering hundreds of items at once
@@ -797,7 +772,7 @@ export default function MusicAdventureFixed() {
       <div className="px-0 py-3">
         <div className="flex items-center gap-2 w-full">
           {/* Profile Pic with Filter Dropdown */}
-          <DropdownMenu open={questFilterMenuOpen} onOpenChange={setQuestFilterMenuOpen}>
+          <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 shrink-0 active:scale-90 transition-all shadow-lg">
                 <Avatar className="w-full h-full rounded-full">
@@ -829,14 +804,6 @@ export default function MusicAdventureFixed() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <button
-            onClick={() => setQuestFilterMenuOpen((prev) => !prev)}
-            className="w-8 h-8 rounded-full border border-white/10 bg-white/5 text-slate-300 flex items-center justify-center active:scale-90 transition-all"
-            aria-label="Open quest filters"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
 
           {/* Search Bar - Full Width */}
           <div className="relative flex-1">
@@ -1387,7 +1354,7 @@ export default function MusicAdventureFixed() {
     <div className="w-full animate-in slide-in-from-right-2 duration-200">
       {/* Search Bar with Profile - True Full Width */}
       <div className="w-full flex gap-2 overflow-x-auto no-scrollbar px-0 py-3 border-b border-white/5 bg-[#0a0f1e]/50 items-center">
-        <DropdownMenu open={exploreFilterMenuOpen} onOpenChange={setExploreFilterMenuOpen}>
+        <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 shrink-0 active:scale-90 transition-all shadow-lg flex touch-manipulation">
               <Avatar className="w-full h-full rounded-full">
@@ -1412,14 +1379,6 @@ export default function MusicAdventureFixed() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <button
-          onClick={() => setExploreFilterMenuOpen((prev) => !prev)}
-          className="w-8 h-8 rounded-full border border-white/10 bg-white/5 text-slate-300 flex items-center justify-center active:scale-90 transition-all"
-          aria-label="Open explore filters"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <Input
@@ -1429,14 +1388,6 @@ export default function MusicAdventureFixed() {
             className="w-full h-12 bg-slate-900/50 border-white/5 rounded-full pl-11 pr-4 text-white placeholder:text-slate-600 font-bold focus-visible:ring-primary"
           />
         </div>
-
-        <button
-          onClick={() => setShowStoryCreate(true)}
-          className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shrink-0 active:scale-90 transition-all"
-          aria-label="Create"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
       </div>
 
       {/* Category Filters - Full Width Compact */}
@@ -1501,26 +1452,10 @@ export default function MusicAdventureFixed() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <button
-          onClick={() => setStoriesFilterMenuOpen((prev) => !prev)}
-          className="w-8 h-8 rounded-full border border-white/10 bg-white/5 text-slate-300 flex items-center justify-center active:scale-90 transition-all"
-          aria-label="Open stories filters"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <Input placeholder="Search stories..." value={storySearchQuery} onChange={(e) => setStorySearchQuery(e.target.value)} className="w-full h-11 bg-slate-900/50 border-white/5 rounded-full pl-11 pr-4 text-white font-bold" />
         </div>
-
-        <button
-          onClick={() => setShowStoryCreate(true)}
-          className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shrink-0 active:scale-90 transition-all"
-          aria-label="Create"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
       </div>
 
       {storiesLoading ? (
@@ -1533,7 +1468,7 @@ export default function MusicAdventureFixed() {
         </div>
       ) : (
         <div className="w-full">
-          <div className="grid grid-cols-1 gap-6 max-w-[430px] mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-full mx-auto px-3 md:px-0">
             {filteredTravelStories.map((story) => {
               if (!story || !story.id) return null;
               const authorName = story.profiles?.name || 'Explorer';

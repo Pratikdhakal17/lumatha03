@@ -994,18 +994,12 @@ export function EnhancedPostCard({
               />
             </div>
             <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-2">
-                <p
-                  className="font-semibold text-[15px] truncate"
-                  style={{ fontFamily: "'Space Grotesk', sans-serif", color: 'var(--text-1)' }}
-                >
-                  {displayName}
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <p style={{ fontSize: 13, fontFamily: "'Inter', sans-serif", color: 'var(--text-2)' }}>
-                  @{username}
-                </p>
+              <p
+                className="font-semibold text-[15px] truncate"
+                style={{ fontFamily: "'Space Grotesk', sans-serif", color: 'var(--text-1)' }}
+              >
+                {displayName}
+              </p>
                 {(post.category === 'travel_story' || post.post_type === 'travel_story') && (
                   <span 
                     className="flex items-center justify-center text-[11px] p-1 rounded-full"
@@ -1015,7 +1009,6 @@ export function EnhancedPostCard({
                     <Plane className="w-3 h-3" />
                   </span>
                 )}
-              </div>
             </div>
             {!isOwner && (
               <div className="flex items-center gap-1.5 ml-2 shrink-0">
