@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getPublicUrlSafe } from '@/lib/storageHelpers';
 
 const DEFAULT_STORY_BUCKETS = ['stories-media', 'stories', 'posts-media'] as const;
 

@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { safeGetUser } from '@/lib/supabaseAuth';
+import { getPublicUrlSafe } from '@/lib/storageHelpers';
 import { toast } from 'sonner';
 import { ArrowLeft, Check, ChevronDown, Palette, Users, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';

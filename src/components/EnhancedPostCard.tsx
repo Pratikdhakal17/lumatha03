@@ -20,6 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { PAUSE_ALL_VIDEOS_EVENT, enableAudioForVideo, getVideoAudioState, muteAllVideosGlobally, setActiveVideoId, shouldVideoBeMuted, subscribeVideoAudioState } from '@/lib/videoAudioState';
+import { getPublicUrlSafe } from '@/lib/storageHelpers';
 
 type Post = Database['public']['Tables']['posts']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
