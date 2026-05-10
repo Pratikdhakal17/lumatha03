@@ -155,11 +155,6 @@ export default function MusicAdventureFixed() {
   const [storiesFilterMenuOpen, setStoriesFilterMenuOpen] = useState(false);
   const [exploreScope, setExploreScope] = useState<'global' | 'regional' | 'following' | 'ghost'>('global');
   const exploreInputRef = useRef<HTMLInputElement | null>(null);
-  const [exploreInputValue, setExploreInputValue] = useState('');
-
-  useEffect(() => {
-    setExploreInputValue(exploreSearchQuery);
-  }, [exploreSearchQuery]);
 
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
@@ -795,7 +790,12 @@ export default function MusicAdventureFixed() {
                   <AvatarFallback className="bg-slate-800 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
                 </Avatar>
                 {/* scope badge */}
-
+                <span className="absolute -right-0 -bottom-0 bg-slate-800/80 p-0.5 rounded-full border border-white/10">
+                  {(() => {
+                    const Icon = SCOPE_ICON_MAP[exploreScope] || Globe;
+                    return <Icon className="w-3 h-3 text-white" />;
+                  })()}
+                </span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56 bg-slate-900 border-white/10 rounded-xl p-2 shadow-2xl">
@@ -819,7 +819,24 @@ export default function MusicAdventureFixed() {
               <DropdownMenuItem onClick={() => setQuestViewFilter('done')} className="rounded-lg py-2.5 gap-3">
                 <Check className="w-4 h-4 text-emerald-500" /> <span className="font-bold text-xs uppercase">Done Work</span>
               </DropdownMenuItem>
-
+              <DropdownMenuSeparator className="bg-white/10" />
+              <div className="p-2">
+                <div className="text-xs font-black text-slate-400 uppercase mb-1">Scope</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <DropdownMenuItem onClick={() => setExploreScope('global')} className="rounded-lg py-2 gap-2">
+                    <Globe className="w-4 h-4 text-sky-400" /> <span className="text-xs font-bold">Global</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setExploreScope('regional')} className="rounded-lg py-2 gap-2">
+                    <Flag className="w-4 h-4 text-emerald-400" /> <span className="text-xs font-bold">Regional</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setExploreScope('following')} className="rounded-lg py-2 gap-2">
+                    <Users className="w-4 h-4 text-violet-400" /> <span className="text-xs font-bold">Following</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setExploreScope('ghost')} className="rounded-lg py-2 gap-2">
+                    <UserCircle2 className="w-4 h-4 text-slate-400" /> <span className="text-xs font-bold">Ghost</span>
+                  </DropdownMenuItem>
+                </div>
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -1379,6 +1396,9 @@ export default function MusicAdventureFixed() {
                 <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
                 <AvatarFallback className="bg-slate-800 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
               </Avatar>
+              <span className="absolute -right-0 -bottom-0 bg-slate-800/80 p-0.5 rounded-full border border-white/10">
+                {(() => { const Icon = SCOPE_ICON_MAP[exploreScope] || Globe; return <Icon className="w-3 h-3 text-white" />; })()}
+              </span>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56 bg-slate-900 border-white/10 rounded-[24px] p-2 shadow-2xl">
@@ -1394,18 +1414,38 @@ export default function MusicAdventureFixed() {
             <DropdownMenuItem onClick={() => setProfileViewFilter('visited')} className="rounded-xl py-3 gap-3">
               <MapPin className="w-4 h-4 text-emerald-500" /> <span className="font-bold text-xs uppercase tracking-widest text-white">Visited</span>
             </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-white/5" />
+            <div className="p-2">
+              <div className="text-xs font-black text-slate-400 uppercase mb-1">Scope</div>
+              <div className="grid grid-cols-2 gap-2">
+                <DropdownMenuItem onClick={() => setExploreScope('global')} className="rounded-lg py-2 gap-2">
+                  <Globe className="w-4 h-4 text-sky-400" /> <span className="text-xs font-bold">Global</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setExploreScope('regional')} className="rounded-lg py-2 gap-2">
+                  <Flag className="w-4 h-4 text-emerald-400" /> <span className="text-xs font-bold">Regional</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setExploreScope('following')} className="rounded-lg py-2 gap-2">
+                  <Users className="w-4 h-4 text-violet-400" /> <span className="text-xs font-bold">Following</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setExploreScope('ghost')} className="rounded-lg py-2 gap-2">
+                  <UserCircle2 className="w-4 h-4 text-slate-400" /> <span className="text-xs font-bold">Ghost</span>
+                </DropdownMenuItem>
+              </div>
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
 
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <Input
+            ref={exploreInputRef}
             placeholder="Find your next adventure..."
-            value={exploreInputValue}
+            value={exploreSearchQuery}
             onChange={(e) => {
               const v = e.target.value;
-              setExploreInputValue(v);
               startTransition(() => setExploreSearchQuery(v));
+              // keep focus stable when re-renders occur
+              requestAnimationFrame(() => exploreInputRef.current?.focus());
             }}
             className="w-full h-12 bg-slate-900/50 border-white/5 rounded-full pl-11 pr-4 text-white placeholder:text-slate-600 font-bold focus-visible:ring-primary"
           />
@@ -1456,6 +1496,9 @@ export default function MusicAdventureFixed() {
                 <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
                 <AvatarFallback className="bg-slate-800 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
               </Avatar>
+              <span className="absolute -right-0 -bottom-0 bg-slate-800/80 p-0.5 rounded-full border border-white/10">
+                {(() => { const Icon = SCOPE_ICON_MAP[exploreScope] || Globe; return <Icon className="w-3 h-3 text-white" />; })()}
+              </span>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-64 bg-slate-900 border-white/10 rounded-[24px] p-2 shadow-2xl">
@@ -1471,7 +1514,24 @@ export default function MusicAdventureFixed() {
             <DropdownMenuItem onClick={() => setTravelViewFilter('saved')} className="rounded-xl py-3 gap-3">
               <Bookmark className="w-4 h-4 text-violet-500" /> <span className="font-bold text-xs uppercase tracking-widest text-white">Saved Posts</span>
             </DropdownMenuItem>
-
+            <DropdownMenuSeparator className="bg-white/5" />
+            <div className="p-2">
+              <div className="text-xs font-black text-slate-400 uppercase mb-1">Scope</div>
+              <div className="grid grid-cols-2 gap-2">
+                <DropdownMenuItem onClick={() => setExploreScope('global')} className="rounded-lg py-2 gap-2">
+                  <Globe className="w-4 h-4 text-sky-400" /> <span className="text-xs font-bold">Global</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setExploreScope('regional')} className="rounded-lg py-2 gap-2">
+                  <Flag className="w-4 h-4 text-emerald-400" /> <span className="text-xs font-bold">Regional</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setExploreScope('following')} className="rounded-lg py-2 gap-2">
+                  <Users className="w-4 h-4 text-violet-400" /> <span className="text-xs font-bold">Following</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setExploreScope('ghost')} className="rounded-lg py-2 gap-2">
+                  <UserCircle2 className="w-4 h-4 text-slate-400" /> <span className="text-xs font-bold">Ghost</span>
+                </DropdownMenuItem>
+              </div>
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
 
