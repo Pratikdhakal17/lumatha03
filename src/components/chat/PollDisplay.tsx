@@ -15,12 +15,24 @@ export function PollDisplay({ content, isOwn, onVote }: PollDisplayProps) {
   const question = lines[0].replace('📊 POLL: ', '').trim();
   const options = lines.slice(1).map(line => line.replace(/^\d+\.\s+/, '').trim()).filter(Boolean);
 
+  const hashString = (value: string) => {
+    let hash = 0;
+    for (let index = 0; index < value.length; index += 1) {
+      hash = ((hash << 5) - hash) + value.charCodeAt(index);
+      hash |= 0;
+    }
+    return Math.abs(hash);
+  };
+
   // Maintain local vote state for UI demonstration
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  
-  // Mock results for a professional look
-  const totalVotes = options.length > 0 ? 12 : 0;
-  const mockVotes = useMemo(() => options.map(() => Math.floor(Math.random() * 5)), [options]);
+
+  // Stable mock results for a professional look
+  const mockVotes = useMemo(
+    () => options.map((option, index) => 1 + (hashString(`${question}:${option}:${index}`) % 4)),
+    [options, question]
+  );
+  const totalVotes = mockVotes.reduce((sum, count) => sum + count, 0);
 
   const handleVote = (idx: number) => {
     if (selectedOption !== null) return;
