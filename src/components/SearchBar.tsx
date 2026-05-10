@@ -19,7 +19,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { debounce } from 'lodash';
 
-export function SearchBar() {
+interface SearchBarProps {
+  wrapperClassName?: string;
+  placeholder?: string;
+}
+
+export function SearchBar({ wrapperClassName = '', placeholder = 'Search on Lumatha...' }: SearchBarProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState<any[]>([]);
@@ -94,18 +99,18 @@ export function SearchBar() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <div className="relative w-full max-w-sm group">
+        <div className={wrapperClassName ? `relative w-full group ${wrapperClassName}` : 'relative w-full max-w-sm group'}>
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setOpen(true)}
-            placeholder="Search on Lumatha..."
+            placeholder={placeholder}
             className="pl-10 h-11 bg-muted/30 border-none rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all"
           />
         </div>
       </PopoverTrigger>
-      <PopoverContent className="w-[420px] p-0 border-white/5 bg-[#0d1117]/95 backdrop-blur-xl shadow-2xl rounded-2xl overflow-hidden mt-2" align="start">
+      <PopoverContent className="w-[min(92vw,420px)] md:w-[420px] p-0 border-white/5 bg-[#0d1117]/95 backdrop-blur-xl shadow-2xl rounded-2xl overflow-hidden mt-2" align="start">
         <Command className="bg-transparent">
           <CommandList className="max-h-[450px] scrollbar-hide">
             {loading ? (
