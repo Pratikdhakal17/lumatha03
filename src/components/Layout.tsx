@@ -777,6 +777,7 @@ function LayoutContent({ children }: LayoutProps) {
                       })}
                     </DropdownMenuContent>
                   </DropdownMenu>
+                </>
               ) : (
                 <span className="text-sm font-bold text-white/70 truncate ml-2">{sectionLabel}</span>
               )}
