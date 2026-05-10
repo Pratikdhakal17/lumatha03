@@ -128,6 +128,7 @@ export default function Create() {
   const [thoughtStyle, setThoughtStyle] = useState<(typeof TEXT_STYLES)[number]['key']>('normal');
   const [thoughtColor, setThoughtColor] = useState(TEXT_COLORS[0]);
   const [showDrawingEditor, setShowDrawingEditor] = useState(isDrawingMode);
+  const [drawingExportType, setDrawingExportType] = useState<'story' | 'post' | 'chat' | 'private' | undefined>(undefined);
 
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -192,6 +193,11 @@ export default function Create() {
     setFiles([file]);
     setMediaPreviewUrls([URL.createObjectURL(file)]);
     setMediaTypes(['image']);
+    if (exportType) {
+      setDrawingExportType(exportType);
+      if (exportType === 'private') setAudience('private');
+      else if (exportType === 'story') setAudience('global');
+    }
     setShowDrawingEditor(false);
   };
 
@@ -268,9 +274,9 @@ export default function Create() {
       }
 
       const isGhost = audience === 'ghost';
-      const isPrivate = audience === 'private';
+      let isPrivate = audience === 'private' || drawingExportType === 'private';
       const mediaType = uploadedTypes[0] || (isThoughtMode ? 'text' : 'image');
-      const postType = isThoughtMode
+      let postType = isThoughtMode
         ? 'thought'
         : isStoryMode
           ? 'story'
@@ -281,6 +287,14 @@ export default function Create() {
               : isDrawingMode
                 ? 'drawing'
                 : 'post';
+
+      // If the user exported a drawing with a specific target type, favor that
+      if (drawingExportType) {
+        if (drawingExportType === 'story') postType = 'story';
+        else if (drawingExportType === 'post') postType = 'post';
+        else if (drawingExportType === 'chat') postType = 'post';
+        else if (drawingExportType === 'private') postType = isDrawingMode ? 'drawing' : 'post';
+      }
 
       const payload: any = {
         user_id: authUser.id,
