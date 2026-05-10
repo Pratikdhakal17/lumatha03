@@ -70,35 +70,9 @@ export function useTravelStories() {
 
       const storyRows = legacyRows || [];
 
-      // Also query the dedicated `travel_stories` table and merge results so all stories show up.
-      let travelRows: any[] = [];
-      try {
-        const { data: trows, error: tErr } = await supabase
-          .from('travel_stories')
-          .select('id,user_id,title,content,description,location,photos,cover_image,created_at,updated_at,likes_count')
-          .order('created_at', { ascending: false })
-          .limit(200 as any);
-        if (!tErr && Array.isArray(trows)) travelRows = trows;
-      } catch (e) {
-        // non-fatal: continue with legacy posts-only results
-        console.warn('Failed to fetch travel_stories table, continuing with posts table only', e);
-      }
+      const safeStoryRows = storyRows;
 
-      const safeStoryRows = [...storyRows, ...travelRows.map((r) => ({
-        id: r.id,
-        user_id: r.user_id,
-        title: r.title,
-        content: r.content || r.description,
-        location: r.location,
-        media_urls: r.photos || (r.cover_image ? [r.cover_image] : []),
-        created_at: r.created_at,
-        updated_at: r.updated_at,
-        likes_count: r.likes_count || 0,
-        category: 'travel_story',
-        visibility: 'public',
-      }))];
-
-      console.log(`Fetched ${safeStoryRows.length} travel stories (posts + travel_stories)`);
+      console.log(`Fetched ${safeStoryRows.length} travel stories from posts`);
 
       const storyIds = safeStoryRows.map((story) => story.id).filter(Boolean);
       const { data: reportRows } = storyIds.length > 0
@@ -229,27 +203,7 @@ export function useTravelStories() {
           return false;
         }
 
-        // Also insert into the dedicated `travel_stories` table so stories reliably appear in the Travel Stories subsection.
-        try {
-          const { error: tErr } = await supabase.from('travel_stories').insert({
-            user_id: user.id,
-            title: data.title.trim(),
-            content: data.description.trim(),
-            description: data.description.trim().slice(0, 200) || null,
-            location: data.location.trim() || null,
-            cover_image: cleanPhotos[0] || null,
-            photos: cleanPhotos,
-            moods: [],
-            tags: [],
-            audience: 'global',
-            is_deleted: false,
-          });
-          if (tErr) console.warn('Travel story inserted into posts but failed to insert into travel_stories:', tErr);
-        } catch (e) {
-          console.warn('Non-fatal error inserting into travel_stories:', e);
-        }
-
-        console.log('Travel story created successfully (posts + travel_stories), refreshing feed...');
+        console.log('Travel story created successfully (posts), refreshing feed...');
         await fetchStories();
         return true;
       } catch (err) {

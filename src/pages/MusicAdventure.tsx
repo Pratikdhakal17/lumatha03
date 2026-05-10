@@ -144,18 +144,8 @@ export default function MusicAdventure() {
       return;
     }
     try {
-      const { data, error } = await supabase
-        .from('adventure_places' as any)
-        .select('*')
-        .order('name');
-      if (!error && data && data.length > 0) {
-        setPlaces(data.filter((p: any) => p && p.id));
-      } else {
-        // Fall back to static data if DB table is empty or missing
-        setPlaces(ADVENTURE_PLACES.filter(p => p && p.id));
-      }
+      setPlaces(ADVENTURE_PLACES.filter(p => p && p.id));
     } catch (e) {
-      console.error(e);
       // Fall back to static data on error
       setPlaces(ADVENTURE_PLACES.filter(p => p && p.id));
     } finally {
@@ -171,23 +161,68 @@ export default function MusicAdventure() {
       return;
     }
     try {
-      const { data, error } = await supabase
-        .from('travel_stories' as any)
-        .select('*, profiles(*)')
-        .eq('is_deleted', false)
-        .order('created_at', { ascending: false });
-      if (!error && data) {
-        const storiesWithState = (await Promise.all(data.map(async (s: any) => {
-          if (!s || !s.id) return null;
-          if (!user) return { ...s, is_liked: false, is_saved: false };
-          const [{ data: like }, { data: save }] = await Promise.all([
-            supabase.from('travel_story_likes' as any).select('id').eq('story_id', s.id).eq('user_id', user.id).maybeSingle(),
-            supabase.from('travel_story_saves' as any).select('id').eq('story_id', s.id).eq('user_id', user.id).maybeSingle(),
-          ]);
-          return { ...s, is_liked: !!like, is_saved: !!save };
-        }))).filter(Boolean);
-        setTravelStories(storiesWithState);
+      const { data: legacyRows, error: legacyError } = await supabase
+        .from('posts')
+        .select('id,user_id,title,content,location,media_urls,created_at,updated_at,likes_count,category,visibility')
+        .or(user?.id ? `visibility.eq.public,user_id.eq.${user.id}` : 'visibility.eq.public')
+        .in('category', ['travel_story', 'travel'])
+        .order('created_at', { ascending: false })
+        .limit(200);
+
+      if (legacyError) {
+        throw legacyError;
       }
+
+      const rows = legacyRows || [];
+      const storyIds = rows.map((story) => story.id).filter(Boolean);
+
+      const [{ data: profileRows }, { data: likesRows }, { data: savesRows }] = await Promise.all([
+        storyIds.length > 0
+          ? supabase.from('profiles').select('id,username,avatar_url,name').in('id', Array.from(new Set(rows.map((story) => story.user_id))))
+          : Promise.resolve({ data: [] as Array<{ id: string; username: string | null; avatar_url: string | null; name: string | null }> }),
+        user?.id ? supabase.from('likes').select('post_id').eq('user_id', user.id) : Promise.resolve({ data: [] as Array<{ post_id: string }> }),
+        user?.id ? supabase.from('saved').select('post_id').eq('user_id', user.id) : Promise.resolve({ data: [] as Array<{ post_id: string }> }),
+      ]);
+
+      const profileById = new Map(
+        (profileRows || []).map((profile: any) => [
+          profile.id,
+          {
+            username: profile.username || profile.name?.toLowerCase().replace(/\s+/g, '_') || 'user',
+            avatar_url: profile.avatar_url || '',
+            name: profile.name || 'Traveler',
+          },
+        ]),
+      );
+
+      const likedIds = new Set((likesRows || []).map((row: any) => row.post_id));
+      const savedIds = new Set((savesRows || []).map((row: any) => row.post_id));
+
+      const stories = rows.map((story: any) => {
+        const profile = profileById.get(story.user_id) || { username: 'user', avatar_url: '', name: 'Traveler' };
+        const photos = Array.isArray(story.media_urls) ? story.media_urls.filter((url: unknown) => typeof url === 'string' && url.length > 0) : [];
+        return {
+          id: story.id,
+          user_id: story.user_id,
+          title: story.title || '',
+          content: story.content || '',
+          description: story.content || '',
+          location: typeof story.location === 'string' ? story.location : '',
+          cover_image: photos[0] || null,
+          photos,
+          moods: [],
+          tags: [],
+          profiles: profile,
+          created_at: story.created_at,
+          updated_at: story.updated_at,
+          likes_count: story.likes_count || 0,
+          comments_count: 0,
+          is_liked: likedIds.has(story.id),
+          is_saved: savedIds.has(story.id),
+        };
+      });
+
+      setTravelStories(stories);
     } catch (e) {
       console.error(e);
     } finally {
@@ -200,9 +235,9 @@ export default function MusicAdventure() {
     const story = travelStories.find(s => s && s.id === id);
     if (!story) return;
     if (story.is_liked) {
-      await supabase.from('travel_story_likes' as any).delete().eq('story_id', id).eq('user_id', user.id);
+      await supabase.from('likes').delete().eq('post_id', id).eq('user_id', user.id);
     } else {
-      await supabase.from('travel_story_likes' as any).insert({ story_id: id, user_id: user.id });
+      await supabase.from('likes').insert({ post_id: id, user_id: user.id });
     }
     setTravelStories(prev => prev.map(s => s && s.id === id ? { ...s, is_liked: !s.is_liked } : s));
   };
@@ -212,9 +247,9 @@ export default function MusicAdventure() {
     const story = travelStories.find(s => s && s.id === id);
     if (!story) return;
     if (story.is_saved) {
-      await supabase.from('travel_story_saves' as any).delete().eq('story_id', id).eq('user_id', user.id);
+      await supabase.from('saved').delete().eq('post_id', id).eq('user_id', user.id);
     } else {
-      await supabase.from('travel_story_saves' as any).insert({ story_id: id, user_id: user.id });
+      await supabase.from('saved').insert({ post_id: id, user_id: user.id });
       toast.success('Saved to collection');
     }
     setTravelStories(prev => prev.map(s => s && s.id === id ? { ...s, is_saved: !s.is_saved } : s));
@@ -546,23 +581,18 @@ export default function MusicAdventure() {
         }}
         onPublish={async (story) => {
           if (!user?.id) { toast.error('Sign in to publish stories'); return; }
-          if (!ADVENTURE_REMOTE_ENABLED) {
-            toast.info('Story publishing is disabled in this environment.');
-            return;
-          }
           try {
-            const { error } = await supabase.from('travel_stories' as any).insert({
+            const { error } = await supabase.from('posts').insert({
               user_id: user.id,
               title: story.title,
               content: story.content,
-              description: story.content?.slice(0, 200) || null,
               location: story.location || null,
-              cover_image: story.image || null,
-              photos: story.photos || [],
-              moods: story.moods || [],
-              tags: story.tags || [],
-              audience: story.audience || 'global',
-              is_deleted: false,
+              media_urls: story.photos || (story.image ? [story.image] : []),
+              media_types: (story.photos || (story.image ? [story.image] : [])).map(() => 'image'),
+              file_url: story.image || story.photos?.[0] || null,
+              file_type: story.image || story.photos?.[0] ? 'image' : null,
+              visibility: 'public',
+              category: 'travel_story',
             });
             if (error) throw error;
             toast.success('Story published! ✈️');
