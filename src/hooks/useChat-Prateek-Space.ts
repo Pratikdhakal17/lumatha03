@@ -161,16 +161,16 @@ export function useChat() {
       if (error) throw error;
 
       // Data comes back newest-first; reverse to chronological order
-      const reversed = (messagesData || []).slice().reverse();
+      const reversed = (messagesData || [] as Message[]).slice().reverse();
       setHasMoreMessages((messagesData?.length || 0) === PAGE_SIZE);
 
-      const senderIds = [...new Set(reversed.map(m => m.sender_id))];
+      const senderIds = [...new Set(reversed.map(m => m.sender_id))] as string[];
       const profilesMap = await hydrateProfiles(senderIds);
 
       const data = reversed.map(m => ({
         ...m,
         sender: profilesMap.get(m.sender_id) || { id: m.sender_id, name: 'Unknown', avatar_url: null }
-      }));
+      })) as Message[];
 
       setMessages(data as Message[]);
       
@@ -209,16 +209,16 @@ export function useChat() {
         .limit(PAGE_SIZE);
       if (error) throw error;
 
-      const reversed = (messagesData || []).slice().reverse();
+      const reversed = (messagesData || [] as Message[]).slice().reverse();
       setHasMoreMessages((messagesData?.length || 0) === PAGE_SIZE);
 
-      const senderIds = [...new Set(reversed.map(m => m.sender_id))];
+      const senderIds = [...new Set(reversed.map(m => m.sender_id))] as string[];
       const profilesMap = await hydrateProfiles(senderIds);
 
       const older = reversed.map(m => ({
         ...m,
         sender: profilesMap.get(m.sender_id) || { id: m.sender_id, name: 'Unknown', avatar_url: null }
-      }));
+      })) as Message[];
 
       setMessages(prev => [...(older as Message[]), ...prev]);
     } catch {
@@ -234,11 +234,12 @@ export function useChat() {
     // Backup rate limit check (recording is handled by the caller via useRateLimit)
     if (!canSend(user.id)) {
       console.warn(`[RateLimit] sendMessage blocked for user "${user.id}" — limit already reached.`);
+      toast.error('Message limit reached. Please wait before sending again.');
       return;
     }
 
-    // Optimistic Update
-    const optimisticId = `temp-${Date.now()}`;
+    // Optimistic Update with better error handling
+    const optimisticId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const optimisticMsg: Message = {
       id: optimisticId,
       sender_id: user.id,
@@ -269,6 +270,7 @@ export function useChat() {
         })
         .select()
         .single();
+      
       if (error) throw error;
 
       if (newMsg) {
@@ -279,17 +281,24 @@ export function useChat() {
         } as Message : m));
       }
 
+      // Send notification
       db.from('notifications').insert({
         user_id: receiverId,
         type: 'message',
         from_user_id: user.id,
         content: `${user.user_metadata?.name || 'Someone'} sent you a message`,
         link: `/chat/${user.id}`,
-      }).then(() => {});
+      }).catch(error => {
+        console.error('Failed to send notification:', error);
+      });
 
       scheduleConversationsRefresh();
-    } catch {
-      // Silent fail
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      toast.error('Failed to send message');
+      
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(m => m.id !== optimisticId));
     }
   }, [scheduleConversationsRefresh, user]);
 
