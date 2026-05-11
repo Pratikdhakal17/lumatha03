@@ -27,6 +27,16 @@ import type { Challenge } from '@/data/adventureChallenges';
 import { cn } from '@/lib/utils';
 
 const FALLBACK_PLACE_IMAGE = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=800';
+
+const EUROPE_COUNTRIES = new Set([
+  'albania', 'andorra', 'austria', 'belarus', 'belgium', 'bosnia and herzegovina', 'bulgaria', 'croatia',
+  'czech republic', 'denmark', 'estonia', 'finland', 'france', 'germany', 'greece', 'hungary', 'iceland',
+  'ireland', 'italy', 'latvia', 'liechtenstein', 'lithuania', 'luxembourg', 'malta', 'moldova', 'monaco',
+  'montenegro', 'netherlands', 'north macedonia', 'norway', 'poland', 'portugal', 'romania', 'san marino',
+  'serbia', 'slovakia', 'slovenia', 'spain', 'sweden', 'switzerland', 'ukraine', 'united kingdom', 'vatican city',
+]);
+
+const ASIA_COUNTRIES = new Set([
   'afghanistan', 'armenia', 'azerbaijan', 'bahrain', 'bangladesh', 'bhutan', 'brunei', 'cambodia', 'china',
   'cyprus', 'georgia', 'india', 'indonesia', 'iran', 'iraq', 'israel', 'japan', 'jordan', 'kazakhstan',
   'kuwait', 'kyrgyzstan', 'laos', 'lebanon', 'malaysia', 'maldives', 'mongolia', 'myanmar', 'nepal',
@@ -213,16 +223,14 @@ export default function MusicAdventureFixed() {
         .order('created_at', { ascending: false })
         .limit(200);
 
-      if (legacyError) {
-        throw legacyError;
-      }
+      if (legacyError) throw legacyError;
 
       const rows = legacyRows || [];
-      const storyIds = rows.map((story) => story.id).filter(Boolean);
+      const storyUserIds = Array.from(new Set(rows.map((story) => story.user_id).filter(Boolean)));
 
       const [{ data: profileRows }, { data: likesRows }, { data: savesRows }] = await Promise.all([
-        storyIds.length > 0
-          ? supabase.from('profiles').select('id,username,avatar_url,name').in('id', Array.from(new Set(rows.map((story) => story.user_id))))
+        storyUserIds.length > 0
+          ? supabase.from('profiles').select('id,username,avatar_url,name').in('id', storyUserIds)
           : Promise.resolve({ data: [] as Array<{ id: string; username: string | null; avatar_url: string | null; name: string | null }> }),
         user?.id ? supabase.from('likes').select('post_id').eq('user_id', user.id) : Promise.resolve({ data: [] as Array<{ post_id: string }> }),
         user?.id ? supabase.from('saved').select('post_id').eq('user_id', user.id) : Promise.resolve({ data: [] as Array<{ post_id: string }> }),
@@ -230,13 +238,66 @@ export default function MusicAdventureFixed() {
 
       const profileById = new Map(
         (profileRows || []).map((profile: any) => [
+          profile.id,
+          {
+            username: profile.username || profile.name?.toLowerCase().replace(/\s+/g, '_') || 'user',
+            avatar_url: profile.avatar_url || '',
+            name: profile.name || 'Traveler',
+          },
+        ]),
+      );
+
+      const likedIds = new Set((likesRows || []).map((row: any) => row.post_id));
+      const savedIds = new Set((savesRows || []).map((row: any) => row.post_id));
+
+      const stories = rows.map((story: any) => {
+        const profile = profileById.get(story.user_id) || { username: 'user', avatar_url: '', name: 'Traveler' };
+        const photos = Array.isArray(story.media_urls)
+          ? story.media_urls.filter((url: unknown) => typeof url === 'string' && url.length > 0)
+          : [];
+
+        return {
+          id: story.id,
+          user_id: story.user_id,
+          title: story.title || '',
+          content: story.content || '',
+          description: story.content || '',
+          location: typeof story.location === 'string' ? story.location : '',
+          cover_image: photos[0] || null,
+          photos,
+          moods: [],
+          tags: [],
+          profiles: profile,
+          created_at: story.created_at,
+          updated_at: story.updated_at,
+          likes_count: story.likes_count || 0,
+          comments_count: 0,
+          is_liked: likedIds.has(story.id),
+          is_saved: savedIds.has(story.id),
+        };
+      });
+
+      setTravelStories(stories);
+    } catch (error) {
+      console.error(error);
+      setTravelStories([]);
+    } finally {
+      setStoriesLoading(false);
+    }
+  };
+
+  const likeStory = async (id: string) => {
+    if (!user?.id || !id) return;
+    const story = travelStories.find((entry) => entry && entry.id === id);
     if (!story) return;
+
     if (story.is_liked) {
       await supabase.from('likes').delete().eq('post_id', id).eq('user_id', user.id);
     } else {
       await supabase.from('likes').insert({ post_id: id, user_id: user.id });
     }
-    setTravelStories(prev => prev.map(s => s && s.id === id ? { ...s, is_liked: !s.is_liked } : s));
+
+    setTravelStories(prev => prev.map(entry => entry && entry.id === id ? { ...entry, is_liked: !entry.is_liked } : entry));
   };
 
   const saveStory = async (id: string) => {
