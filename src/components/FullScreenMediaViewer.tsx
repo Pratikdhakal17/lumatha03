@@ -563,6 +563,7 @@ export function FullScreenMediaViewer({
   if (!currentMedia) return null;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="w-screen h-screen max-w-none max-h-none p-0 m-0 bg-black border-none rounded-none [&>button]:hidden fixed inset-0 translate-x-0 translate-y-0 top-0 left-0 z-[9999]"
@@ -895,15 +896,10 @@ export function FullScreenMediaViewer({
                   <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13 }}>{localLikesCount}</span>
                 </button>
 
-                <button className="flex items-center justify-center gap-1.5" onClick={onComment}>
+                <button className="flex items-center justify-center gap-1.5" onClick={() => (postId ? setCommentsOpen(true) : onComment?.())}>
                   <MessageCircle className="w-[18px] h-[18px]" style={{ color: 'rgba(255,255,255,0.80)' }} />
                   <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13 }}>{localCommentsCount}</span>
                 </button>
-
-                  <button className="flex items-center justify-center gap-1.5" onClick={() => postId ? setCommentsOpen(true) : onComment?.()}>
-                    <MessageCircle className="w-[18px] h-[18px]" style={{ color: 'rgba(255,255,255,0.80)' }} />
-                    <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13 }}>{localCommentsCount}</span>
-                  </button>
                 <button className="flex items-center justify-center gap-1.5" onClick={handleSave}>
                   <Bookmark
                     className={cn('w-[18px] h-[18px]', localSaved ? 'text-white fill-white' : 'text-white/80')}
@@ -921,18 +917,15 @@ export function FullScreenMediaViewer({
         </div>
       </DialogContent>
     </Dialog>
+      {postId && (
+        <CommentsDialog
+          postId={postId}
+          postTitle={title || 'Media'}
+          type={type}
+          open={commentsOpen}
+          onOpenChange={setCommentsOpen}
+        />
+      )}
+    </>
   );
 }
-
-        {postId && (
-          <CommentsDialog
-            postId={postId}
-            postTitle={title || 'Media'}
-            type={type}
-            open={commentsOpen}
-            onOpenChange={setCommentsOpen}
-          />
-        )}
-      </>
-    );
-  }
