@@ -38,6 +38,7 @@ const PerformanceDebug = lazy(() => import('@/pages/PerformanceDebug'));
 const Privacy = lazy(() => import('@/pages/Privacy'));
 const Terms = lazy(() => import('@/pages/Terms'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
+const Notes = lazy(() => import('@/pages/NotesSubsection'));
 
 function PageLoader() {
   return (
@@ -150,6 +151,7 @@ export default function Index() {
                           <Route path="/search" element={<Search />} />
                           <Route path="/privacy" element={<Privacy />} />
                           <Route path="/terms" element={<Terms />} />
+                          <Route path="/notes" element={<Notes />} />
                           <Route path="/debug/perf" element={<PerformanceDebug />} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>

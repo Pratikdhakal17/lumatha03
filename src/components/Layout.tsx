@@ -47,6 +47,7 @@ interface MenuItemConfig {
 const menuItems: MenuItemConfig[] = [
   { title: 'Home', url: '/', icon: Home, desc: 'Social + Explore', managedKey: 'home' },
   { title: 'Learn', url: '/education', icon: BookOpen, desc: 'Docs, Images, Videos', managedKey: 'learn' },
+  { title: 'Notes', url: '/notes', icon: FileText, desc: 'Quiet space for thoughts', managedKey: undefined },
   { title: 'Messages', url: '/chat', icon: MessageSquare, desc: 'Chat + VC + Groups', managedKey: 'messages' },
   { title: 'Adventure', url: '/music-adventure', icon: Mountain, desc: 'Challenges + Discover', managedKey: 'adventure' },
   { title: 'Random Connect', url: '/random-connect', icon: Heart, desc: 'Share a moment', managedKey: 'randomConnect' },
