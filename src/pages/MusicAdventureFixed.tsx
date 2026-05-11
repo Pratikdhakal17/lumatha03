@@ -338,7 +338,10 @@ export default function MusicAdventureFixed() {
 
       if (legacyError) throw legacyError;
 
-      const rows = legacyRows || [];
+      const rows = (legacyRows || []).filter((story: any) => {
+        const category = String(story?.category || '').toLowerCase();
+        return category.includes('travel');
+      });
       const storyUserIds = Array.from(new Set(rows.map((story) => story.user_id).filter(Boolean)));
 
       const [{ data: profileRows }, { data: likesRows }, { data: savesRows }] = await Promise.all([
@@ -555,9 +558,95 @@ export default function MusicAdventureFixed() {
   const visiblePlaces = filteredPlaces;
   const [isPending, startTransition] = useTransition();
 
+  const PlaceCard = memo(({ place, index, onSelect }: { place: any; index: number; onSelect: (place: any) => void }) => {
+    const isVisited = visitedPlaceIds.has(place.id);
+    const isLoved = lovedPlaceIds.has(place.id);
+    const isSaved = savedPlaceIds.has(place.id);
+    const imageUrl = place.image || place.cover_image || FALLBACK_PLACE_IMAGE;
+
+    return (
+      <div
+        className="group relative rounded-2xl overflow-hidden border border-white/10 bg-slate-900/40 hover:bg-slate-900/60 transition-all cursor-pointer"
+        onClick={() => onSelect(place)}
+      >
+        <div className="aspect-[4/5] relative overflow-hidden">
+          <img src={imageUrl} alt={place.name || 'Place'} loading={index < 6 ? 'eager' : 'lazy'} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+          <div className="absolute top-2 right-2 flex items-center gap-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleLovePlace(place.id);
+              }}
+              className={cn("w-7 h-7 rounded-full flex items-center justify-center bg-black/40", isLoved ? "text-red-500" : "text-white")}
+            >
+              <Heart className={cn("w-3.5 h-3.5", isLoved && "fill-current")} />
+            </button>
+            <button
+              onClick={(e) => toggleSavePlaceGrid(e, place.id)}
+              className={cn("w-7 h-7 rounded-full flex items-center justify-center bg-black/40", isSaved ? "text-violet-400" : "text-white")}
+            >
+              <Bookmark className={cn("w-3.5 h-3.5", isSaved && "fill-current")} />
+            </button>
+          </div>
+          {isVisited && (
+            <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-emerald-500/80 text-[9px] font-black uppercase tracking-wider text-white">
+              Visited
+            </div>
+          )}
+        </div>
+        <div className="p-2.5 space-y-1.5">
+          <p className="text-xs font-black text-white uppercase tracking-wide line-clamp-1">{place.name || 'Unknown Place'}</p>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest line-clamp-1">{place.country || 'Unknown Country'}</p>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleVisitPlace(place.id);
+            }}
+            className={cn(
+              "w-full h-7 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors",
+              isVisited ? "bg-emerald-500/20 text-emerald-300" : "bg-white/10 text-slate-200 hover:bg-white/20"
+            )}
+          >
+            {isVisited ? 'Visited' : 'Mark Visit'}
+          </button>
+        </div>
+      </div>
+    );
+  });
+
   const headerToolbar = activeTab === 'quests' ? (
     <div className="px-0 py-3">
       <div className="flex items-center gap-2 w-full">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="w-11 h-11 rounded-full overflow-hidden border-2 border-primary/30 shrink-0 active:scale-90 transition-all shadow-lg">
+              <Avatar className="w-full h-full rounded-full">
+                <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
+                <AvatarFallback className="bg-slate-800 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
+              </Avatar>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56 bg-slate-900 border-white/10 rounded-xl p-2 shadow-2xl">
+            <DropdownMenuItem onClick={() => setQuestViewFilter('system')} className="rounded-lg py-2.5 gap-3">
+              <Sparkles className="w-4 h-4 text-yellow-400" /> <span className="font-bold text-xs uppercase">System</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setQuestViewFilter('public')} className="rounded-lg py-2.5 gap-3">
+              <Globe className="w-4 h-4 text-sky-400" /> <span className="font-bold text-xs uppercase">Public</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setQuestViewFilter('private')} className="rounded-lg py-2.5 gap-3">
+              <Lock className="w-4 h-4 text-emerald-400" /> <span className="font-bold text-xs uppercase">Private</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-white/10" />
+            <DropdownMenuItem onClick={() => setQuestViewFilter('liked')} className="rounded-lg py-2.5 gap-3">
+              <Heart className="w-4 h-4 text-red-500" /> <span className="font-bold text-xs uppercase">Liked</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setQuestViewFilter('saved')} className="rounded-lg py-2.5 gap-3">
+              <Bookmark className="w-4 h-4 text-violet-500" /> <span className="font-bold text-xs uppercase">Saved</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <div className="flex-1 relative min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <Input
