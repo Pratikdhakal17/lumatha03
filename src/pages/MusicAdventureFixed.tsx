@@ -62,6 +62,19 @@ const ASIA_COUNTRIES = new Set([
   'turkmenistan', 'united arab emirates', 'uzbekistan', 'vietnam', 'yemen',
 ]);
 
+const EXPLORE_SEARCH_FILTERS = [
+  { id: 'allplaces', label: 'All Places', icon: Globe },
+  { id: 'nepal', label: 'Nepal', icon: Flag },
+  { id: 'hiddengems', label: 'Hidden Gems', icon: Compass },
+  { id: 'nature', label: 'Nature', icon: MapPin },
+  { id: 'culture', label: 'Culture', icon: Sparkles },
+  { id: 'mountains', label: 'Mountains', icon: Plane },
+  { id: 'park', label: 'Parks', icon: Layers },
+  { id: 'temple', label: 'Temples', icon: CheckCircle },
+  { id: 'europe', label: 'Europe', icon: Globe },
+  { id: 'asia', label: 'Asia', icon: Globe },
+];
+
 const DIFFICULTY_FILTERS = [
   { id: 'all', label: 'All', icon: '🌟' },
   { id: 'simple', label: 'Simple', icon: '🌱', durations: ['daily'] },
