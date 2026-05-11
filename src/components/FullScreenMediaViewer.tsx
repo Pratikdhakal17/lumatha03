@@ -4,6 +4,7 @@ import { X, Heart, MessageCircle, Send, Pause, Play, Volume2, VolumeX, Bookmark,
 import { cn } from '@/lib/utils';
 import { useKeyboardGallery } from '@/hooks/useKeyboardGallery';
 import { useVideoSound } from '@/contexts/VideoSoundContext';
+import { CommentsDialog } from '@/components/CommentsDialog';
 import {
   enableAudioForVideo,
   getVideoAudioState,
@@ -42,6 +43,8 @@ interface FullScreenMediaViewerProps {
   isGhostPost?: boolean;
   downloadDisabled?: boolean;
   minimal?: boolean;
+    postId?: string;
+    type?: 'post' | 'travel';
 }
 
 export function FullScreenMediaViewer({
@@ -62,10 +65,13 @@ export function FullScreenMediaViewer({
   onShare,
   onSave,
   minimal = false,
+  postId,
+  type = 'post',
 }: FullScreenMediaViewerProps) {
   const { globalMuted: externalGlobalMuted, setGlobalMuted: setExternalGlobalMuted } = useVideoSound();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [viewportWidth, setViewportWidth] = useState(() => (typeof window === 'undefined' ? 0 : window.innerWidth));
+    const [commentsOpen, setCommentsOpen] = useState(false);
   const [swipeX, setSwipeX] = useState(0);
   const [isSwiping, setIsSwiping] = useState(false);
   const [dragY, setDragY] = useState(0);
@@ -894,6 +900,10 @@ export function FullScreenMediaViewer({
                   <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13 }}>{localCommentsCount}</span>
                 </button>
 
+                  <button className="flex items-center justify-center gap-1.5" onClick={() => postId ? setCommentsOpen(true) : onComment?.()}>
+                    <MessageCircle className="w-[18px] h-[18px]" style={{ color: 'rgba(255,255,255,0.80)' }} />
+                    <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13 }}>{localCommentsCount}</span>
+                  </button>
                 <button className="flex items-center justify-center gap-1.5" onClick={handleSave}>
                   <Bookmark
                     className={cn('w-[18px] h-[18px]', localSaved ? 'text-white fill-white' : 'text-white/80')}
@@ -913,3 +923,16 @@ export function FullScreenMediaViewer({
     </Dialog>
   );
 }
+
+        {postId && (
+          <CommentsDialog
+            postId={postId}
+            postTitle={title || 'Media'}
+            type={type}
+            open={commentsOpen}
+            onOpenChange={setCommentsOpen}
+          />
+        )}
+      </>
+    );
+  }

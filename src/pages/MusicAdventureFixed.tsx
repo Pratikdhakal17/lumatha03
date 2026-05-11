@@ -139,6 +139,8 @@ export default function MusicAdventureFixed() {
   const [places, setPlaces] = useState<any[]>([]);
   const [visiblePlaceCount, setVisiblePlaceCount] = useState<number>(typeof window !== 'undefined' && window.innerWidth < 768 ? 100 : 150);
   const [loading, setLoading] = useState(true);
+    const [hasMorePlaces, setHasMorePlaces] = useState(true);
+    const [placeLoadingMore, setPlaceLoadingMore] = useState(false);
   const [questSearchQuery, setQuestSearchQuery] = useState('');
   const [exploreSearchQuery, setExploreSearchQuery] = useState('');
   const [storySearchQuery, setStorySearchQuery] = useState('');
@@ -551,8 +553,22 @@ export default function MusicAdventureFixed() {
   // Reset visible count when filters/search change to avoid showing a huge list
   useEffect(() => {
     setVisiblePlaceCount(typeof window !== 'undefined' && window.innerWidth < 768 ? 100 : 150);
+      setHasMorePlaces(true);
   }, [exploreSearchQuery, exploreSearchFilter, profileViewFilter]);
 
+    const loadMorePlaces = useCallback(() => {
+      if (placeLoadingMore || !hasMorePlaces || visiblePlaceCount >= filteredPlaces.length) return;
+      setPlaceLoadingMore(true);
+      // Simulate slight loading delay for smooth UX
+      setTimeout(() => {
+        setVisiblePlaceCount(prev => {
+          const newCount = prev + (typeof window !== 'undefined' && window.innerWidth < 768 ? 50 : 100);
+          if (newCount >= filteredPlaces.length) setHasMorePlaces(false);
+          return newCount;
+        });
+        setPlaceLoadingMore(false);
+      }, 300);
+    }, [placeLoadingMore, hasMorePlaces, visiblePlaceCount, filteredPlaces.length]);
   const [isPending, startTransition] = useTransition();
 
   // Memoized place card to avoid re-rendering each item when unrelated state changes
@@ -594,6 +610,7 @@ export default function MusicAdventureFixed() {
   // Virtualized grid for places using react-window
   const VirtualizedPlacesGrid = () => {
     const containerRef = useRef<HTMLDivElement | null>(null);
+      const loadMoreRef = useRef<HTMLDivElement | null>(null);
     const [containerWidth, setContainerWidth] = useState<number>(typeof window !== 'undefined' ? Math.min(window.innerWidth, 1200) : 800);
     const [columns, setColumns] = useState<number>(typeof window !== 'undefined' && window.innerWidth >= 1024 ? 4 : 2);
 
@@ -613,6 +630,16 @@ export default function MusicAdventureFixed() {
       };
     }, []);
 
+      useEffect(() => {
+        if (!loadMoreRef.current || !hasMorePlaces) return;
+        const observer = new IntersectionObserver(entries => {
+          if (entries[0]?.isIntersecting) {
+            loadMorePlaces();
+          }
+        }, { threshold: 0.1 });
+        observer.observe(loadMoreRef.current);
+        return () => observer.disconnect();
+      }, [hasMorePlaces, loadMorePlaces]);
     const itemSize = Math.floor(containerWidth / columns);
     const rowCount = Math.ceil(visiblePlaces.length / columns);
     // Removed fixed height limit - use dynamic height based on items, capped to avoid excessive rendering
@@ -656,6 +683,19 @@ export default function MusicAdventureFixed() {
             </div>
           </div>
         )}
+          {hasMorePlaces && visiblePlaces.length > 0 && (
+            <div ref={loadMoreRef} className="w-full py-8 flex justify-center items-center">
+              {placeLoadingMore ? (
+                <div className="flex items-center gap-2 text-slate-500">
+                  <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              ) : (
+                <p className="text-xs text-slate-600">Scroll for more places</p>
+              )}
+            </div>
+          )}
       </div>
     );
   };
