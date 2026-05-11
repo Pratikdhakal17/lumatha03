@@ -769,7 +769,11 @@ function LayoutContent({ children }: LayoutProps) {
                         aria-label="Feed categories"
                         title="Feed categories"
                       >
-                        <Globe className="w-5 h-5" strokeWidth={2.5} />
+                        {useMemo(() => {
+                          const activeScope = feedScopes.find(s => s.id === activeFeedScope);
+                          const Icon = activeScope?.icon || Globe;
+                          return <Icon className="w-5 h-5" strokeWidth={2.5} />;
+                        }, [activeFeedScope])}
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-[#0d1117] border-[#23324a] rounded-xl p-2 w-56 shadow-none">

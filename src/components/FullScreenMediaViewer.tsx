@@ -637,10 +637,10 @@ export function FullScreenMediaViewer({
               }
             }}
           >
-            {isDesktop && hasMultiple && (
+            {hasMultiple && (
               <>
                 <button
-                  className="absolute left-3 top-1/2 -translate-y-1/2 z-40 rounded-full p-2.5"
+                  className={cn("absolute top-1/2 -translate-y-1/2 z-40 rounded-full p-2.5", isDesktop ? "left-3" : "left-2")}
                   style={{ background: 'rgba(255,255,255,0.18)', color: '#fff' }}
                   onClick={(event) => {
                     event.stopPropagation();
@@ -648,10 +648,10 @@ export function FullScreenMediaViewer({
                   }}
                   aria-label="Previous media"
                 >
-                  <ChevronLeft className="w-5 h-5" />
+                  <ChevronLeft className={isDesktop ? "w-5 h-5" : "w-4 h-4"} />
                 </button>
                 <button
-                  className="absolute right-3 top-1/2 -translate-y-1/2 z-40 rounded-full p-2.5"
+                  className={cn("absolute top-1/2 -translate-y-1/2 z-40 rounded-full p-2.5", isDesktop ? "right-3" : "right-2")}
                   style={{ background: 'rgba(255,255,255,0.18)', color: '#fff' }}
                   onClick={(event) => {
                     event.stopPropagation();
@@ -659,7 +659,7 @@ export function FullScreenMediaViewer({
                   }}
                   aria-label="Next media"
                 >
-                  <ChevronRight className="w-5 h-5" />
+                  <ChevronRight className={isDesktop ? "w-5 h-5" : "w-4 h-4"} />
                 </button>
               </>
             )}

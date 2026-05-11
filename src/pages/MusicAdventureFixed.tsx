@@ -137,7 +137,7 @@ export default function MusicAdventureFixed() {
   
 
   const [places, setPlaces] = useState<any[]>([]);
-  const [visiblePlaceCount, setVisiblePlaceCount] = useState<number>(typeof window !== 'undefined' && window.innerWidth < 768 ? 36 : 72);
+  const [visiblePlaceCount, setVisiblePlaceCount] = useState<number>(typeof window !== 'undefined' && window.innerWidth < 768 ? 100 : 150);
   const [loading, setLoading] = useState(true);
   const [questSearchQuery, setQuestSearchQuery] = useState('');
   const [exploreSearchQuery, setExploreSearchQuery] = useState('');
@@ -550,7 +550,7 @@ export default function MusicAdventureFixed() {
 
   // Reset visible count when filters/search change to avoid showing a huge list
   useEffect(() => {
-    setVisiblePlaceCount(typeof window !== 'undefined' && window.innerWidth < 768 ? 36 : 72);
+    setVisiblePlaceCount(typeof window !== 'undefined' && window.innerWidth < 768 ? 100 : 150);
   }, [exploreSearchQuery, exploreSearchFilter, profileViewFilter]);
 
   const [isPending, startTransition] = useTransition();
@@ -615,7 +615,9 @@ export default function MusicAdventureFixed() {
 
     const itemSize = Math.floor(containerWidth / columns);
     const rowCount = Math.ceil(visiblePlaces.length / columns);
-    const height = Math.min(800, Math.max(400, Math.floor((window.innerHeight || 800) * 0.7)));
+    // Removed fixed height limit - use dynamic height based on items, capped to avoid excessive rendering
+    const maxVisibleHeight = Math.min(2000, Math.max(600, Math.floor((window.innerHeight || 800) * 0.9)));
+    const estimatedHeight = Math.min(maxVisibleHeight, rowCount * itemSize);
 
     const Cell = ({ columnIndex, rowIndex, style, data }: any) => {
       const idx = rowIndex * columns + columnIndex;
@@ -630,18 +632,30 @@ export default function MusicAdventureFixed() {
 
     return (
       <div ref={containerRef} className="w-full">
-        <Grid
-          className="adventure-explore-grid-scroll no-scrollbar"
-          columnCount={columns}
-          columnWidth={itemSize}
-          height={height}
-          rowCount={rowCount}
-          rowHeight={itemSize}
-          width={containerWidth}
-          itemData={visiblePlaces}
-        >
-          {Cell}
-        </Grid>
+        {visiblePlaces.length > 0 ? (
+          <Grid
+            className="adventure-explore-grid-scroll no-scrollbar"
+            columnCount={columns}
+            columnWidth={itemSize}
+            height={estimatedHeight}
+            rowCount={rowCount}
+            rowHeight={itemSize}
+            width={containerWidth}
+            itemData={visiblePlaces}
+            overscanRowCount={2}
+            overscanColumnCount={1}
+          >
+            {Cell}
+          </Grid>
+        ) : (
+          <div className="flex items-center justify-center py-20 text-center">
+            <div>
+              <span className="text-4xl mb-3 block">🌍</span>
+              <p className="text-sm font-black text-slate-400 uppercase tracking-wider">No places found</p>
+              <p className="text-xs text-slate-600 mt-1">Try adjusting your search or filters</p>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -1429,7 +1443,7 @@ export default function MusicAdventureFixed() {
       </div>
 
       {/* Places Grid - Full Width Mobile, No Side Space - Instant rendering with preloading */}
-      <div className="px-0 pb-6 mt-0 w-full" style={{ contentVisibility: 'auto', containIntrinsicSize: '200px' }}>
+      <div className="px-0 pb-6 mt-0 w-full will-change-contents">
         <VirtualizedPlacesGrid />
       </div>
     </div>
