@@ -1,4 +1,4 @@
-import { useState, memo, useMemo } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Database } from '@/integrations/supabase/types';
 import { Card, CardContent } from '@/components/ui/card';
@@ -27,7 +27,7 @@ interface PostCardProps {
   onOpenComments?: (id: string, title: string) => void;
 }
 
-function PostCardComponent({ post, isSaved, isLiked, likesCount, currentUserId, onToggleSave, onToggleLike, onDelete, onUpdate, onOpenComments }: PostCardProps) {
+export function PostCard({ post, isSaved, isLiked, likesCount, currentUserId, onToggleSave, onToggleLike, onDelete, onUpdate, onOpenComments }: PostCardProps) {
   const navigate = useNavigate();
   const [imageOpen, setImageOpen] = useState(false);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
@@ -36,15 +36,15 @@ function PostCardComponent({ post, isSaved, isLiked, likesCount, currentUserId, 
   const [editContent, setEditContent] = useState(post.content || '');
   
   // Get all media URLs (support both single and multiple)
-  const mediaUrls = useMemo(() => post.media_urls?.length ? post.media_urls : (post.file_url ? [post.file_url] : []), [post.media_urls, post.file_url]);
-  const mediaTypes = useMemo(() => post.media_types?.length ? post.media_types : (post.file_type ? [post.file_type] : []), [post.media_types, post.file_type]);
+  const mediaUrls = post.media_urls?.length ? post.media_urls : (post.file_url ? [post.file_url] : []);
+  const mediaTypes = post.media_types?.length ? post.media_types : (post.file_type ? [post.file_type] : []);
   const hasMedia = mediaUrls.length > 0;
   const hasMultipleMedia = mediaUrls.length > 1;
   const currentMedia = mediaUrls[currentMediaIndex] || '/placeholder.svg';
   const currentMediaType = mediaTypes[currentMediaIndex] || 'image';
   
   const isOwner = currentUserId === post.user_id;
-  const isLongText = useMemo(() => (post.content?.length || 0) > 200, [post.content]);
+  const isLongText = (post.content?.length || 0) > 200;
   const isVideo = currentMediaType?.includes('video');
 
   const handleCopy = () => {
@@ -322,16 +322,3 @@ function PostCardComponent({ post, isSaved, isLiked, likesCount, currentUserId, 
     </Card>
   );
 }
-
-// Memoized export to prevent unnecessary re-renders when parent updates
-export const PostCard = memo(PostCardComponent, (prev, next) => {
-  // Return true if props are equal (skip render), false if different (do render)
-  return (
-    prev.post.id === next.post.id &&
-    prev.post.updated_at === next.post.updated_at &&
-    prev.isSaved === next.isSaved &&
-    prev.isLiked === next.isLiked &&
-    prev.likesCount === next.likesCount &&
-    prev.currentUserId === next.currentUserId
-  );
-});
