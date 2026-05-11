@@ -28,6 +28,38 @@ import { cn } from '@/lib/utils';
 
 const FALLBACK_PLACE_IMAGE = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=800';
 
+function getLocalSet(key: string): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(key) || '[]') as string[]);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveLocalSet(key: string, s: Set<string>) {
+  try {
+    localStorage.setItem(key, JSON.stringify([...s]));
+  } catch {
+    // ignore storage write failures
+  }
+}
+
+function getLocalInt(key: string): number {
+  try {
+    return parseInt(localStorage.getItem(key) || '0', 10) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function saveLocalInt(key: string, n: number) {
+  try {
+    localStorage.setItem(key, String(n));
+  } catch {
+    // ignore storage write failures
+  }
+}
+
 function getDifficulty(duration: Challenge['duration']): { label: string; color: string; icon: string } {
   switch (duration) {
     case 'daily':
