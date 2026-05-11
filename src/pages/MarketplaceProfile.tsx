@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, ArrowLeft, Edit3, MessageCircle, Phone, ExternalLink, Star } from 'lucide-react';
+import { MapPin, ArrowLeft, Edit3, MessageCircle, Phone, ExternalLink, Star, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow, format } from 'date-fns';
@@ -129,11 +129,11 @@ export default function MarketplaceProfile() {
             {seller.isPhoneVerified ? (
               <span className="px-3 py-1.5 rounded-full text-[12px] font-semibold" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', color: '#10B981' }}>✅ Verified</span>
             ) : (
-              <span className="px-3 py-1.5 rounded-full text-[12px] opacity-60" style={{ background: 'var(--bg-elevated, #1e293b)', border: '1px solid var(--border, #1f2937)', color: '#94A3B8' }}>📱 Unverified</span>
+              <span className="px-3 py-1.5 rounded-full text-[12px] opacity-60" style={{ background: 'var(--bg-elevated, #1e293b)', border: '1px solid var(--border, #1f2937)', color: '#94A3B8' }}>⏳ Pending</span>
             )}
             {/* Location badge */}
             {seller.location && (
-              <span className="px-3 py-1.5 rounded-full text-[12px] text-white" style={{ background: 'var(--bg-elevated, #1e293b)', border: '1px solid var(--border, #1f2937)' }}>📍 {seller.location.split(',')[0]}</span>
+              <span className="px-3 py-1.5 rounded-full text-[12px] text-white" style={{ background: 'var(--bg-elevated, #1e293b)', border: '1px solid var(--border, #1f2937)' }}>📍 {seller.location}</span>
             )}
             {/* Rating badge */}
             <span className="px-3 py-1.5 rounded-full text-[12px]" style={{ background: 'var(--bg-elevated, #1e293b)', border: '1px solid var(--border, #1f2937)', color: '#94A3B8' }}>⭐ New Seller</span>
