@@ -550,8 +550,21 @@ export default function MusicAdventureFixed() {
       return matchesSearch && matchesFilter;
     });
 
-    // Stable ordering - no random shuffle to prevent layout shifts
-    return filtered;
+    // Stable ordering: Nepal first, then country/name alphabetical
+    return filtered.sort((a, b) => {
+      const aCountry = String(a?.country || '').toLowerCase();
+      const bCountry = String(b?.country || '').toLowerCase();
+      const aNepal = aCountry.includes('nepal') ? 0 : 1;
+      const bNepal = bCountry.includes('nepal') ? 0 : 1;
+      if (aNepal !== bNepal) return aNepal - bNepal;
+
+      const countryCompare = aCountry.localeCompare(bCountry);
+      if (countryCompare !== 0) return countryCompare;
+
+      const aName = String(a?.name || '').toLowerCase();
+      const bName = String(b?.name || '').toLowerCase();
+      return aName.localeCompare(bName);
+    });
   }, [places, exploreSearchQuery, exploreSearchFilter, profileViewFilter, placeMatchesExploreCategory, visitedPlaceIds, savedPlaceIds, lovedPlaceIds]);
 
   // Show all filtered places for complete scrolling experience
@@ -560,8 +573,6 @@ export default function MusicAdventureFixed() {
 
   const PlaceCard = memo(({ place, index, onSelect }: { place: any; index: number; onSelect: (place: any) => void }) => {
     const isVisited = visitedPlaceIds.has(place.id);
-    const isLoved = lovedPlaceIds.has(place.id);
-    const isSaved = savedPlaceIds.has(place.id);
     const imageUrl = place.image || place.cover_image || FALLBACK_PLACE_IMAGE;
 
     return (
@@ -572,23 +583,6 @@ export default function MusicAdventureFixed() {
         <div className="aspect-[4/5] relative overflow-hidden">
           <img src={imageUrl} alt={place.name || 'Place'} loading={index < 6 ? 'eager' : 'lazy'} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-          <div className="absolute top-2 right-2 flex items-center gap-1">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleLovePlace(place.id);
-              }}
-              className={cn("w-7 h-7 rounded-full flex items-center justify-center bg-black/40", isLoved ? "text-red-500" : "text-white")}
-            >
-              <Heart className={cn("w-3.5 h-3.5", isLoved && "fill-current")} />
-            </button>
-            <button
-              onClick={(e) => toggleSavePlaceGrid(e, place.id)}
-              className={cn("w-7 h-7 rounded-full flex items-center justify-center bg-black/40", isSaved ? "text-violet-400" : "text-white")}
-            >
-              <Bookmark className={cn("w-3.5 h-3.5", isSaved && "fill-current")} />
-            </button>
-          </div>
           {isVisited && (
             <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-emerald-500/80 text-[9px] font-black uppercase tracking-wider text-white">
               Visited
@@ -596,20 +590,8 @@ export default function MusicAdventureFixed() {
           )}
         </div>
         <div className="p-2.5 space-y-1.5">
-          <p className="text-xs font-black text-white uppercase tracking-wide line-clamp-1">{place.name || 'Unknown Place'}</p>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest line-clamp-1">{place.country || 'Unknown Country'}</p>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleVisitPlace(place.id);
-            }}
-            className={cn(
-              "w-full h-7 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors",
-              isVisited ? "bg-emerald-500/20 text-emerald-300" : "bg-white/10 text-slate-200 hover:bg-white/20"
-            )}
-          >
-            {isVisited ? 'Visited' : 'Mark Visit'}
-          </button>
+          <p className="text-sm font-black text-blue-400 uppercase tracking-wide line-clamp-1">{place.name || 'Unknown Place'}</p>
+          <p className="text-[11px] text-emerald-400 font-black uppercase tracking-widest line-clamp-1">{place.country || 'Unknown Country'}</p>
         </div>
       </div>
     );
@@ -671,9 +653,11 @@ export default function MusicAdventureFixed() {
     <div className="w-full flex gap-2 overflow-x-auto no-scrollbar px-0 py-3 border-b border-white/5 bg-[#0a0f1e]/50 items-center">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="h-11 px-3 rounded-2xl bg-slate-900/60 border border-white/10 text-slate-200 hover:text-white active:scale-95 transition-all shadow-lg flex items-center gap-2 shrink-0">
-            <Filter className="w-4 h-4" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Places</span>
+          <button className="w-11 h-11 rounded-full overflow-hidden border-2 border-primary/30 shrink-0 active:scale-90 transition-all shadow-lg">
+            <Avatar className="w-full h-full rounded-full">
+              <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
+              <AvatarFallback className="bg-slate-800 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
+            </Avatar>
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56 bg-slate-900 border-white/10 rounded-[24px] p-2 shadow-2xl">
