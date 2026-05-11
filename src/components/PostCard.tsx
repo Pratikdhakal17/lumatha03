@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Database } from '@/integrations/supabase/types';
+import { memo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,7 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, isSaved, isLiked, likesCount, currentUserId, onToggleSave, onToggleLike, onDelete, onUpdate, onOpenComments }: PostCardProps) {
+function PostCardContent({ post, isSaved, isLiked, likesCount, currentUserId, onToggleSave, onToggleLike, onDelete, onUpdate, onOpenComments }: PostCardProps) {
   const navigate = useNavigate();
   const [imageOpen, setImageOpen] = useState(false);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
@@ -321,4 +323,7 @@ export function PostCard({ post, isSaved, isLiked, likesCount, currentUserId, on
       </CardContent>
     </Card>
   );
+  }
+  // Export memoized component - uses default shallow comparison
+  export const PostCard = memo(PostCardContent);
 }
