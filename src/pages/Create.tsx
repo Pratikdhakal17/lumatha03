@@ -111,7 +111,8 @@ export default function Create() {
   const isDiaryMode = contentType === 'diary';
   const isReelMode = contentType === 'reel';
   const isDrawingMode = contentType === 'drawing';
-  const isPrivateMode = isPrivateEntry || isStoryMode || isDiaryMode || isReelMode || isDrawingMode || isThoughtMode;
+  // Only treat as private when explicitly requested via `?mode=private`.
+  const isPrivateMode = isPrivateEntry;
 
   const [caption, setCaption] = useState('');
   const [files, setFiles] = useState<File[]>([]);
@@ -153,10 +154,9 @@ export default function Create() {
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
-    if (isPrivateEntry || isPrivateMode) {
-      setAudience('private');
-    }
-  }, [isPrivateEntry, isPrivateMode]);
+    // If the user explicitly opened the editor in private mode via `?mode=private`, default to private.
+    if (isPrivateEntry) setAudience('private');
+  }, [isPrivateEntry]);
 
   useEffect(() => {
     if (isDrawingMode) {
