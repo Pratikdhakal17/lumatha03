@@ -28,6 +28,23 @@ import { cn } from '@/lib/utils';
 
 const FALLBACK_PLACE_IMAGE = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=800';
 
+function getDifficulty(duration: Challenge['duration']): { label: string; color: string; icon: string } {
+  switch (duration) {
+    case 'daily':
+      return { label: 'Easy', color: 'bg-green-500/20 text-green-400', icon: '🌱' };
+    case 'weekly':
+      return { label: 'Medium', color: 'bg-yellow-500/20 text-yellow-400', icon: '🌿' };
+    case 'monthly':
+      return { label: 'Hard', color: 'bg-orange-500/20 text-orange-400', icon: '🌳' };
+    case 'yearly':
+      return { label: 'Epic', color: 'bg-purple-500/20 text-purple-400', icon: '⭐' };
+    case 'lifetime':
+      return { label: 'Epic', color: 'bg-red-500/20 text-red-400', icon: '👑' };
+    default:
+      return { label: 'Easy', color: 'bg-green-500/20 text-green-400', icon: '🌱' };
+  }
+}
+
 const EUROPE_COUNTRIES = new Set([
   'albania', 'andorra', 'austria', 'belarus', 'belgium', 'bosnia and herzegovina', 'bulgaria', 'croatia',
   'czech republic', 'denmark', 'estonia', 'finland', 'france', 'germany', 'greece', 'hungary', 'iceland',
