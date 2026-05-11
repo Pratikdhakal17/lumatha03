@@ -19,7 +19,7 @@ interface NotesSubsectionProps {
   onBack?: () => void;
 }
 
-export function NotesSubsection({ onBack }: NotesSubsectionProps) {
+export default function NotesSubsection({ onBack }: NotesSubsectionProps) {
   const { user } = useAuth();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
