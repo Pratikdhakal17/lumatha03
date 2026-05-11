@@ -681,14 +681,14 @@ function LayoutContent({ children }: LayoutProps) {
         )}>
           <div className="grid h-full grid-cols-[auto_1fr_auto] items-center gap-3 px-3 md:px-5">
             {/* Left side - menu/back button and branding */}
-            <div className="flex items-center gap-1 min-w-0">
+            <div className="flex items-center gap-2 min-w-0 justify-self-start">
               {isChatListView ? (
                 // Chat list: Show hamburger + LUMATHA like other sections for consistency
                 <>
                   {isMobile && (
                     <button 
                       onClick={handleMobileLeadingAction} 
-                      className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5"
+                      className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5 shrink-0"
                     >
                       <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
                     </button>
@@ -696,7 +696,18 @@ function LayoutContent({ children }: LayoutProps) {
                   <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
                 </>
               ) : isFeedPage ? (
-                <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
+                <>
+                  {isMobile && (
+                    <button
+                      onClick={handleMobileLeadingAction}
+                      className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5 shrink-0"
+                      aria-label="Menu"
+                    >
+                      <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
+                    </button>
+                  )}
+                  <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
+                </>
               ) : (
                 // Other sections: Show back or sidebar icon + section name
                 <>
@@ -704,7 +715,7 @@ function LayoutContent({ children }: LayoutProps) {
                     // Home subsections: Back icon
                     <button 
                       onClick={handleBack} 
-                      className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5"
+                      className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5 shrink-0"
                       aria-label="Go back"
                     >
                       <ArrowLeft className="w-5 h-5 text-blue-500" strokeWidth={2} />
@@ -714,7 +725,7 @@ function LayoutContent({ children }: LayoutProps) {
                     isMobile && (
                       <button 
                         onClick={handleMobileLeadingAction} 
-                        className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5"
+                        className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5 shrink-0"
                         aria-label="Menu"
                       >
                         <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
