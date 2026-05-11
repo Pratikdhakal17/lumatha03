@@ -1,3 +1,54 @@
+-- Create todos table if it doesn't exist (for basic task tracking)
+create table if not exists public.todos (
+  id text primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  
+  -- Task data
+  title text not null,
+  description text,
+  completed boolean not null default false,
+  
+  -- Enhanced fields
+  due_date timestamp with time zone,
+  completed_at timestamp with time zone,
+  priority text not null default 'medium',
+  category text not null default 'general',
+  
+  -- Metadata
+  created_at timestamp with time zone not null default timezone('utc'::text, now()),
+  updated_at timestamp with time zone not null default timezone('utc'::text, now())
+);
+
+-- Enable RLS on todos
+alter table public.todos enable row level security;
+
+-- RLS policies for todos
+create policy "Users can view their own todos"
+  on public.todos
+  for select
+  using (auth.uid() = user_id);
+
+create policy "Users can create their own todos"
+  on public.todos
+  for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can update their own todos"
+  on public.todos
+  for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create policy "Users can delete their own todos"
+  on public.todos
+  for delete
+  using (auth.uid() = user_id);
+
+-- Create indexes for todos
+create index if not exists todos_user_id_idx on public.todos(user_id);
+create index if not exists todos_updated_at_idx on public.todos(updated_at desc);
+create index if not exists todos_completed_idx on public.todos(completed);
+
 -- Create user_stats table for tracking screen time and stats
 create table if not exists public.user_stats (
   id text primary key,
@@ -48,16 +99,9 @@ create policy "Users can update their own stats"
   with check (auth.uid() = user_id);
 
 -- Create indexes for performance
-create index user_stats_user_id_idx on public.user_stats(user_id);
-create index user_stats_updated_at_idx on public.user_stats(updated_at desc);
-create index user_stats_last_reset_idx on public.user_stats(last_reset desc);
-
--- Update todos table if needed (ensure it has proper columns)
-alter table public.todos add column if not exists due_date timestamp with time zone;
-alter table public.todos add column if not exists completed_at timestamp with time zone;
-alter table public.todos add column if not exists priority text default 'medium';
-alter table public.todos add column if not exists category text default 'general';
-alter table public.todos add column if not exists updated_at timestamp with time zone default timezone('utc'::text, now());
+create index if not exists user_stats_user_id_idx on public.user_stats(user_id);
+create index if not exists user_stats_updated_at_idx on public.user_stats(updated_at desc);
+create index if not exists user_stats_last_reset_idx on public.user_stats(last_reset desc);
 
 -- Create todos_stats table to track task completion per month/year
 create table if not exists public.todos_stats (
@@ -103,10 +147,11 @@ create policy "Users can update their own todos stats"
   with check (auth.uid() = user_id);
 
 -- Create indexes
-create index todos_stats_user_id_idx on public.todos_stats(user_id);
-create index todos_stats_date_idx on public.todos_stats(user_id, year, month);
-create index todos_stats_updated_at_idx on public.todos_stats(updated_at desc);
+create index if not exists todos_stats_user_id_idx on public.todos_stats(user_id);
+create index if not exists todos_stats_date_idx on public.todos_stats(user_id, year, month);
+create index if not exists todos_stats_updated_at_idx on public.todos_stats(updated_at desc);
 
 -- Comment tables
+comment on table public.todos is 'User todos with priority, category, and completion tracking';
 comment on table public.user_stats is 'Stores screen time and user settings/stats with duration-based auto-reset';
 comment on table public.todos_stats is 'Monthly aggregated statistics for tasks/todos';
