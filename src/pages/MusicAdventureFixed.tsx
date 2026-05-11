@@ -145,10 +145,8 @@ export default function MusicAdventureFixed() {
 
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
   const [showStoryCreate, setShowStoryCreate] = useState(false);
-  const [showQuestCreate, setShowQuestCreate] = useState(false);
   const [travelReaderStoryId, setTravelReaderStoryId] = useState<string | null>(null);
   const [travelReaderOpen, setTravelReaderOpen] = useState(false);
-  const [storiesFilterMenuOpen, setStoriesFilterMenuOpen] = useState(false);
 
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
@@ -184,17 +182,71 @@ export default function MusicAdventureFixed() {
   const [showHeader, setShowHeader] = useState(true);
 
   useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY < lastScrollY || currentScrollY < 100) {
+        setShowHeader(true);
+      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setShowHeader(false);
+      }
+      setLastScrollY(currentScrollY);
+      setScrollY(currentScrollY);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
+  const formatStoryDate = (value: string | null | undefined) => {
+    if (!value) return 'Unknown date';
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? 'Unknown date' : parsed.toLocaleDateString();
+  };
+
+  useEffect(() => {
+    if (!user?.id) return;
+    setVisitedPlaceIds(getLocalSet(`adv_visited_${user.id}`));
+    setLovedPlaceIds(getLocalSet(`adv_loved_${user.id}`));
+    setSavedPlaceIds(getLocalSet(`adv_saved_places_${user.id}`));
+    setTotalChallengesDone(getLocalInt(`adv_challenge_total_${user.id}`));
+
+    const storedQuests = localStorage.getItem(`custom_quests_${user.id}`);
+    if (storedQuests) {
+      setCustomQuests(JSON.parse(storedQuests));
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from('user_points')
+      .select('total_points')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setUserPoints(data.total_points || 0);
+      })
+      .catch(console.error);
+  }, [user?.id]);
+
+  useEffect(() => {
+    fetchPlaces();
+    fetchTravelStories();
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
     if (isDesktop) {
       setShowHeader(true);
-      return;
     }
     const todayKey = new Date().toISOString().slice(0, 10);
     const storageKey = `adv_done_${user.id}_${todayKey}`;
     try {
       const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
       setCompletedIds(new Set(Array.isArray(stored) ? stored : []));
-    } catch { setCompletedIds(new Set()); }
-  }, [user?.id]);
+    } catch {
+      setCompletedIds(new Set());
+    }
+  }, [user?.id, isDesktop]);
 
   // Award points to DB
   const awardPoints = useCallback(async (delta: number) => {
@@ -249,7 +301,6 @@ export default function MusicAdventureFixed() {
         .from('posts')
         .select('id,user_id,title,content,location,media_urls,created_at,updated_at,likes_count,category,visibility')
         .or(user?.id ? `visibility.eq.public,user_id.eq.${user.id}` : 'visibility.eq.public')
-        .in('category', ['travel_story', 'travel'])
         .order('created_at', { ascending: false })
         .limit(200);
 
@@ -380,21 +431,6 @@ export default function MusicAdventureFixed() {
   }, [user?.id]);
 
   // Quest management functions
-  const createQuest = (quest: Omit<CustomQuest, 'id' | 'createdAt' | 'likes'>) => {
-    if (!user?.id) return;
-    const newQuest: CustomQuest = {
-      ...quest,
-      id: `custom_${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      likes: 0,
-    };
-    const updated = [...customQuests, newQuest];
-    setCustomQuests(updated);
-    localStorage.setItem(`custom_quests_${user.id}`, JSON.stringify(updated));
-    toast.success('Quest created successfully!');
-    setShowQuestCreate(false);
-  };
-
   const deleteQuest = (id: string) => {
     if (!user?.id) return;
     const updated = customQuests.filter(q => q.id !== id);
@@ -556,7 +592,7 @@ export default function MusicAdventureFixed() {
     </div>
   ) : (
     <div className="w-full flex gap-2 overflow-x-auto no-scrollbar px-0 py-2 mb-2 items-center">
-      <DropdownMenu open={storiesFilterMenuOpen} onOpenChange={setStoriesFilterMenuOpen}>
+      <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 shrink-0">
             <Avatar className="w-full h-full rounded-full">
@@ -735,69 +771,6 @@ export default function MusicAdventureFixed() {
   // Quests Section Component
   const QuestsSection = () => (
     <div className="w-full pb-24">
-      {/* Search Bar with Profile and Create - True Full Width */}
-      <div className="px-0 py-3">
-        <div className="flex items-center gap-2 w-full">
-          {/* Profile Pic with Filter Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 shrink-0 active:scale-90 transition-all shadow-lg">
-                <Avatar className="w-full h-full rounded-full">
-                  <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
-                  <AvatarFallback className="bg-slate-800 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
-                </Avatar>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56 bg-slate-900 border-white/10 rounded-xl p-2 shadow-2xl">
-              <DropdownMenuItem onClick={() => setQuestViewFilter('system')} className="rounded-lg py-2.5 gap-3">
-                <Sparkles className="w-4 h-4 text-yellow-400" /> <span className="font-bold text-xs uppercase">System</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setQuestViewFilter('public')} className="rounded-lg py-2.5 gap-3">
-                <Globe className="w-4 h-4 text-sky-400" /> <span className="font-bold text-xs uppercase">Public</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setQuestViewFilter('private')} className="rounded-lg py-2.5 gap-3">
-                <Lock className="w-4 h-4 text-emerald-400" /> <span className="font-bold text-xs uppercase">Private</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-white/10" />
-              <DropdownMenuItem onClick={() => setQuestViewFilter('liked')} className="rounded-lg py-2.5 gap-3">
-                <Heart className="w-4 h-4 text-red-500" /> <span className="font-bold text-xs uppercase">Liked</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setQuestViewFilter('saved')} className="rounded-lg py-2.5 gap-3">
-                <Bookmark className="w-4 h-4 text-violet-500" /> <span className="font-bold text-xs uppercase">Saved</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-white/10" />
-              <DropdownMenuItem onClick={() => setQuestViewFilter('done')} className="rounded-lg py-2.5 gap-3">
-                <Check className="w-4 h-4 text-emerald-500" /> <span className="font-bold text-xs uppercase">Done Work</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Create Button - Shows Category Icon when filters active */}
-          <button 
-            onClick={() => setShowQuestCreate(true)}
-            className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all shrink-0",
-              selectedCategory !== 'all' 
-                ? 'bg-primary/20 border-2 border-primary text-primary hover:bg-primary/30' 
-                : 'bg-primary text-white shadow-primary/20'
-            )}
-          >
-            {selectedCategory !== 'all' ? (
-              <motion.span 
-                key={selectedCategory}
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                className="text-base"
-              >
-                {CATEGORY_FILTERS.find(c => c.id === selectedCategory)?.icon}
-              </motion.span>
-            ) : (
-              <Plus className="w-4 h-4" />
-            )}
-          </button>
-        </div>
-      </div>
-
       {/* Category Filters - Vertical First, Then Horizontal Options Layout */}
       <div className="px-3 py-2 space-y-2">
         {/* Main Filter Buttons - Vertical Layout */}
@@ -1203,89 +1176,6 @@ export default function MusicAdventureFixed() {
     );
   };
 
-  // Create Quest Dialog
-  const CreateQuestDialog = () => {
-    const [newQuest, setNewQuest] = useState({
-      title: '',
-      description: '',
-      type: 'private' as 'public' | 'private',
-      difficulty: 'easy',
-      category: 'lifestyle',
-    });
-
-    return (
-      <Dialog open={showQuestCreate} onOpenChange={setShowQuestCreate}>
-        <DialogContent className="bg-slate-900 border-0 text-white w-screen h-screen max-w-none max-h-none rounded-none p-4 overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-black uppercase tracking-wider">Create Quest</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div>
-              <label className="text-xs font-bold uppercase text-slate-500">Title</label>
-              <Input 
-                value={newQuest.title}
-                onChange={e => setNewQuest({...newQuest, title: e.target.value})}
-                placeholder="Enter quest title..."
-                className="mt-1 bg-slate-800 border-white/10 text-white"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold uppercase text-slate-500">Description</label>
-              <Input 
-                value={newQuest.description}
-                onChange={e => setNewQuest({...newQuest, description: e.target.value})}
-                placeholder="Describe your quest..."
-                className="mt-1 bg-slate-800 border-white/10 text-white"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-bold uppercase text-slate-500">Type</label>
-                <select 
-                  value={newQuest.type}
-                  onChange={e => setNewQuest({...newQuest, type: e.target.value as 'public' | 'private'})}
-                  className="w-full mt-1 h-10 bg-slate-800 border border-white/10 rounded-lg px-3 text-white text-sm"
-                >
-                  <option value="private">🔒 Private</option>
-                  <option value="public">🌍 Public</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-bold uppercase text-slate-500">Difficulty</label>
-                <select 
-                  value={newQuest.difficulty}
-                  onChange={e => setNewQuest({...newQuest, difficulty: e.target.value})}
-                  className="w-full mt-1 h-10 bg-slate-800 border border-white/10 rounded-lg px-3 text-white text-sm"
-                >
-                  <option value="easy">🌱 Easy</option>
-                  <option value="medium">🌿 Medium</option>
-                  <option value="hard">🌳 Hard</option>
-                  <option value="epic">⭐ Epic</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex gap-3 pt-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setShowQuestCreate(false)}
-                className="flex-1 border-white/10 text-white hover:bg-white/5"
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={() => createQuest(newQuest)}
-                disabled={!newQuest.title}
-                className="flex-1 bg-primary hover:bg-primary/90"
-              >
-                Create Quest
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  };
-
   // Explore Section Component
   const ExploreSection = () => (
     <div className="w-full animate-in slide-in-from-right-2 duration-200">
@@ -1324,6 +1214,16 @@ export default function MusicAdventureFixed() {
               <span className="text-4xl mb-3 block">🌍</span>
               <p className="text-sm font-black text-slate-400 uppercase tracking-wider">No places found</p>
               <p className="text-xs text-slate-600 mt-1">Try adjusting your search or filters</p>
+              <button
+                onClick={() => {
+                  setExploreSearchQuery('');
+                  setExploreSearchFilter('allplaces');
+                  setProfileViewFilter('all');
+                }}
+                className="mt-3 px-3 py-1.5 rounded-lg bg-white/10 text-white text-[10px] font-bold uppercase tracking-wider hover:bg-white/20"
+              >
+                Reset Filters
+              </button>
             </div>
           </div>
         )}
@@ -1501,9 +1401,6 @@ export default function MusicAdventureFixed() {
           }
         }}
       />
-
-      {/* Create Quest Dialog */}
-      <CreateQuestDialog />
 
       {/* Challenge Detail Dialog */}
       <ChallengeDetailDialog />
