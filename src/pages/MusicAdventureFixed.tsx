@@ -490,39 +490,6 @@ export default function MusicAdventureFixed() {
   const headerToolbar = activeTab === 'quests' ? (
     <div className="px-0 py-3">
       <div className="flex items-center gap-2 w-full">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 shrink-0 active:scale-90 transition-all shadow-lg">
-              <Avatar className="w-full h-full rounded-full">
-                <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
-                <AvatarFallback className="bg-slate-800 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
-              </Avatar>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56 bg-slate-900 border-white/10 rounded-xl p-2 shadow-2xl">
-            <DropdownMenuItem onClick={() => setQuestViewFilter('system')} className="rounded-lg py-2.5 gap-3">
-              <Sparkles className="w-4 h-4 text-yellow-400" /> <span className="font-bold text-xs uppercase">System</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setQuestViewFilter('public')} className="rounded-lg py-2.5 gap-3">
-              <Globe className="w-4 h-4 text-sky-400" /> <span className="font-bold text-xs uppercase">Public</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setQuestViewFilter('private')} className="rounded-lg py-2.5 gap-3">
-              <Lock className="w-4 h-4 text-emerald-400" /> <span className="font-bold text-xs uppercase">Private</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-white/10" />
-            <DropdownMenuItem onClick={() => setQuestViewFilter('liked')} className="rounded-lg py-2.5 gap-3">
-              <Heart className="w-4 h-4 text-red-500" /> <span className="font-bold text-xs uppercase">Liked</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setQuestViewFilter('saved')} className="rounded-lg py-2.5 gap-3">
-              <Bookmark className="w-4 h-4 text-violet-500" /> <span className="font-bold text-xs uppercase">Saved</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-white/10" />
-            <DropdownMenuItem onClick={() => setQuestViewFilter('done')} className="rounded-lg py-2.5 gap-3">
-              <Check className="w-4 h-4 text-emerald-500" /> <span className="font-bold text-xs uppercase">Done Work</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
         <div className="flex-1 relative min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <Input
@@ -541,40 +508,15 @@ export default function MusicAdventureFixed() {
             </button>
           )}
         </div>
-
-        <button
-          onClick={() => setShowQuestCreate(true)}
-          className={cn(
-            "w-10 h-10 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all shrink-0",
-            selectedCategory !== 'all'
-              ? 'bg-primary/20 border-2 border-primary text-primary hover:bg-primary/30'
-              : 'bg-primary text-white shadow-primary/20'
-          )}
-        >
-          {selectedCategory !== 'all' ? (
-            <motion.span
-              key={selectedCategory}
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              className="text-base"
-            >
-              {CATEGORY_FILTERS.find(c => c.id === selectedCategory)?.icon}
-            </motion.span>
-          ) : (
-            <Plus className="w-4 h-4" />
-          )}
-        </button>
       </div>
     </div>
   ) : activeTab === 'explore' ? (
     <div className="w-full flex gap-2 overflow-x-auto no-scrollbar px-0 py-3 border-b border-white/5 bg-[#0a0f1e]/50 items-center">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 shrink-0 active:scale-90 transition-all shadow-lg flex touch-manipulation">
-            <Avatar className="w-full h-full rounded-full">
-              <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
-              <AvatarFallback className="bg-slate-800 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
-            </Avatar>
+          <button className="h-11 px-3 rounded-2xl bg-slate-900/60 border border-white/10 text-slate-200 hover:text-white active:scale-95 transition-all shadow-lg flex items-center gap-2 shrink-0">
+            <Filter className="w-4 h-4" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Places</span>
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56 bg-slate-900 border-white/10 rounded-[24px] p-2 shadow-2xl">
@@ -1347,35 +1289,6 @@ export default function MusicAdventureFixed() {
   // Explore Section Component
   const ExploreSection = () => (
     <div className="w-full animate-in slide-in-from-right-2 duration-200">
-      {/* Search Bar with Profile - True Full Width */}
-      <div className="w-full flex gap-2 overflow-x-auto no-scrollbar px-0 py-3 border-b border-white/5 bg-[#0a0f1e]/50 items-center">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 shrink-0 active:scale-90 transition-all shadow-lg flex touch-manipulation">
-              <Avatar className="w-full h-full rounded-full">
-                <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
-                <AvatarFallback className="bg-slate-800 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
-              </Avatar>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56 bg-slate-900 border-white/10 rounded-[24px] p-2 shadow-2xl">
-            <DropdownMenuItem onClick={() => setProfileViewFilter('all')} className="rounded-xl py-3 gap-3">
-              <Globe className="w-4 h-4 text-sky-400" /> <span className="font-bold text-xs uppercase tracking-widest text-white">All Places</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setProfileViewFilter('liked')} className="rounded-xl py-3 gap-3">
-              <Heart className="w-4 h-4 text-red-500" /> <span className="font-bold text-xs uppercase tracking-widest text-white">Liked</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setProfileViewFilter('saved')} className="rounded-xl py-3 gap-3">
-              <Bookmark className="w-4 h-4 text-violet-500" /> <span className="font-bold text-xs uppercase tracking-widest text-white">Saved</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setProfileViewFilter('visited')} className="rounded-xl py-3 gap-3">
-              <MapPin className="w-4 h-4 text-emerald-500" /> <span className="font-bold text-xs uppercase tracking-widest text-white">Visited</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-      </div>
-
       {/* Category Filters - Full Width Compact */}
       <div className={cn("w-full flex gap-2 overflow-x-auto no-scrollbar bg-[#0a0f1e]", isMobile ? "px-0 py-2" : "px-3 py-3")}>
         {EXPLORE_SEARCH_FILTERS.map(f => {
@@ -1398,9 +1311,9 @@ export default function MusicAdventureFixed() {
       </div>
 
       {/* Places Grid - Full Width, natural page scroll */}
-      <div className="px-0 pb-6 mt-0 w-full">
+      <div className="px-2 pb-6 mt-0 w-full">
         {filteredPlaces.length > 0 ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 w-full">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 w-full">
             {filteredPlaces.map((place, index) => (
               <PlaceCard key={place.id} place={place} index={index} onSelect={setSelectedPlace} />
             ))}
@@ -1435,15 +1348,15 @@ export default function MusicAdventureFixed() {
         </div>
       ) : (
         <div className="w-full">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto px-3 md:px-0">
-            {filteredTravelStories.map((story) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto px-3 md:px-0">
+            {filteredTravelStories.map((story, index) => {
               if (!story || !story.id) return null;
               const authorName = story.profiles?.name || 'Explorer';
               const coverImg = story.cover_image || story.photos?.[0] || FALLBACK_PLACE_IMAGE;
               return (
-                <div key={story.id} className="group relative bg-slate-900/40 border border-white/5 rounded-[24px] overflow-hidden">
+                <div key={story.id} className="group relative bg-slate-900/40 border border-white/5 rounded-[24px] overflow-hidden" style={{ contentVisibility: 'auto', containIntrinsicSize: '560px' }}>
                   <div className="aspect-[3/4] relative w-full overflow-hidden">
-                    <img src={coverImg} className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-500 group-hover:scale-105" alt={story.title} />
+                    <img src={coverImg} loading={index < 2 ? 'eager' : 'lazy'} fetchPriority={index < 2 ? 'high' : 'auto'} decoding="async" className="w-full h-full object-cover" alt={story.title} />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
                     {story.location && (
                       <div className="absolute top-3 left-3 md:top-4 md:left-4">
