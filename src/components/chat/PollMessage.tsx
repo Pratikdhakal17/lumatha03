@@ -1,8 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart3, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -126,107 +124,90 @@ export function PollMessage({ content, messageId, senderId, isOwn }: PollMessage
   const canVote = user && !isOwn && poll.isActive && !hasVoted;
 
   return (
-    <div className="rounded-xl border border-white/10 p-4 bg-white/5 space-y-3">
+    <div className="w-full max-w-[320px] rounded-2xl overflow-hidden bg-[#1a1a2e] border border-white/10">
       {/* Poll Header */}
-      <div className="flex items-center gap-2">
-        <BarChart3 className="w-4 h-4 text-purple-400" />
-        <span className="text-xs font-medium text-purple-300">POLL</span>
-        {totalVotes > 0 && (
-          <span className="text-xs text-white/60">{totalVotes} vote{totalVotes !== 1 ? 's' : ''}</span>
-        )}
+      <div className="px-4 py-3 border-b border-white/5">
+        <div className="flex items-center gap-2 mb-1">
+          <BarChart3 className="w-4 h-4 text-violet-400" />
+          <span className="text-[10px] font-bold uppercase tracking-wider text-violet-300">Poll</span>
+          {totalVotes > 0 && (
+            <span className="text-[10px] text-white/50">{totalVotes} vote{totalVotes !== 1 ? 's' : ''}</span>
+          )}
+        </div>
+        <h3 className="text-white font-semibold text-[15px] leading-snug">{poll.question}</h3>
       </div>
 
-      {/* Poll Question */}
-      <h3 className="text-white font-semibold">{poll.question}</h3>
-
       {/* Poll Options */}
-      <div className="space-y-2">
-        <AnimatePresence>
-          {poll.options.map((option, index) => {
-            const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
-            const isSelected = option.id === selectedOption;
-            const isLeading = totalVotes > 0 && option.votes === Math.max(...poll.options.map(o => o.votes));
+      <div className="p-3 space-y-2">
+        {poll.options.map((option) => {
+          const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
+          const isSelected = option.id === selectedOption;
 
-            return (
-              <motion.button
-                key={option.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ delay: index * 0.05 }}
-                onClick={() => canVote && handleVote(option.id)}
-                disabled={!canVote || voting}
-                className={cn(
-                  "relative w-full text-left p-3 rounded-lg border transition-all duration-200 overflow-hidden",
-                  canVote && !voting && "hover:bg-white/10 cursor-pointer",
-                  isSelected && "bg-purple-500/20 border-purple-400/50",
-                  !canVote && "cursor-not-allowed opacity-75",
-                  "border-white/10"
-                )}
-              >
-                {/* Progress Bar */}
-                {hasVoted && (
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${percentage}%` }}
-                    transition={{ duration: 0.5, ease: "easeOut" }}
-                    className={cn(
-                      "absolute inset-y-0 left-0 rounded-lg",
-                      isSelected ? "bg-purple-500/30" : "bg-white/10"
-                    )}
-                  />
-                )}
+          return (
+            <button
+              key={option.id}
+              onClick={() => canVote && handleVote(option.id)}
+              disabled={!canVote || voting}
+              type="button"
+              className={cn(
+                "relative w-full text-left rounded-xl overflow-hidden transition-all",
+                canVote && !voting && "cursor-pointer active:scale-[0.98] hover:bg-white/5",
+                !canVote && "cursor-default",
+                "border-0"
+              )}
+            >
+              {/* Background track */}
+              <div className="absolute inset-0 bg-white/5 rounded-xl" />
 
-                {/* Option Content */}
-                <div className="relative flex items-center justify-between">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    {isSelected && (
-                      <CheckCircle className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                    )}
-                    <span className={cn(
-                      "text-sm truncate",
-                      isSelected ? "text-purple-200 font-medium" : "text-white"
-                    )}>
-                      {option.text}
-                    </span>
-                  </div>
-                  
-                  {hasVoted && (
-                    <div className="flex items-center gap-2 ml-2">
-                      <span className="text-xs text-white/60">
-                        {Math.round(percentage)}%
-                      </span>
-                      <span className="text-xs text-white/40">
-                        {option.votes}
-                      </span>
-                    </div>
+              {/* Progress fill */}
+              {hasVoted && (
+                <div
+                  className={cn(
+                    "absolute inset-y-0 left-0 rounded-xl transition-all duration-700 ease-out",
+                    isSelected ? "bg-violet-500/25" : "bg-white/5"
                   )}
+                  style={{ width: `${percentage}%` }}
+                />
+              )}
+
+              {/* Content */}
+              <div className="relative flex items-center justify-between gap-3 px-3 py-2.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  {hasVoted && isSelected && (
+                    <CheckCircle className="w-4 h-4 text-violet-400 flex-shrink-0" />
+                  )}
+                  <span className={cn(
+                    "text-[13px] font-medium truncate",
+                    isSelected ? "text-white" : "text-white/90"
+                  )}>
+                    {option.text}
+                  </span>
                 </div>
 
-                {/* Leading Indicator */}
-                {hasVoted && isLeading && !isSelected && (
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                    <div className="w-2 h-2 rounded-full bg-yellow-400" />
+                {hasVoted && (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[12px] font-bold text-white/80">{Math.round(percentage)}%</span>
+                    <span className="text-[11px] text-white/40">({option.votes})</span>
                   </div>
                 )}
-              </motion.button>
-            );
-          })}
-        </AnimatePresence>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {/* Voting Status */}
       {voting && (
-        <div className="text-center">
-          <span className="text-xs text-purple-300">Recording vote...</span>
+        <div className="text-center py-2">
+          <span className="text-xs text-violet-300">Recording vote...</span>
         </div>
       )}
 
       {/* Poll Footer */}
-      <div className="text-xs text-white/40 pt-2 border-t border-white/5">
+      <div className="text-[10px] text-white/40 px-4 py-2 border-t border-white/5">
         Created {new Date(poll.createdAt).toLocaleDateString()}
         {!poll.isActive && (
-          <span className="ml-2 text-orange-400">• Poll ended</span>
+          <span className="ml-2 text-orange-400">· Poll ended</span>
         )}
       </div>
     </div>

@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo, useRef, useTransition, memo } from 'react';
-import { FixedSizeGrid as Grid } from 'react-window';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,54 +27,6 @@ import type { Challenge } from '@/data/adventureChallenges';
 import { cn } from '@/lib/utils';
 
 const FALLBACK_PLACE_IMAGE = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=800';
-
-// --- localStorage helpers ---
-function getLocalSet(key: string): Set<string> {
-  try { return new Set(JSON.parse(localStorage.getItem(key) || '[]') as string[]); } catch { return new Set(); }
-}
-function saveLocalSet(key: string, s: Set<string>) {
-  try { localStorage.setItem(key, JSON.stringify([...s])); } catch {}
-}
-function getLocalInt(key: string): number {
-  try { return parseInt(localStorage.getItem(key) || '0', 10) || 0; } catch { return 0; }
-}
-function saveLocalInt(key: string, n: number) {
-  try { localStorage.setItem(key, String(n)); } catch {}
-}
-
-// Challenge difficulty mapping
-function getDifficulty(duration: Challenge['duration']): { label: string; color: string; icon: string } {
-  switch (duration) {
-    case 'daily': return { label: 'Easy', color: 'bg-green-500/20 text-green-400', icon: '🌱' };
-    case 'weekly': return { label: 'Medium', color: 'bg-yellow-500/20 text-yellow-400', icon: '🌿' };
-    case 'monthly': return { label: 'Hard', color: 'bg-orange-500/20 text-orange-400', icon: '🌳' };
-    case 'yearly': return { label: 'Epic', color: 'bg-purple-500/20 text-purple-400', icon: '⭐' };
-    case 'lifetime': return { label: 'Epic', color: 'bg-red-500/20 text-red-400', icon: '👑' };
-  }
-}
-
-const EXPLORE_SEARCH_FILTERS = [
-  { id: 'allplaces', label: 'All Places', icon: Globe },
-  { id: 'nepal', label: 'Nepal', icon: Flag },
-  { id: 'temple', label: 'Temple', icon: Sparkles },
-  { id: 'asia', label: 'Asia', icon: Globe },
-  { id: 'nature', label: 'Nature', icon: MapPin },
-  { id: 'europe', label: 'Europe', icon: Globe },
-  { id: 'park', label: 'Park', icon: MapIcon },
-  { id: 'culture', label: 'Culture', icon: Sparkles },
-  { id: 'mountains', label: 'Mountains', icon: Compass },
-  { id: 'hiddengems', label: 'Hidden Gems', icon: Compass },
-];
-
-const EUROPE_COUNTRIES = new Set([
-  'albania', 'andorra', 'austria', 'belarus', 'belgium', 'bosnia and herzegovina', 'bulgaria', 'croatia',
-  'czech republic', 'denmark', 'estonia', 'finland', 'france', 'germany', 'greece', 'hungary', 'iceland',
-  'ireland', 'italy', 'latvia', 'liechtenstein', 'lithuania', 'luxembourg', 'malta', 'moldova', 'monaco',
-  'montenegro', 'netherlands', 'north macedonia', 'norway', 'poland', 'portugal', 'romania', 'san marino',
-  'serbia', 'slovakia', 'slovenia', 'spain', 'sweden', 'switzerland', 'ukraine', 'united kingdom', 'vatican city',
-]);
-
-const ASIA_COUNTRIES = new Set([
   'afghanistan', 'armenia', 'azerbaijan', 'bahrain', 'bangladesh', 'bhutan', 'brunei', 'cambodia', 'china',
   'cyprus', 'georgia', 'india', 'indonesia', 'iran', 'iraq', 'israel', 'japan', 'jordan', 'kazakhstan',
   'kuwait', 'kyrgyzstan', 'laos', 'lebanon', 'malaysia', 'maldives', 'mongolia', 'myanmar', 'nepal',
@@ -87,8 +38,8 @@ const ASIA_COUNTRIES = new Set([
 const DIFFICULTY_FILTERS = [
   { id: 'all', label: 'All', icon: '🌟' },
   { id: 'simple', label: 'Simple', icon: '🌱', durations: ['daily'] },
-  { id: 'easy', label: 'Easy', icon: '�', durations: ['daily', 'weekly'] },
-  { id: 'medium', label: 'Medium', icon: '�', durations: ['weekly', 'monthly'] },
+  { id: 'easy', label: 'Easy', icon: '🍀', durations: ['daily', 'weekly'] },
+  { id: 'medium', label: 'Medium', icon: '🌿', durations: ['weekly', 'monthly'] },
   { id: 'hard', label: 'Hard', icon: '⚡', durations: ['monthly', 'yearly'] },
   { id: 'epic', label: 'Epic', icon: '⭐', durations: ['yearly', 'lifetime'] },
   { id: 'crazy', label: 'Crazy', icon: '🔥', durations: ['yearly', 'lifetime'] },
@@ -197,62 +148,6 @@ export default function MusicAdventureFixed() {
       setShowHeader(true);
       return;
     }
-
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      if (currentScrollY < lastScrollY || currentScrollY < 100) {
-        setShowHeader(true);
-      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        setShowHeader(false);
-      }
-      setLastScrollY(currentScrollY);
-      setScrollY(currentScrollY);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isDesktop, lastScrollY]);
-
-  const formatStoryDate = (value: string | null | undefined) => {
-    if (!value) return 'Unknown date';
-    const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? 'Unknown date' : parsed.toLocaleDateString();
-  };
-
-  // Load localStorage-backed gamification state
-  useEffect(() => {
-    if (!user?.id) return;
-    setVisitedPlaceIds(getLocalSet(`adv_visited_${user.id}`));
-    setLovedPlaceIds(getLocalSet(`adv_loved_${user.id}`));
-    setSavedPlaceIds(getLocalSet(`adv_saved_places_${user.id}`));
-    setTotalChallengesDone(getLocalInt(`adv_challenge_total_${user.id}`));
-    
-    // Load custom quests
-    const storedQuests = localStorage.getItem(`custom_quests_${user.id}`);
-    if (storedQuests) {
-      setCustomQuests(JSON.parse(storedQuests));
-    }
-  }, [user?.id]);
-
-  // Load user points from DB
-  useEffect(() => {
-    if (!user?.id) return;
-    supabase
-      .from('user_points')
-      .select('total_points')
-      .eq('user_id', user.id)
-      .maybeSingle()
-      .then(({ data }) => { if (data) setUserPoints(data.total_points || 0); })
-      .catch(console.error);
-  }, [user?.id]);
-
-  useEffect(() => {
-    fetchPlaces();
-    fetchTravelStories();
-  }, [user?.id]);
-
-  // Load completed challenges
-  useEffect(() => {
-    if (!user?.id) return;
     const todayKey = new Date().toISOString().slice(0, 10);
     const storageKey = `adv_done_${user.id}_${todayKey}`;
     try {
@@ -335,54 +230,6 @@ export default function MusicAdventureFixed() {
 
       const profileById = new Map(
         (profileRows || []).map((profile: any) => [
-          profile.id,
-          {
-            username: profile.username || profile.name?.toLowerCase().replace(/\s+/g, '_') || 'user',
-            avatar_url: profile.avatar_url || '',
-            name: profile.name || 'Traveler',
-          },
-        ]),
-      );
-
-      const likedIds = new Set((likesRows || []).map((row: any) => row.post_id));
-      const savedIds = new Set((savesRows || []).map((row: any) => row.post_id));
-
-      const stories = rows.map((story: any) => {
-        const profile = profileById.get(story.user_id) || { username: 'user', avatar_url: '', name: 'Traveler' };
-        const photos = Array.isArray(story.media_urls) ? story.media_urls.filter((url: unknown) => typeof url === 'string' && url.length > 0) : [];
-        return {
-          id: story.id,
-          user_id: story.user_id,
-          title: story.title || '',
-          content: story.content || '',
-          description: story.content || '',
-          location: typeof story.location === 'string' ? story.location : '',
-          cover_image: photos[0] || null,
-          photos,
-          moods: [],
-          tags: [],
-          profiles: profile,
-          created_at: story.created_at,
-          updated_at: story.updated_at,
-          likes_count: story.likes_count || 0,
-          comments_count: 0,
-          is_liked: likedIds.has(story.id),
-          is_saved: savedIds.has(story.id),
-        };
-      });
-
-      setTravelStories(stories);
-    } catch (e) {
-      console.error(e);
-      setTravelStories([]);
-    } finally {
-      setStoriesLoading(false);
-    }
-  };
-
-  const likeStory = async (id: string) => {
-    if (!user || !id) return;
-    const story = travelStories.find(s => s && s.id === id);
     if (!story) return;
     if (story.is_liked) {
       await supabase.from('likes').delete().eq('post_id', id).eq('user_id', user.id);
@@ -541,164 +388,194 @@ export default function MusicAdventureFixed() {
       return matchesSearch && matchesFilter;
     });
 
-    // Randomize places for better discovery
-    const shuffled = [...filtered].sort(() => Math.random() - 0.5);
-
-    return shuffled;
+    // Stable ordering - no random shuffle to prevent layout shifts
+    return filtered;
   }, [places, exploreSearchQuery, exploreSearchFilter, profileViewFilter, placeMatchesExploreCategory, visitedPlaceIds, savedPlaceIds, lovedPlaceIds]);
 
-  // Limit visible places to avoid rendering hundreds of items at once
-  const visiblePlaces = filteredPlaces.slice(0, visiblePlaceCount);
-
-  // Reset visible count when filters/search change to avoid showing a huge list
-  useEffect(() => {
-    setVisiblePlaceCount(typeof window !== 'undefined' && window.innerWidth < 768 ? 100 : 150);
-      setHasMorePlaces(true);
-  }, [exploreSearchQuery, exploreSearchFilter, profileViewFilter]);
-
-    const loadMorePlaces = useCallback(() => {
-      if (placeLoadingMore || !hasMorePlaces || visiblePlaceCount >= filteredPlaces.length) return;
-      setPlaceLoadingMore(true);
-      // Simulate slight loading delay for smooth UX
-      setTimeout(() => {
-        setVisiblePlaceCount(prev => {
-          const newCount = prev + (typeof window !== 'undefined' && window.innerWidth < 768 ? 50 : 100);
-          if (newCount >= filteredPlaces.length) setHasMorePlaces(false);
-          return newCount;
-        });
-        setPlaceLoadingMore(false);
-      }, 300);
-    }, [placeLoadingMore, hasMorePlaces, visiblePlaceCount, filteredPlaces.length]);
+  // Show all filtered places for complete scrolling experience
+  const visiblePlaces = filteredPlaces;
   const [isPending, startTransition] = useTransition();
 
-  // Memoized place card to avoid re-rendering each item when unrelated state changes
-  const PlaceCard = memo(function PlaceCard({ place, index }: { place: any; index: number }) {
-    if (!place || !place.id) return null;
-    const placeName = place.name?.trim() || 'Untitled Place';
-    const placeCountry = place.country?.trim() || 'Unknown';
-    const placeImage = place.image?.trim() || FALLBACK_PLACE_IMAGE;
-    const shouldPreload = index < 12;
-    return (
-      <div
-        key={place.id}
-        onClick={() => setSelectedPlace(place)}
-        className="group relative aspect-square overflow-hidden bg-slate-900 border-[0.5px] border-white/5 cursor-pointer shadow-2xl will-change-transform"
-      >
-        <img
-          src={placeImage}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          alt={placeName}
-          loading={shouldPreload ? 'eager' : 'lazy'}
-          decoding={shouldPreload ? 'sync' : 'async'}
-          fetchpriority={shouldPreload ? 'high' : 'auto'}
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            if (target.src !== FALLBACK_PLACE_IMAGE) {
-              target.src = FALLBACK_PLACE_IMAGE;
-            }
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity" />
-        <div className="absolute bottom-3 left-3 right-3">
-          <p className="text-[7px] font-black text-primary uppercase tracking-[0.2em] mb-0.5">{placeCountry}</p>
-          <h3 className="text-white font-bold text-[10px] truncate leading-tight uppercase tracking-wider">{placeName}</h3>
-        </div>
-      </div>
-    );
-  });
+  const headerToolbar = activeTab === 'quests' ? (
+    <div className="px-0 py-3">
+      <div className="flex items-center gap-2 w-full">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 shrink-0 active:scale-90 transition-all shadow-lg">
+              <Avatar className="w-full h-full rounded-full">
+                <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
+                <AvatarFallback className="bg-slate-800 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
+              </Avatar>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56 bg-slate-900 border-white/10 rounded-xl p-2 shadow-2xl">
+            <DropdownMenuItem onClick={() => setQuestViewFilter('system')} className="rounded-lg py-2.5 gap-3">
+              <Sparkles className="w-4 h-4 text-yellow-400" /> <span className="font-bold text-xs uppercase">System</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setQuestViewFilter('public')} className="rounded-lg py-2.5 gap-3">
+              <Globe className="w-4 h-4 text-sky-400" /> <span className="font-bold text-xs uppercase">Public</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setQuestViewFilter('private')} className="rounded-lg py-2.5 gap-3">
+              <Lock className="w-4 h-4 text-emerald-400" /> <span className="font-bold text-xs uppercase">Private</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-white/10" />
+            <DropdownMenuItem onClick={() => setQuestViewFilter('liked')} className="rounded-lg py-2.5 gap-3">
+              <Heart className="w-4 h-4 text-red-500" /> <span className="font-bold text-xs uppercase">Liked</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setQuestViewFilter('saved')} className="rounded-lg py-2.5 gap-3">
+              <Bookmark className="w-4 h-4 text-violet-500" /> <span className="font-bold text-xs uppercase">Saved</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-white/10" />
+            <DropdownMenuItem onClick={() => setQuestViewFilter('done')} className="rounded-lg py-2.5 gap-3">
+              <Check className="w-4 h-4 text-emerald-500" /> <span className="font-bold text-xs uppercase">Done Work</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-  // Virtualized grid for places using react-window
-  const VirtualizedPlacesGrid = () => {
-    const containerRef = useRef<HTMLDivElement | null>(null);
-      const loadMoreRef = useRef<HTMLDivElement | null>(null);
-    const [containerWidth, setContainerWidth] = useState<number>(typeof window !== 'undefined' ? Math.min(window.innerWidth, 1200) : 800);
-    const [columns, setColumns] = useState<number>(typeof window !== 'undefined' && window.innerWidth >= 1024 ? 4 : 2);
-
-    useEffect(() => {
-      const measure = () => {
-        const w = containerRef.current?.clientWidth || window.innerWidth || 800;
-        setContainerWidth(w);
-        setColumns(window.innerWidth >= 1024 ? 4 : 2);
-      };
-      measure();
-      const ro = new ResizeObserver(measure);
-      if (containerRef.current) ro.observe(containerRef.current);
-      window.addEventListener('resize', measure);
-      return () => {
-        ro.disconnect();
-        window.removeEventListener('resize', measure);
-      };
-    }, []);
-
-      useEffect(() => {
-        if (!loadMoreRef.current || !hasMorePlaces) return;
-        const observer = new IntersectionObserver(entries => {
-          if (entries[0]?.isIntersecting) {
-            loadMorePlaces();
-          }
-        }, { threshold: 0.1 });
-        observer.observe(loadMoreRef.current);
-        return () => observer.disconnect();
-      }, [hasMorePlaces, loadMorePlaces]);
-    const itemSize = Math.floor(containerWidth / columns);
-    const rowCount = Math.ceil(visiblePlaces.length / columns);
-    // Removed fixed height limit - use dynamic height based on items, capped to avoid excessive rendering
-    const maxVisibleHeight = Math.min(2000, Math.max(600, Math.floor((window.innerHeight || 800) * 0.9)));
-    const estimatedHeight = Math.min(maxVisibleHeight, rowCount * itemSize);
-
-    const Cell = ({ columnIndex, rowIndex, style, data }: any) => {
-      const idx = rowIndex * columns + columnIndex;
-      const place = data[idx];
-      if (!place) return <div style={style} />;
-      return (
-        <div style={style} className="p-0">
-          <PlaceCard place={place} index={idx} />
-        </div>
-      );
-    };
-
-    return (
-      <div ref={containerRef} className="w-full">
-        {visiblePlaces.length > 0 ? (
-          <Grid
-            className="adventure-explore-grid-scroll no-scrollbar"
-            columnCount={columns}
-            columnWidth={itemSize}
-            height={estimatedHeight}
-            rowCount={rowCount}
-            rowHeight={itemSize}
-            width={containerWidth}
-            itemData={visiblePlaces}
-            overscanRowCount={2}
-            overscanColumnCount={1}
-          >
-            {Cell}
-          </Grid>
-        ) : (
-          <div className="flex items-center justify-center py-20 text-center">
-            <div>
-              <span className="text-4xl mb-3 block">🌍</span>
-              <p className="text-sm font-black text-slate-400 uppercase tracking-wider">No places found</p>
-              <p className="text-xs text-slate-600 mt-1">Try adjusting your search or filters</p>
-            </div>
-          </div>
-        )}
-          {hasMorePlaces && visiblePlaces.length > 0 && (
-            <div ref={loadMoreRef} className="w-full py-8 flex justify-center items-center">
-              {placeLoadingMore ? (
-                <div className="flex items-center gap-2 text-slate-500">
-                  <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                </div>
-              ) : (
-                <p className="text-xs text-slate-600">Scroll for more places</p>
-              )}
-            </div>
+        <div className="flex-1 relative min-w-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <Input
+            value={questSearchQuery}
+            onChange={(e) => setQuestSearchQuery(e.target.value)}
+            placeholder="Search for challenges ..."
+            className="h-11 pl-10 pr-10 rounded-2xl bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500"
+          />
+          {questSearchQuery && (
+            <button
+              onClick={() => setQuestSearchQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
+              aria-label="Clear quest search"
+            >
+              <X className="w-4 h-4" />
+            </button>
           )}
+        </div>
+
+        <button
+          onClick={() => setShowQuestCreate(true)}
+          className={cn(
+            "w-10 h-10 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all shrink-0",
+            selectedCategory !== 'all'
+              ? 'bg-primary/20 border-2 border-primary text-primary hover:bg-primary/30'
+              : 'bg-primary text-white shadow-primary/20'
+          )}
+        >
+          {selectedCategory !== 'all' ? (
+            <motion.span
+              key={selectedCategory}
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              className="text-base"
+            >
+              {CATEGORY_FILTERS.find(c => c.id === selectedCategory)?.icon}
+            </motion.span>
+          ) : (
+            <Plus className="w-4 h-4" />
+          )}
+        </button>
       </div>
-    );
-  };
+    </div>
+  ) : activeTab === 'explore' ? (
+    <div className="w-full flex gap-2 overflow-x-auto no-scrollbar px-0 py-3 border-b border-white/5 bg-[#0a0f1e]/50 items-center">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 shrink-0 active:scale-90 transition-all shadow-lg flex touch-manipulation">
+            <Avatar className="w-full h-full rounded-full">
+              <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
+              <AvatarFallback className="bg-slate-800 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
+            </Avatar>
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56 bg-slate-900 border-white/10 rounded-[24px] p-2 shadow-2xl">
+          <DropdownMenuItem onClick={() => setProfileViewFilter('all')} className="rounded-xl py-3 gap-3">
+            <Globe className="w-4 h-4 text-sky-400" /> <span className="font-bold text-xs uppercase tracking-widest text-white">All Places</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setProfileViewFilter('liked')} className="rounded-xl py-3 gap-3">
+            <Heart className="w-4 h-4 text-red-500" /> <span className="font-bold text-xs uppercase tracking-widest text-white">Liked</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setProfileViewFilter('saved')} className="rounded-xl py-3 gap-3">
+            <Bookmark className="w-4 h-4 text-violet-500" /> <span className="font-bold text-xs uppercase tracking-widest text-white">Saved</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setProfileViewFilter('visited')} className="rounded-xl py-3 gap-3">
+            <MapPin className="w-4 h-4 text-emerald-500" /> <span className="font-bold text-xs uppercase tracking-widest text-white">Visited</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <div className="flex-1 relative min-w-0">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+        <Input
+          value={exploreSearchQuery}
+          onChange={(e) => setExploreSearchQuery(e.target.value)}
+          placeholder="Explore place..."
+          className="h-11 pl-10 pr-10 rounded-2xl bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500"
+        />
+        {exploreSearchQuery && (
+          <button
+            onClick={() => setExploreSearchQuery('')}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
+            aria-label="Clear explore search"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+    </div>
+  ) : (
+    <div className="w-full flex gap-2 overflow-x-auto no-scrollbar px-0 py-2 mb-2 items-center">
+      <DropdownMenu open={storiesFilterMenuOpen} onOpenChange={setStoriesFilterMenuOpen}>
+        <DropdownMenuTrigger asChild>
+          <button className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 shrink-0">
+            <Avatar className="w-full h-full rounded-full">
+              <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
+              <AvatarFallback className="bg-slate-800 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
+            </Avatar>
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-64 bg-slate-900 border-white/10 rounded-[24px] p-2 shadow-2xl">
+          <DropdownMenuItem onClick={() => setTravelViewFilter('public')} className="rounded-xl py-3 gap-3">
+            <Globe className="w-4 h-4 text-sky-400" /> <span className="font-bold text-xs uppercase tracking-widest text-white">Public Posts</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTravelViewFilter('own')} className="rounded-xl py-3 gap-3">
+            <UserCircle2 className="w-4 h-4 text-emerald-400" /> <span className="font-bold text-xs uppercase tracking-widest text-white">Own Posts</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTravelViewFilter('liked')} className="rounded-xl py-3 gap-3">
+            <Heart className="w-4 h-4 text-red-500" /> <span className="font-bold text-xs uppercase tracking-widest text-white">Liked Posts</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTravelViewFilter('saved')} className="rounded-xl py-3 gap-3">
+            <Bookmark className="w-4 h-4 text-violet-500" /> <span className="font-bold text-xs uppercase tracking-widest text-white">Saved Posts</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <div className="flex-1 relative min-w-0">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+        <Input
+          value={storySearchQuery}
+          onChange={(e) => setStorySearchQuery(e.target.value)}
+          placeholder="Search travel stories..."
+          className="h-11 pl-10 pr-10 rounded-2xl bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500"
+        />
+        {storySearchQuery && (
+          <button
+            onClick={() => setStorySearchQuery('')}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
+            aria-label="Clear story search"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      <button
+        onClick={() => setShowStoryCreate(true)}
+        className="w-10 h-10 rounded-xl bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 flex items-center justify-center shrink-0 active:scale-90 transition-all"
+        aria-label="Create story"
+      >
+        <Plus className="w-5 h-5" />
+      </button>
+    </div>
+  );
 
   const filteredTravelStories = useMemo(() => {
     return travelStories.filter((s) => {
@@ -862,26 +739,6 @@ export default function MusicAdventureFixed() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Quests Search */}
-          <div className="flex-1 relative min-w-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-            <Input
-              value={questSearchQuery}
-              onChange={(e) => setQuestSearchQuery(e.target.value)}
-              placeholder="Search for challenges ..."
-              className="h-11 pl-10 pr-10 rounded-2xl bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500"
-            />
-            {questSearchQuery && (
-              <button
-                onClick={() => setQuestSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
-                aria-label="Clear quest search"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-
           {/* Create Button - Shows Category Icon when filters active */}
           <button 
             onClick={() => setShowQuestCreate(true)}
@@ -1011,35 +868,29 @@ export default function MusicAdventureFixed() {
 
       {/* Challenge Cards - Full Width Layout, No Side Space Mobile */}
       <div className="px-0 md:px-3 space-y-3 w-full">
-        <AnimatePresence mode="popLayout">
-          {filteredChallenges.map((challenge, index) => {
-            const isCustom = 'createdBy' in challenge;
-            const isOwner = isCustom && challenge.createdBy === user?.id;
-            const isCompleted = completedIds.has(challenge.id);
-            const diff = getDifficulty(challenge.duration || 'daily');
-            
-            // Get creator info for display
-            const getCreatorDisplay = () => {
-              if (!isCustom) return { name: 'Lumatha System', initial: 'L', color: 'bg-yellow-500/20 text-yellow-400' };
-              if (challenge.createdBy === user?.id) return { name: 'You', initial: profile?.name?.[0] || 'Y', color: 'bg-emerald-500/20 text-emerald-400' };
-              return { name: `User${challenge.createdBy?.slice(-4) || '0000'}`, initial: 'U', color: 'bg-slate-700 text-slate-400' };
-            };
-            const creator = getCreatorDisplay();
+        {filteredChallenges.map((challenge) => {
+          const isCustom = 'createdBy' in challenge;
+          const isOwner = isCustom && challenge.createdBy === user?.id;
+          const isCompleted = completedIds.has(challenge.id);
+          const diff = getDifficulty(challenge.duration || 'daily');
+          
+          // Get creator info for display
+          const getCreatorDisplay = () => {
+            if (!isCustom) return { name: 'Lumatha System', initial: 'L', color: 'bg-yellow-500/20 text-yellow-400' };
+            if (challenge.createdBy === user?.id) return { name: 'You', initial: profile?.name?.[0] || 'Y', color: 'bg-emerald-500/20 text-emerald-400' };
+            return { name: `User${challenge.createdBy?.slice(-4) || '0000'}`, initial: 'U', color: 'bg-slate-700 text-slate-400' };
+          };
+          const creator = getCreatorDisplay();
 
-            return (
-              <motion.div
-                key={challenge.id}
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2, delay: index * 0.02 }}
-                onClick={() => { setSelectedChallenge(challenge); setChallengeDetailOpen(true); }}
-                className={cn(
-                  "bg-slate-900/60 border rounded-2xl p-4 transition-all relative group cursor-pointer hover:bg-slate-800/60",
-                  isCompleted ? 'border-green-500/30 bg-green-500/5' : 'border-white/5'
-                )}
-              >
+          return (
+            <div
+              key={challenge.id}
+              onClick={() => { setSelectedChallenge(challenge); setChallengeDetailOpen(true); }}
+              className={cn(
+                "bg-slate-900/60 border rounded-2xl p-4 transition-all relative group cursor-pointer hover:bg-slate-800/60",
+                isCompleted ? 'border-green-500/30 bg-green-500/5' : 'border-white/5'
+              )}
+            >
                 {/* Edit/Delete for owner */}
                 {isOwner && (
                   <DropdownMenu>
@@ -1095,39 +946,32 @@ export default function MusicAdventureFixed() {
                       <p className="text-xs text-slate-500 mt-1.5 line-clamp-2">{challenge.description}</p>
                     )}
                   </div>
-                  <motion.button
+                  <button
                     onClick={(e) => { e.stopPropagation(); toggleChallengeComplete(challenge.id); }}
-                    whileTap={{ scale: 0.85 }}
                     className={cn(
-                      "w-10 h-10 shrink-0 rounded-full border flex items-center justify-center transition-all",
+                      "w-10 h-10 shrink-0 rounded-full border flex items-center justify-center transition-all active:scale-90",
                       isCompleted
                         ? 'bg-green-500 border-green-500 shadow-lg shadow-green-500/30'
                         : 'border-white/20 text-slate-600 hover:border-white/40 hover:text-slate-400'
                     )}
                   >
                     {isCompleted ? <CheckCircle className="w-5 h-5 text-white fill-white" /> : <Plus className="w-5 h-5" />}
-                  </motion.button>
+                  </button>
                 </div>
                 
                 {/* Like, Save, Share Actions - Full Width */}
                 <div className="mt-3 flex items-center justify-between pt-3 border-t border-white/5">
                   <div className="flex items-center gap-4">
-                    <motion.button 
+                    <button 
                       onClick={(e) => { e.stopPropagation(); if (isCustom) likeQuest(challenge.id); }}
-                      whileTap={{ scale: 0.85 }}
                       className={cn(
-                        "flex items-center gap-1.5 text-xs transition-colors",
+                        "flex items-center gap-1.5 text-xs transition-colors active:scale-90",
                         challenge.isLiked ? "text-red-500" : "text-slate-500 hover:text-red-400"
                       )}
                     >
-                      <motion.div
-                        animate={challenge.isLiked ? { scale: [1, 1.3, 1] } : {}}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <Heart className={cn("w-4 h-4", challenge.isLiked && "fill-current")} />
-                      </motion.div>
+                      <Heart className={cn("w-4 h-4", challenge.isLiked && "fill-current")} />
                       <span className="font-bold">{challenge.isLiked ? 'Liked' : 'Like'}</span>
-                    </motion.button>
+                    </button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); if (isCustom) saveQuest(challenge.id); }}
                       className={cn(
@@ -1153,10 +997,9 @@ export default function MusicAdventureFixed() {
                   </div>
                   <span className="text-[10px] text-slate-600 font-bold uppercase tracking-wider">Tap to view</span>
                 </div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+            </div>
+          );
+        })}
       </div>
 
       {filteredChallenges.length === 0 && (
@@ -1440,25 +1283,6 @@ export default function MusicAdventureFixed() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="flex-1 relative min-w-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-          <Input
-            value={exploreSearchQuery}
-            onChange={(e) => setExploreSearchQuery(e.target.value)}
-            placeholder="Explore place..."
-            className="h-11 pl-10 pr-10 rounded-2xl bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500"
-          />
-          {exploreSearchQuery && (
-            <button
-              onClick={() => setExploreSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
-              aria-label="Clear explore search"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-
       </div>
 
       {/* Category Filters - Full Width Compact */}
@@ -1482,9 +1306,23 @@ export default function MusicAdventureFixed() {
         })}
       </div>
 
-      {/* Places Grid - Full Width Mobile, No Side Space - Instant rendering with preloading */}
-      <div className="px-0 pb-6 mt-0 w-full will-change-contents">
-        <VirtualizedPlacesGrid />
+      {/* Places Grid - Full Width, natural page scroll */}
+      <div className="px-0 pb-6 mt-0 w-full">
+        {filteredPlaces.length > 0 ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 w-full">
+            {filteredPlaces.map((place, index) => (
+              <PlaceCard key={place.id} place={place} index={index} onSelect={setSelectedPlace} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center py-20 text-center">
+            <div>
+              <span className="text-4xl mb-3 block">🌍</span>
+              <p className="text-sm font-black text-slate-400 uppercase tracking-wider">No places found</p>
+              <p className="text-xs text-slate-600 mt-1">Try adjusting your search or filters</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1494,62 +1332,6 @@ export default function MusicAdventureFixed() {
     <div className="w-full animate-in fade-in duration-200 px-0 md:px-3 pt-3 pb-24">
       <div className="flex items-center justify-between mb-4 px-3">
         <h2 className="text-lg font-black text-white uppercase tracking-wider">Travel Stories</h2>
-      </div>
-
-      {/* Stories Filter & Search - Full Width No Side Space */}
-      <div className="w-full flex gap-2 overflow-x-auto no-scrollbar px-0 py-2 mb-2 items-center">
-        <DropdownMenu open={storiesFilterMenuOpen} onOpenChange={setStoriesFilterMenuOpen}>
-          <DropdownMenuTrigger asChild>
-            <button className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 shrink-0">
-              <Avatar className="w-full h-full rounded-full">
-                <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
-                <AvatarFallback className="bg-slate-800 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
-              </Avatar>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-64 bg-slate-900 border-white/10 rounded-[24px] p-2 shadow-2xl">
-            <DropdownMenuItem onClick={() => setTravelViewFilter('public')} className="rounded-xl py-3 gap-3">
-              <Globe className="w-4 h-4 text-sky-400" /> <span className="font-bold text-xs uppercase tracking-widest text-white">Public Posts</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTravelViewFilter('own')} className="rounded-xl py-3 gap-3">
-              <UserCircle2 className="w-4 h-4 text-emerald-400" /> <span className="font-bold text-xs uppercase tracking-widest text-white">Own Posts</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTravelViewFilter('liked')} className="rounded-xl py-3 gap-3">
-              <Heart className="w-4 h-4 text-red-500" /> <span className="font-bold text-xs uppercase tracking-widest text-white">Liked Posts</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTravelViewFilter('saved')} className="rounded-xl py-3 gap-3">
-              <Bookmark className="w-4 h-4 text-violet-500" /> <span className="font-bold text-xs uppercase tracking-widest text-white">Saved Posts</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <div className="flex-1 relative min-w-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-          <Input
-            value={storySearchQuery}
-            onChange={(e) => setStorySearchQuery(e.target.value)}
-            placeholder="Search travel stories..."
-            className="h-11 pl-10 pr-10 rounded-2xl bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500"
-          />
-          {storySearchQuery && (
-            <button
-              onClick={() => setStorySearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
-              aria-label="Clear story search"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-
-        <button
-          onClick={() => setShowStoryCreate(true)}
-          className="w-10 h-10 rounded-xl bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 flex items-center justify-center shrink-0 active:scale-90 transition-all"
-          aria-label="Create story"
-        >
-          <Plus className="w-5 h-5" />
-        </button>
-
       </div>
 
       {storiesLoading ? (
@@ -1633,6 +1415,7 @@ export default function MusicAdventureFixed() {
         <div className="w-full max-w-none">
           {/* Shared Subsection Navigation - Visible on all tabs */}
           <SubsectionNavigation />
+          {headerToolbar}
           
           <AnimatePresence mode="wait">
             <motion.div
@@ -1644,13 +1427,13 @@ export default function MusicAdventureFixed() {
             >
               {activeTab === 'quests' && (
                 <ErrorBoundary fallback={<div className="p-8 text-center text-slate-400">Failed to load quests. Please refresh.</div>}>
-                  <QuestsSection />
+                  {QuestsSection()}
                 </ErrorBoundary>
               )}
 
-              {activeTab === 'explore' && <ExploreSection />}
+              {activeTab === 'explore' && ExploreSection()}
 
-              {activeTab === 'stories' && <StoriesSection />}
+              {activeTab === 'stories' && StoriesSection()}
             </motion.div>
           </AnimatePresence>
         </div>
