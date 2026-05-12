@@ -341,38 +341,38 @@ export default function FunPun() {
       let fileType: string | null = null;
 
       if (projectFile) {
-        const filePath = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}-${projectFile.name.replace(/\s+/g, '_')}`;
-        const safeContentType = projectFile.type && !projectFile.type.includes('html')
-          ? projectFile.type
-          : 'application/octet-stream';
+        const nameLower = projectFile.name.toLowerCase();
+        const isHtml = (projectFile.type && projectFile.type.includes('html')) || nameLower.endsWith('.html') || nameLower.endsWith('.htm');
 
-        const { error: uploadError } = await supabase.storage.from('posts-media').upload(filePath, projectFile, {
-          cacheControl: '31536000',
-          contentType: safeContentType,
-        });
-
-        if (uploadError) {
-          console.warn('Attachment upload skipped:', uploadError);
-
-          // If storage rejected HTML files, fall back to embedding the HTML as a data URL so preview still works
-          const nameLower = projectFile.name.toLowerCase();
-          const isHtml = (projectFile.type && projectFile.type.includes('html')) || nameLower.endsWith('.html') || nameLower.endsWith('.htm');
-          if (isHtml) {
-            try {
-              const text = await projectFile.text();
-              fileUrl = `data:text/html;charset=utf-8,${encodeURIComponent(text)}`;
-              fileType = 'text/html';
-              toast.success('Project published with inline HTML preview (storage blocked HTML).');
-            } catch (err) {
-              console.warn('Failed to create inline HTML preview:', err);
-              toast.warning('Project published without file attachment');
-            }
-          } else {
+        if (isHtml) {
+          // Skip storage upload for HTML files (Supabase blocks text/html); embed as data URL instead
+          try {
+            const text = await projectFile.text();
+            fileUrl = `data:text/html;charset=utf-8,${encodeURIComponent(text)}`;
+            fileType = 'text/html';
+            toast.success('Project published with inline HTML preview');
+          } catch (err) {
+            console.warn('Failed to create inline HTML preview:', err);
             toast.warning('Project published without file attachment');
           }
         } else {
-          fileUrl = getPublicUrlSafe('posts-media', filePath);
-          fileType = safeContentType;
+          const filePath = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}-${projectFile.name.replace(/\s+/g, '_')}`;
+          const safeContentType = projectFile.type && !projectFile.type.includes('html')
+            ? projectFile.type
+            : 'application/octet-stream';
+
+          const { error: uploadError } = await supabase.storage.from('posts-media').upload(filePath, projectFile, {
+            cacheControl: '31536000',
+            contentType: safeContentType,
+          });
+
+          if (uploadError) {
+            console.warn('Attachment upload skipped:', uploadError);
+            toast.warning('Project published without file attachment');
+          } else {
+            fileUrl = getPublicUrlSafe('posts-media', filePath);
+            fileType = safeContentType;
+          }
         }
       }
 
