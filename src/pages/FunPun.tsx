@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { Code, MessageCircle, Share2, Bookmark, Heart, Upload, Filter, MoreVertical } from 'lucide-react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { Code, MessageCircle, Share2, Bookmark, Heart, Upload, Filter } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,7 +26,20 @@ export default function FunPun() {
   const [projects, setProjects] = useState<Project[]>([
     { id: 'default', name: 'FunPun', desc: 'FunPun is a single member project inside AB Dev — a playground for ambitious beginner developers to try projects.', isDefault: true }
   ]);
+  const menuRef = useRef<HTMLDivElement>(null);
   const { profile } = useAuth();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowOptionsMenu(false);
+      }
+    };
+    if (showOptionsMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showOptionsMenu]);
 
   const avatar = profile?.avatar || profile?.photo_url || '/lumatha-logo-new.png';
   const currentProject = projects.find(p => p.id === selectedProject) || projects[0];
@@ -85,8 +98,8 @@ export default function FunPun() {
             </Avatar>
           </button>
           {showOptionsMenu && (
-            <div className="absolute top-12 left-0 bg-[#0a0f1e] border border-white/10 rounded-lg p-2 space-y-1 z-40 w-40">
-              <button className="w-full text-left px-3 py-2 text-sm hover:bg-white/5 rounded flex items-center gap-2">
+            <div ref={menuRef} className="absolute top-12 left-0 bg-[#0a0f1e] border border-white/10 rounded-lg p-2 space-y-1 z-40 w-40">
+              <button onClick={() => { toggleLike(); setShowOptionsMenu(false); }} className="w-full text-left px-3 py-2 text-sm hover:bg-white/5 rounded flex items-center gap-2">
                 <Heart className="w-4 h-4" />
                 {isCurrentLiked ? 'Unlike' : 'Like'}
               </button>
@@ -98,7 +111,7 @@ export default function FunPun() {
                 <Share2 className="w-4 h-4" />
                 Share
               </button>
-              <button onClick={toggleSave} className="w-full text-left px-3 py-2 text-sm hover:bg-white/5 rounded flex items-center gap-2">
+              <button onClick={() => { toggleSave(); setShowOptionsMenu(false); }} className="w-full text-left px-3 py-2 text-sm hover:bg-white/5 rounded flex items-center gap-2">
                 <Bookmark className="w-4 h-4" />
                 {isCurrentSaved ? 'Unsave' : 'Save'}
               </button>
