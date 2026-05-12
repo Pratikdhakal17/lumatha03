@@ -1,71 +1,60 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Code } from 'lucide-react';
-import { randomChallenges } from '@/data/funpunChallenges';
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function FunPun() {
-  const [selected, setSelected] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const [showPlayer, setShowPlayer] = useState(false);
+  const { profile } = useAuth();
+
+  const avatar = profile?.avatar || profile?.photo_url || '/lumatha-logo-new.png';
+
+  const openPlayer = useCallback(() => setShowPlayer(true), []);
+  const closePlayer = useCallback(() => setShowPlayer(false), []);
 
   return (
-    <div className="w-full min-h-screen bg-[#0a0f1e] text-white p-4">
-      <header className="flex items-center gap-3 mb-4">
-        <div className="p-2 rounded-md bg-gradient-to-br from-slate-800 to-slate-700">
-          <Code className="w-6 h-6 text-cyan-300" />
-        </div>
-        <div>
-          <h1 className="text-lg font-semibold">AB Dev</h1>
-          <p className="text-xs text-muted-foreground">Developer playground — tap a card to play</p>
-        </div>
-        <div className="ml-auto">
-          <button className="text-sm text-muted-foreground hover:text-white" onClick={() => navigate(-1)}>Back</button>
+    <div className="w-full min-h-screen bg-[#0a0f1e] text-white p-6 flex flex-col items-center">
+      <header className="w-full max-w-3xl flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-md bg-gradient-to-br from-slate-800 to-slate-700">
+            <Code className="w-6 h-6 text-cyan-300" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold">AB Dev</h1>
+          </div>
         </div>
       </header>
 
-      {!selected && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {/* Retro console card as first option */}
-          <div className="bg-[#071023] p-3 rounded-xl cursor-pointer hover:scale-[1.02] transition" onClick={() => { setIsLoading(true); setSelected(-1); }}>
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-md bg-gradient-to-br from-indigo-600 to-cyan-500 flex items-center justify-center">
-                <Code className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <div className="text-sm font-semibold">Retro Console</div>
-                <div className="text-[11px] text-muted-foreground">Classic FP-333 (iframe)</div>
-              </div>
-            </div>
-          </div>
+      <div className="w-full max-w-3xl bg-[#071023] rounded-xl p-6 flex flex-col items-center gap-4">
+        <img src={avatar} alt="profile" className="w-20 h-20 rounded-full object-cover border-2 border-white/10" />
 
-          {/* Show a few AB Dev challenge cards */}
-          {randomChallenges.slice(0, 8).map((c) => (
-            <div key={c.id} className="bg-[#071023] p-3 rounded-xl cursor-pointer hover:scale-[1.02] transition" onClick={() => { setSelected(c.id); setIsLoading(true); }}>
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-md bg-gradient-to-br from-emerald-600 to-teal-500 flex items-center justify-center text-white font-bold">{c.level}</div>
-                <div className="flex-1">
-                  <div className="text-sm font-semibold">{c.title}</div>
-                  <div className="text-[11px] text-muted-foreground">{c.instruction}</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {selected !== null && (
-        <div className="mt-4 w-full h-[70vh] rounded-lg overflow-hidden bg-black border border-white/5">
-          <iframe
-            title={`AB Dev player ${selected}`}
-            src={`/funpun.html${selected > 0 ? `?challenge=${selected}` : ''}`}
-            className="w-full h-full border-none"
-            onLoad={() => setIsLoading(false)}
+        <div className="w-full">
+          <input
+            placeholder="Search AB Dev..."
+            className="w-full bg-transparent border border-white/10 rounded-md px-3 py-2 placeholder:text-muted-foreground focus:outline-none"
+            aria-label="search-abdev"
           />
         </div>
-      )}
 
-      {isLoading && selected !== null && (
-        <div className="mt-2 text-xs text-muted-foreground">Loading game…</div>
+        <div className="w-full text-center">
+          <h2 className="text-lg font-semibold">AB Dev — Retro Console</h2>
+          <p className="text-sm text-muted-foreground mt-1">One place for classic browser games. Tap Launch to open the player in a full-screen view.</p>
+        </div>
+
+        <div className="w-full flex justify-center">
+          <button onClick={openPlayer} className="px-4 py-2 rounded-md bg-cyan-500 hover:bg-cyan-600 text-black font-semibold">Launch</button>
+        </div>
+      </div>
+
+      {showPlayer && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex flex-col">
+          <div className="flex items-center justify-between p-3">
+            <div />
+            <button onClick={closePlayer} className="text-white text-sm bg-white/10 px-3 py-1 rounded">Close</button>
+          </div>
+          <div className="flex-1">
+            <iframe title="AB Dev Player" src="/funpun.html" className="w-full h-full border-none" />
+          </div>
+        </div>
       )}
     </div>
   );
