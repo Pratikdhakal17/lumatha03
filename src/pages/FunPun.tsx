@@ -1,46 +1,66 @@
 import { useState, useCallback } from 'react';
-import { Code, MessageCircle, Share2, Bookmark, Heart, Upload, Filter } from 'lucide-react';
+import { Code, MessageCircle, Share2, Bookmark, Heart, Upload, Filter, MoreVertical } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
+interface Project {
+  id: string;
+  name: string;
+  desc: string;
+  isLiked?: boolean;
+  isSaved?: boolean;
+  isDefault?: boolean;
+}
+
 export default function FunPun() {
   const [showPlayer, setShowPlayer] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<string>('default');
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [filterActive, setFilterActive] = useState<'all' | 'liked' | 'saved' | 'commented' | 'yours'>('all');
-  const [isLiked, setIsLiked] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
-  const [commentsCount, setCommentsCount] = useState(0);
   const [projectName, setProjectName] = useState('');
   const [projectDesc, setProjectDesc] = useState('');
+  const [projects, setProjects] = useState<Project[]>([
+    { id: 'default', name: 'FunPun', desc: 'FunPun is a single member project inside AB Dev — a playground for ambitious beginner developers to try projects.', isDefault: true }
+  ]);
   const { profile } = useAuth();
 
   const avatar = profile?.avatar || profile?.photo_url || '/lumatha-logo-new.png';
+  const currentProject = projects.find(p => p.id === selectedProject) || projects[0];
+  const isCurrentLiked = currentProject?.isLiked || false;
+  const isCurrentSaved = currentProject?.isSaved || false;
 
   const openPlayer = useCallback(() => setShowPlayer(true), []);
   const closePlayer = useCallback(() => setShowPlayer(false), []);
   const toggleLike = useCallback(() => {
-    if (isLiked) {
-      setLikesCount(c => Math.max(0, c - 1));
-    } else {
-      setLikesCount(c => c + 1);
-    }
-    setIsLiked(!isLiked);
-  }, [isLiked]);
-  const toggleSave = useCallback(() => setIsSaved(!isSaved), [isSaved]);
+    setProjects(p => p.map(proj => 
+      proj.id === selectedProject ? { ...proj, isLiked: !proj.isLiked } : proj
+    ));
+  }, [selectedProject]);
+  const toggleSave = useCallback(() => {
+    setProjects(p => p.map(proj => 
+      proj.id === selectedProject ? { ...proj, isSaved: !proj.isSaved } : proj
+    ));
+  }, [selectedProject]);
   const handlePublish = useCallback(() => {
     if (!projectName.trim()) {
       toast.error('Project name is required');
       return;
     }
-    toast.success('Project published!');
+    const newProject: Project = {
+      id: `project-${Date.now()}`,
+      name: projectName,
+      desc: projectDesc || 'No description provided'
+    };
+    setProjects(p => [...p, newProject]);
+    toast.success(`${projectName} published successfully!`);
     setShowUploadModal(false);
     setProjectName('');
     setProjectDesc('');
-  }, [projectName]);
+  }, [projectName, projectDesc]);
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-[#0a0f1e] to-[#0f1424] text-white p-6 flex flex-col items-center">
@@ -56,12 +76,34 @@ export default function FunPun() {
         </div>
       </header>
 
-      <div className="w-full max-w-4xl flex items-start gap-4 mb-6">
-        <div className="flex-shrink-0">
-          <Avatar>
-            <AvatarImage src={avatar} alt="profile" />
-            <AvatarFallback>AB</AvatarFallback>
-          </Avatar>
+      <div className="w-full max-w-4xl flex items-start gap-4 mb-6 relative">
+        <div className="flex-shrink-0 relative">
+          <button onClick={() => setShowOptionsMenu(!showOptionsMenu)} className="hover:opacity-80 transition">
+            <Avatar className="cursor-pointer">
+              <AvatarImage src={avatar} alt="profile" />
+              <AvatarFallback>AB</AvatarFallback>
+            </Avatar>
+          </button>
+          {showOptionsMenu && (
+            <div className="absolute top-12 left-0 bg-[#0a0f1e] border border-white/10 rounded-lg p-2 space-y-1 z-40 w-40">
+              <button className="w-full text-left px-3 py-2 text-sm hover:bg-white/5 rounded flex items-center gap-2">
+                <Heart className="w-4 h-4" />
+                {isCurrentLiked ? 'Unlike' : 'Like'}
+              </button>
+              <button className="w-full text-left px-3 py-2 text-sm hover:bg-white/5 rounded flex items-center gap-2">
+                <MessageCircle className="w-4 h-4" />
+                Comment
+              </button>
+              <button className="w-full text-left px-3 py-2 text-sm hover:bg-white/5 rounded flex items-center gap-2">
+                <Share2 className="w-4 h-4" />
+                Share
+              </button>
+              <button onClick={toggleSave} className="w-full text-left px-3 py-2 text-sm hover:bg-white/5 rounded flex items-center gap-2">
+                <Bookmark className="w-4 h-4" />
+                {isCurrentSaved ? 'Unsave' : 'Save'}
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex-1">
@@ -96,43 +138,30 @@ export default function FunPun() {
         </div>
       </div>
 
-      <div className="w-full max-w-4xl">
-        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden backdrop-blur-sm">
-          <div className="p-4 border-b border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={avatar} />
-                <AvatarFallback>FP</AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="font-semibold">FunPun</h3>
-                <p className="text-xs text-muted-foreground">Default Project • AB Dev</p>
+      <div className="w-full max-w-4xl space-y-3">
+        {projects.map(project => (
+          <div key={project.id} className={`bg-white/5 border rounded-xl overflow-hidden backdrop-blur-sm transition cursor-pointer ${selectedProject === project.id ? 'border-cyan-500 bg-white/10' : 'border-white/10 hover:border-white/20'}`}
+            onClick={() => setSelectedProject(project.id)}>
+            <div className="p-4 border-b border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-3 flex-1">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={avatar} />
+                  <AvatarFallback>{project.name[0]}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <h3 className="font-semibold">{project.name}</h3>
+                  <p className="text-xs text-muted-foreground">AB Dev {project.isDefault ? '• Default' : '• Community'}</p>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="p-4">
-            <p className="text-sm text-muted-foreground">FunPun is a single member project inside AB Dev — a playground for ambitious beginner developers to try projects. Tap Launch to open the game in full-screen.</p>
-          </div>
-          <div className="px-4 py-3 border-t border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button onClick={toggleLike} className={`flex items-center gap-1 transition ${isLiked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'}`}>
-                <Heart className={`w-4 h-4 ${isLiked ? 'fill-red-500' : ''}`} />
-                <span className="text-xs">{likesCount}</span>
-              </button>
-              <button className="flex items-center gap-1 text-muted-foreground hover:text-cyan-500 transition">
-                <MessageCircle className="w-4 h-4" />
-                <span className="text-xs">{commentsCount}</span>
-              </button>
-              <button className="flex items-center gap-1 text-muted-foreground hover:text-cyan-500 transition">
-                <Share2 className="w-4 h-4" />
-              </button>
-              <button onClick={toggleSave} className={`transition ${isSaved ? 'text-yellow-500' : 'text-muted-foreground hover:text-yellow-500'}`}>
-                <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-yellow-500' : ''}`} />
-              </button>
+            <div className="p-4">
+              <p className="text-sm text-muted-foreground">{project.desc}</p>
             </div>
-            <Button onClick={openPlayer} size="sm" className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold">Launch</Button>
+            <div className="px-4 py-3 border-t border-white/5 flex items-center justify-end gap-2">
+              <Button onClick={(e) => { e.stopPropagation(); openPlayer(); }} size="sm" className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold">Open</Button>
+            </div>
           </div>
-        </div>
+        ))}
       </div>
 
       <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
