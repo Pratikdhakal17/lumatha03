@@ -118,10 +118,11 @@ export function CommentsDialog({ postId, postTitle, type = 'post', mediaUrl, ope
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) { toast.error('Please sign in to comment'); return; }
-    if (!postId) { toast.error('Missing post id — cannot save comment'); return; }
+    if (!postId) { toast.error('Missing post id — cannot save comment'); console.warn('[CommentsDialog] Attempted submit without postId', { type, postId }); return; }
     if (!newComment.trim()) return;
 
     setLoading(true);
+    console.log('[CommentsDialog] Submitting comment', { postId, type, userId: user.id, contentLength: newComment.length });
     try {
       const table = type === 'travel' ? 'travel_comments' : 'comments';
       const payload: any = {
@@ -131,15 +132,18 @@ export function CommentsDialog({ postId, postTitle, type = 'post', mediaUrl, ope
       if (type === 'travel') payload.story_id = postId;
       else payload.post_id = postId;
 
-      const { error } = await supabase.from(table as any).insert(payload);
-      if (error) throw error;
+      console.log(`[CommentsDialog] Inserting into ${table}:`, payload);
+      const { error, data } = await supabase.from(table as any).insert(payload).select();
+      if (error) throw new Error(`[DB] ${error.message} (Code: ${error.code})`);
 
+      console.log('[CommentsDialog] Comment saved successfully:', data);
       setNewComment('');
       fetchComments();
       toast.success('Comment added!');
     } catch (error) {
-      console.error('Error adding comment:', error);
-      toast.error('Failed to add comment');
+      const errMsg = error instanceof Error ? error.message : String(error);
+      console.error('[CommentsDialog] Error adding comment:', errMsg);
+      toast.error(`Failed: ${errMsg.substring(0, 50)}`);
     } finally {
       setLoading(false);
     }
