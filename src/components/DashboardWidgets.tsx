@@ -18,7 +18,7 @@ export function FunpunPreviewWidget({ className }: WidgetProps) {
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
                 </span>
               </div>
-              <CardTitle className="text-xs sm:text-sm font-semibold">AB Dev</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-semibold">FP Games</CardTitle>
             </div>
             <Badge variant="outline" className="text-[8px] h-4 border-green-500/50 text-green-500 font-black animate-pulse">PLAY NOW</Badge>
           </div>

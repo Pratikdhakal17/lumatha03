@@ -224,7 +224,12 @@ export function CommentsDialog({ postId, postTitle, type = 'post', mediaUrl, ope
               <button className="font-bold text-xs hover:underline text-left text-white" onClick={() => { onOpenChange(false); navigate(`/profile/${comment.user_id}`); }}>
                 {displayName}
               </button>
-              <p className="text-sm mt-0.5 break-words text-slate-300 font-medium">{comment.content}</p>
+              <div 
+              className="text-sm mt-0.5 break-words text-slate-300 font-medium"
+              dangerouslySetInnerHTML={{ 
+                __html: comment.content.replace(/\n/g, '<br>') 
+              }}
+            />
             </div>
 
             <DropdownMenu>

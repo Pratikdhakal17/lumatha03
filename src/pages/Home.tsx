@@ -23,7 +23,10 @@ import { beginPerfTrace, endPerfTrace } from '@/lib/perfMarkers';
 import { useRouteLoadTrace } from '@/hooks/useRouteLoadTrace';
 import { toast } from 'sonner';
 
-type Post = Database['public']['Tables']['posts']['Row'];
+type Post = Database['public']['Tables']['posts']['Row'] & {
+  profiles?: Profile;
+  likes_count?: number;
+};
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type PostWithProfile = Post & { profiles?: Profile };
 
@@ -216,7 +219,7 @@ export default function Home() {
         query = query.eq('category', 'ghost').gte('created_at', yesterday);
       } else if (feedScope === 'following') {
         const { data: follows } = await supabase.from('follows').select('following_id').eq('follower_id', user.id);
-        const fids = follows?.map(f => f.following_id) || [];
+        const fids = follows?.map((f: any) => f.following_id) || [];
         query = query.in('user_id', [...fids, user.id]);
       } else if (feedScope === 'regional') {
         query = query.eq('country', 'Nepal');
@@ -267,8 +270,8 @@ export default function Home() {
         supabase.from('saved').select('post_id').eq('user_id', user.id),
         supabase.from('likes').select('post_id').eq('user_id', user.id)
       ]);
-      setSavedPosts(new Set(savedResult.data?.map(s => s.post_id) || []));
-      setLikedPosts(new Set(likedResult.data?.map(l => l.post_id) || []));
+      setSavedPosts(new Set((savedResult.data as any[])?.map((s: any) => s.post_id) || []));
+      setLikedPosts(new Set((likedResult.data as any[])?.map((l: any) => l.post_id) || []));
     } catch (err) {
       console.error(err);
       setHasError(true);
@@ -326,13 +329,13 @@ export default function Home() {
   return (
     <div className="pb-20 overflow-x-hidden">
       {isHomeRoute && (
-        <div className={cn("w-full pt-1 md:max-w-[640px] md:mx-auto transition-all duration-300", showTopElements ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0")}>
+        <div className={cn("w-full pt-1 transition-all duration-300", showTopElements ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0")}>
           <StoriesBar />
         </div>
       )}
 
       {isHomeRoute && (
-        <div className={cn("md:hidden px-0 py-1 mb-2 transition-all duration-300", showTopElements ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0")}>
+        <div className={cn("md:hidden px-4 py-1 mb-2 transition-all duration-300", showTopElements ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0")}>
           <div className="mobile-feed-chips flex items-center gap-2 overflow-x-auto no-scrollbar">
             {mobileFeedChips.map((chip) => {
               const active = subFilter === chip.id;
@@ -344,7 +347,7 @@ export default function Home() {
         </div>
       )}
 
-      <div className="w-full md:max-w-[640px] md:mx-auto space-y-0 px-0 md:px-0">
+      <div className="w-full space-y-0 px-4 md:px-4 lg:px-6">
         <FeedFilterTabs contentFilter={contentFilter} onContentFilterChange={setContentFilter} subFilter={subFilter} onSubFilterChange={(filter) => setSubFilter(filter as MobileFeedChipId)} />
         {subFilter === 'travel' ? (
           <div className="mt-4">
