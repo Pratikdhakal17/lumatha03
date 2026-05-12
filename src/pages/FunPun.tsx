@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Code, MessageCircle, Share2, Bookmark, Heart, Upload } from 'lucide-react';
+import { Code, MessageCircle, Share2, Bookmark, Heart, Upload, MoreHorizontal, ExternalLink, X } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -92,6 +92,11 @@ export default function FunPun() {
   const [selectedProject, setSelectedProject] = useState<string>(DEFAULT_PROJECT_ID);
   const [previewUrl, setPreviewUrl] = useState('/funpun.html?challenge=1');
   const [showPlayer, setShowPlayer] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editProject, setEditProject] = useState<ProjectPost | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const [likedProjectIds, setLikedProjectIds] = useState<Set<string>>(new Set());
   const [savedProjectIds, setSavedProjectIds] = useState<Set<string>>(new Set());
   const [sharedProjectIds, setSharedProjectIds] = useState<Set<string>>(new Set());
@@ -153,6 +158,16 @@ export default function FunPun() {
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showOptionsMenu]);
+
+  useEffect(() => {
+    if (editProject) {
+      setEditTitle(editProject.title || '');
+      setEditDesc(editProject.content || '');
+    } else {
+      setEditTitle('');
+      setEditDesc('');
+    }
+  }, [editProject]);
 
   const loadProjects = useCallback(async () => {
     setLoadingProjects(true);
@@ -421,6 +436,48 @@ export default function FunPun() {
     }
   }, [profile?.country, projectDesc, projectFile, projectName, user?.id]);
 
+  const handleSaveEdit = async () => {
+    if (!editProject) return;
+    if (!editTitle.trim()) {
+      toast.error('Title is required');
+      return;
+    }
+    try {
+      const { data, error } = await supabase.from('posts').update({ title: editTitle.trim(), content: editDesc.trim() || null }).eq('id', editProject.id).select('*, profiles(*)').maybeSingle();
+      if (error) throw error;
+      const updated = data as ProjectPost | null;
+      if (updated) {
+        setProjects((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      }
+      setShowEditModal(false);
+      setEditProject(null);
+      toast.success('Project updated');
+    } catch (err) {
+      console.error('Failed to save project edits:', err);
+      toast.error('Could not save changes');
+    }
+  };
+
+  const handleDeleteProject = async (id?: string) => {
+    const projectId = id || editProject?.id;
+    if (!projectId) return;
+    // confirm
+    // eslint-disable-next-line no-restricted-globals
+    if (!confirm('Delete this project? This cannot be undone.')) return;
+    try {
+      const { error } = await supabase.from('posts').delete().eq('id', projectId);
+      if (error) throw error;
+      setProjects((prev) => prev.filter((p) => p.id !== projectId));
+      setShowEditModal(false);
+      setEditProject(null);
+      if (selectedProject === projectId) setSelectedProject(DEFAULT_PROJECT_ID);
+      toast.success('Project deleted');
+    } catch (err) {
+      console.error('Failed to delete project:', err);
+      toast.error('Could not delete project');
+    }
+  };
+
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-[#0a0f1e] to-[#0f1424] text-white p-6 flex flex-col items-center">
       <header className="w-full max-w-4xl mb-6">
@@ -514,7 +571,18 @@ export default function FunPun() {
                     {project.id === DEFAULT_PROJECT_ID ? (
                       <span className="text-[11px] rounded-full px-2 py-1 bg-cyan-500/15 text-cyan-300 border border-cyan-500/20">Default</span>
                     ) : project.user_id === user?.id ? (
-                      <span className="text-[11px] rounded-full px-2 py-1 bg-cyan-500/15 text-cyan-300 border border-cyan-500/20">Yours</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] rounded-full px-2 py-1 bg-cyan-500/15 text-cyan-300 border border-cyan-500/20">Yours</span>
+                        <div className="relative">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setEditProject(project); setShowEditModal(true); }}
+                            className="p-1 hover:bg-white/5 rounded"
+                            aria-label="edit-project"
+                          >
+                            <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                          </button>
+                        </div>
+                      </div>
                     ) : null}
                   </div>
                   <div className="p-4 space-y-3">
@@ -571,16 +639,6 @@ export default function FunPun() {
                         <Bookmark className={`w-4 h-4 ${savedProjectIds.has(project.id) ? 'fill-yellow-500' : ''}`} />
                       </button>
                     </div>
-                    <Button
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        openProject(project);
-                      }}
-                      size="sm"
-                      className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold"
-                    >
-                      Open
-                    </Button>
                   </div>
                 </div>
               );
@@ -630,13 +688,49 @@ export default function FunPun() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="bg-[#0a0f1e] border-white/10">
+          <DialogHeader>
+            <DialogTitle>Edit Project</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <label className="text-sm font-semibold">Project Name</label>
+              <input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="Enter project name"
+                className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 mt-1 placeholder:text-muted-foreground focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-semibold">Description</label>
+              <textarea
+                value={editDesc}
+                onChange={(e) => setEditDesc(e.target.value)}
+                placeholder="Describe your project"
+                className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 mt-1 placeholder:text-muted-foreground focus:outline-none h-20 resize-none"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Button variant="outline" className="text-red-400" onClick={() => void handleDeleteProject()}>Delete</Button>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => { setShowEditModal(false); setEditProject(null); }}>Cancel</Button>
+                <Button onClick={() => void handleSaveEdit()} className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold">Save</Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {showPlayer && (
         <div className="fixed inset-0 z-50 bg-black/90 flex flex-col">
           <div className="flex items-center justify-between p-3 max-w-3xl w-full mx-auto">
-            <div className="text-xs text-muted-foreground truncate max-w-[70%]">
-              {currentProject?.title || 'Project preview'}
-            </div>
-            <button onClick={closePlayer} className="text-white text-sm bg-white/10 px-3 py-1 rounded">Close</button>
+            <button onClick={closePlayer} className="p-2 bg-white/10 rounded"><X className="w-4 h-4" /></button>
+            <div className="text-xs text-muted-foreground text-center truncate max-w-[70%]">{previewError || 'Preview'}</div>
+            <button onClick={() => window.open(previewUrl, '_blank')} className="p-2 bg-white/10 rounded" aria-label="open-new-tab"><ExternalLink className="w-4 h-4" /></button>
           </div>
           <div className="flex-1 flex items-center justify-center">
             {(() => {
@@ -649,15 +743,15 @@ export default function FunPun() {
               }
 
               if (mime && mime.startsWith('image')) {
-                return <img src={src} alt={project?.title || 'project'} className="max-w-full max-h-full object-contain" />;
+                return <img src={src} alt={project?.title || 'project'} className="max-w-full max-h-full object-contain" onLoad={() => setPreviewError(null)} onError={() => setPreviewError('Preview failed to load')} />;
               }
 
               if (mime && mime.startsWith('video')) {
-                return <video controls className="w-full h-full max-h-[85vh] bg-black" src={src} />;
+                return <video controls className="w-full h-full max-h-[85vh] bg-black" src={src} onLoadedData={() => setPreviewError(null)} onError={() => setPreviewError('Preview failed to load')} />;
               }
 
               if (mime === 'application/pdf') {
-                return <iframe title="PDF Preview" src={src} className="w-full h-full border-none" />;
+                return <iframe title="PDF Preview" src={src} className="w-full h-full border-none" onLoad={() => setPreviewError(null)} onError={() => setPreviewError('Preview may be blocked or failed to load')} />;
               }
 
               if (mime === 'text/html') {
@@ -665,16 +759,16 @@ export default function FunPun() {
                   <div className="w-full h-full flex flex-col">
                     <div className="p-3 border-b border-white/5 bg-white/5 text-sm text-yellow-200">HTML preview may be blocked by browser or storage CORS; open in a new tab if it doesn't render.</div>
                     <div className="flex-1">
-                      <iframe title="HTML Preview" src={src} sandbox="allow-scripts allow-forms" className="w-full h-full border-none" />
+                      <iframe title="HTML Preview" src={src} sandbox="allow-scripts allow-forms" className="w-full h-full border-none" onLoad={() => setPreviewError(null)} onError={() => setPreviewError('Preview may be blocked or failed to load')} />
                     </div>
                     <div className="p-3 text-right">
-                      <Button className="bg-cyan-500 hover:bg-cyan-600 text-black" onClick={() => window.open(src, '_blank')}>Open in new tab</Button>
+                      <button onClick={() => window.open(src, '_blank')} className="p-2 bg-cyan-500 hover:bg-cyan-600 rounded" aria-label="open-new-tab"><ExternalLink className="w-4 h-4 text-black" /></button>
                     </div>
                   </div>
                 );
               }
 
-              return <iframe title="AB Dev Player" src={src} className="w-full h-full border-none" />;
+              return <iframe title="AB Dev Player" src={src} className="w-full h-full border-none" onLoad={() => setPreviewError(null)} onError={() => setPreviewError('Preview may be blocked or failed to load')} />;
             })()}
           </div>
         </div>
