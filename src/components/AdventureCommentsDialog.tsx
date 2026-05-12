@@ -330,13 +330,15 @@ export function AdventureCommentsDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-full h-[100dvh] max-w-full m-0 p-0 border-0 rounded-none bg-[#0a0f1e] flex flex-col overflow-hidden">
-        <DialogHeader className="px-4 py-4 border-b border-white/5 flex flex-row items-center justify-between shrink-0 sticky top-0 bg-[#0a0f1e]/80 backdrop-blur-xl z-20">
-          <div className="flex items-center gap-3">
-            <button onClick={() => onOpenChange(false)} className="h-10 w-10 flex items-center justify-center hover:bg-white/5 rounded-full text-slate-400 active:scale-95 transition-transform" aria-label="Close comments"><X className="w-6 h-6" /></button>
-            <DialogTitle className="text-[17px] font-bold text-white truncate max-w-[240px] font-['Space_Grotesk']">{itemTitle}</DialogTitle>
-            <DialogDescription className="sr-only">Read and write comments for this adventure item.</DialogDescription>
-          </div>
-        </DialogHeader>
+        <div className="flex items-center justify-between px-3 py-2 border-b border-white/5 shrink-0 bg-[#0a0f1e]/90 backdrop-blur-xl z-30">
+          <button onClick={() => onOpenChange(false)} className="h-9 w-9 rounded-full flex items-center justify-center hover:bg-white/5 text-slate-400 active:scale-95 transition-transform" aria-label="Close comments">
+            <X className="w-4 h-4" />
+          </button>
+          <div />
+          <button onClick={() => onOpenChange(false)} className="h-9 w-9 rounded-full flex items-center justify-center hover:bg-white/5 text-slate-400 active:scale-95 transition-transform" aria-label="Collapse comments">
+            <ChevronUp className="w-4 h-4" />
+          </button>
+        </div>
         {Content}
       </DialogContent>
     </Dialog>

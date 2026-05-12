@@ -268,37 +268,28 @@ export function CommentsDialog({ postId, postTitle, type = 'post', mediaUrl, ope
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-full h-[100dvh] max-w-full m-0 p-0 border-0 rounded-none bg-[#0d1117] overflow-hidden flex flex-col shadow-2xl">
-        <div className="flex items-center justify-between px-4 py-4 border-b border-white/5 shrink-0 bg-[#0d1117]/90 backdrop-blur-xl z-30">
-          <div className="min-w-0">
-            <DialogTitle className="text-lg font-black uppercase tracking-wider text-white truncate">Comments</DialogTitle>
-            <DialogDescription className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate max-w-[240px]">{postTitle || 'Loading post details...'}</DialogDescription>
-          </div>
-          <button onClick={() => onOpenChange(false)} className="h-10 w-10 rounded-full flex items-center justify-center hover:bg-white/5 text-slate-400 active:scale-95 transition-transform" aria-label="Close comments">
-            <X className="w-5 h-5" />
+        <div className="flex items-center justify-between px-3 py-2 border-b border-white/5 shrink-0 bg-[#0d1117]/90 backdrop-blur-xl z-30">
+          <button onClick={() => onOpenChange(false)} className="h-9 w-9 rounded-full flex items-center justify-center hover:bg-white/5 text-slate-400 active:scale-95 transition-transform" aria-label="Close comments">
+            <X className="w-4 h-4" />
+          </button>
+          <div />
+          <button onClick={() => onOpenChange(false)} className="h-9 w-9 rounded-full flex items-center justify-center hover:bg-white/5 text-slate-400 active:scale-95 transition-transform" aria-label="Collapse comments">
+            <ChevronUp className="w-4 h-4" />
           </button>
         </div>
 
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          <div className="relative w-full aspect-square max-h-[60vh] min-h-[240px] overflow-hidden border-b border-white/5 bg-slate-950">
-              {mediaUrl ? (
-                mediaKind === 'video' ? (
-                  <video src={mediaUrl} controls playsInline preload="metadata" className="w-full h-full object-cover bg-black" />
-                ) : (
-                  <img src={mediaUrl} alt={postTitle || 'Post media'} className="w-full h-full object-cover" />
-                )
+          <div className="relative w-full aspect-square md:aspect-video max-h-[60vh] min-h-[240px] overflow-hidden border-b border-white/5 bg-slate-950">
+            {mediaUrl ? (
+              mediaKind === 'video' ? (
+                <video src={mediaUrl} controls playsInline preload="metadata" className="w-full h-full object-cover bg-black" />
               ) : (
-                <div className="absolute inset-0 bg-gradient-to-b from-slate-800 via-slate-900 to-[#0d1117]" />
-              )}
-            {mediaKind !== 'none' && (
-              <div className="absolute top-3 right-3 z-20 rounded-full bg-black/40 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/80 backdrop-blur-md">
-                {mediaKind === 'video' ? 'Video' : 'Photo'}
-              </div>
+                <img src={mediaUrl} alt={postTitle || 'Post media'} className="w-full h-full object-cover" />
+              )
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-b from-slate-800 via-slate-900 to-[#0d1117]" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-[#0d1117]/20 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 p-4">
-              <p className="text-[10px] uppercase tracking-[0.22em] text-white/50 font-black">{type === 'travel' ? 'Travel story' : 'Post'}</p>
-              <h2 className="mt-1 text-2xl font-black text-white leading-tight line-clamp-2">{postTitle || 'Comments'}</h2>
-            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-transparent" />
           </div>
 
           <div className="flex-1 min-h-0 flex flex-col">
@@ -313,11 +304,7 @@ export function CommentsDialog({ postId, postTitle, type = 'post', mediaUrl, ope
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">Syncing with Lumatha...</p>
                 </div>
               ) : comments.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center space-y-3 opacity-40 grayscale">
-                  <MessageCircle className="w-12 h-12 text-slate-600" />
-                  <p className="text-sm font-bold uppercase tracking-widest text-slate-500">No comments yet</p>
-                  <p className="text-[10px] font-medium text-slate-600">Be the first to share your thoughts!</p>
-                </div>
+                <div className="py-4 text-center text-slate-500 text-[12px]">0 comments</div>
               ) : (
                 <div className="pb-10 space-y-1">{comments.map(c => renderComment(c))}</div>
               )}
