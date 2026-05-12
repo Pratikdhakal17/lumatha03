@@ -31,6 +31,7 @@ interface AdventureCommentsDialogProps {
   itemId: string;
   itemTitle: string;
   itemType: 'challenge' | 'place' | 'travel';
+  mediaUrl?: string | null;
   inline?: boolean;
 }
 
@@ -40,6 +41,7 @@ export function AdventureCommentsDialog({
   itemId, 
   itemTitle,
   itemType,
+  mediaUrl,
   inline
 }: AdventureCommentsDialogProps) {
   const [comments, setComments] = useState<Comment[]>([]);
@@ -186,6 +188,19 @@ export function AdventureCommentsDialog({
 
   const Content = (
     <div className="flex flex-col h-full bg-[#0a0f1e]">
+      <div className="relative h-[40svh] min-h-[230px] overflow-hidden border-b border-white/5">
+        {mediaUrl ? (
+          <img src={mediaUrl} alt={itemTitle} className="w-full h-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-800 via-slate-900 to-[#0a0f1e]" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1e] via-[#0a0f1e]/20 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 p-4">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-white/50 font-black">{itemType}</p>
+          <h2 className="mt-1 text-xl font-black text-white leading-tight line-clamp-2">{itemTitle}</h2>
+        </div>
+      </div>
+
       {/* List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 no-scrollbar">
         {loading ? (
@@ -261,9 +276,9 @@ export function AdventureCommentsDialog({
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-white/5 bg-[#0a0f1e]/95 backdrop-blur-xl">
+      <div className="p-4 border-t border-white/5 bg-[#0a0f1e]/95 backdrop-blur-xl pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="flex items-center gap-3 max-w-2xl mx-auto">
-          <Avatar className="w-10 h-10 border-2 border-primary/20">
+          <Avatar className="w-11 h-11 border-2 border-primary/20 shrink-0">
             <AvatarImage src={currentUserProfile?.avatar_url || ''} />
             <AvatarFallback className="bg-slate-800 text-primary font-black">{currentUserProfile?.name?.[0] || '?'}</AvatarFallback>
           </Avatar>
@@ -294,10 +309,10 @@ export function AdventureCommentsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full h-full max-w-full m-0 p-0 border-0 rounded-none bg-[#0a0f1e] flex flex-col overflow-hidden">
-        <DialogHeader className="px-4 py-4 border-b border-white/5 flex flex-row items-center justify-between sticky top-0 bg-[#0a0f1e]/80 backdrop-blur-xl z-20">
+      <DialogContent className="w-full h-[100dvh] max-w-full m-0 p-0 border-0 rounded-none bg-[#0a0f1e] flex flex-col overflow-hidden">
+        <DialogHeader className="px-4 py-4 border-b border-white/5 flex flex-row items-center justify-between shrink-0 sticky top-0 bg-[#0a0f1e]/80 backdrop-blur-xl z-20">
           <div className="flex items-center gap-3">
-            <button onClick={() => onOpenChange(false)} className="p-1 hover:bg-white/5 rounded-full text-slate-400"><X className="w-6 h-6" /></button>
+            <button onClick={() => onOpenChange(false)} className="h-10 w-10 flex items-center justify-center hover:bg-white/5 rounded-full text-slate-400 active:scale-95 transition-transform" aria-label="Close comments"><X className="w-6 h-6" /></button>
             <DialogTitle className="text-[17px] font-bold text-white truncate max-w-[240px] font-['Space_Grotesk']">{itemTitle}</DialogTitle>
             <DialogDescription className="sr-only">Read and write comments for this adventure item.</DialogDescription>
           </div>

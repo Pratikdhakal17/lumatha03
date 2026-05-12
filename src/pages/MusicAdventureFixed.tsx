@@ -183,6 +183,7 @@ export default function MusicAdventureFixed() {
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [selectedPostTitle, setSelectedPostTitle] = useState('');
+  const [selectedPostMediaUrl, setSelectedPostMediaUrl] = useState<string | null>(null);
   const [selectedCommentType, setSelectedCommentType] = useState<'post' | 'travel'>('post');
 
   // Challenge detail modal
@@ -204,6 +205,7 @@ export default function MusicAdventureFixed() {
   const [visitedPlaceIds, setVisitedPlaceIds] = useState<Set<string>>(new Set());
   const [lovedPlaceIds, setLovedPlaceIds] = useState<Set<string>>(new Set());
   const [savedPlaceIds, setSavedPlaceIds] = useState<Set<string>>(new Set());
+  const [exploreShuffleSeed, setExploreShuffleSeed] = useState(() => Math.floor(Date.now() / 3600000));
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
@@ -227,6 +229,25 @@ export default function MusicAdventureFixed() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
+
+  useEffect(() => {
+    const updateSeed = () => setExploreShuffleSeed(Math.floor(Date.now() / 3600000));
+    updateSeed();
+
+    const now = new Date();
+    const msUntilNextHour = ((59 - now.getMinutes()) * 60 * 1000) + ((59 - now.getSeconds()) * 1000) + (1000 - now.getMilliseconds());
+    const timeoutId = window.setTimeout(() => {
+      updateSeed();
+      const intervalId = window.setInterval(updateSeed, 60 * 60 * 1000);
+      (window as any).__lumathaExploreShuffleInterval = intervalId;
+    }, msUntilNextHour);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      const intervalId = (window as any).__lumathaExploreShuffleInterval;
+      if (intervalId) window.clearInterval(intervalId);
+    };
+  }, []);
 
   const formatStoryDate = (value: string | null | undefined) => {
     if (!value) return 'Unknown date';
@@ -538,6 +559,15 @@ export default function MusicAdventureFixed() {
     return true;
   }, []);
 
+  const seededExploreScore = useCallback((value: string) => {
+    let hash = exploreShuffleSeed;
+    for (let index = 0; index < value.length; index += 1) {
+      hash = ((hash << 5) - hash) + value.charCodeAt(index);
+      hash |= 0;
+    }
+    return Math.abs(hash);
+  }, [exploreShuffleSeed]);
+
   const filteredPlaces = useMemo(() => {
     const filtered = places.filter(p => {
       if (!p || typeof p !== 'object' || !p.id) return false;
@@ -550,22 +580,17 @@ export default function MusicAdventureFixed() {
       return matchesSearch && matchesFilter;
     });
 
-    // Stable ordering: Nepal first, then country/name alphabetical
+    // Hourly seeded shuffle: stable for the hour, different the next hour.
     return filtered.sort((a, b) => {
-      const aCountry = String(a?.country || '').toLowerCase();
-      const bCountry = String(b?.country || '').toLowerCase();
-      const aNepal = aCountry.includes('nepal') ? 0 : 1;
-      const bNepal = bCountry.includes('nepal') ? 0 : 1;
-      if (aNepal !== bNepal) return aNepal - bNepal;
-
-      const countryCompare = aCountry.localeCompare(bCountry);
-      if (countryCompare !== 0) return countryCompare;
+      const aScore = seededExploreScore(String(a?.id || a?.name || ''));
+      const bScore = seededExploreScore(String(b?.id || b?.name || ''));
+      if (aScore !== bScore) return aScore - bScore;
 
       const aName = String(a?.name || '').toLowerCase();
       const bName = String(b?.name || '').toLowerCase();
       return aName.localeCompare(bName);
     });
-  }, [places, exploreSearchQuery, exploreSearchFilter, profileViewFilter, placeMatchesExploreCategory, visitedPlaceIds, savedPlaceIds, lovedPlaceIds]);
+  }, [places, exploreSearchQuery, exploreSearchFilter, profileViewFilter, placeMatchesExploreCategory, visitedPlaceIds, savedPlaceIds, lovedPlaceIds, seededExploreScore]);
 
   // Show all filtered places for complete scrolling experience
   const visiblePlaces = filteredPlaces;
@@ -1392,7 +1417,7 @@ export default function MusicAdventureFixed() {
                         <button onClick={() => likeStory(story.id)} className={cn("transition-colors", story.is_liked ? "text-red-500" : "text-slate-500 hover:text-red-400")}>
                           <Heart className={cn("w-4 h-4", story.is_liked && "fill-current")} />
                         </button>
-                        <button onClick={() => { setSelectedPostId(story.id); setSelectedPostTitle(story.title); setSelectedCommentType('travel'); setCommentsOpen(true); }} className="text-slate-500 hover:text-white transition-colors">
+                        <button onClick={() => { setSelectedPostId(story.id); setSelectedPostTitle(story.title); setSelectedPostMediaUrl(story.cover_image || story.photos?.[0] || null); setSelectedCommentType('travel'); setCommentsOpen(true); }} className="text-slate-500 hover:text-white transition-colors">
                           <MessageCircle className="w-4 h-4" />
                         </button>
                         <button onClick={() => saveStory(story.id)} className={cn("transition-colors", story.is_saved ? "text-violet-500" : "text-slate-500 hover:text-violet-400")}>
@@ -1555,7 +1580,7 @@ export default function MusicAdventureFixed() {
         );
       })()}
 
-      <CommentsDialog postId={selectedPostId || ''} postTitle={selectedPostTitle} type={selectedCommentType} open={commentsOpen} onOpenChange={setCommentsOpen} />
+      <CommentsDialog postId={selectedPostId || ''} postTitle={selectedPostTitle} mediaUrl={selectedPostMediaUrl} type={selectedCommentType} open={commentsOpen} onOpenChange={setCommentsOpen} />
     </div>
   );
 }

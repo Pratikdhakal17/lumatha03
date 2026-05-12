@@ -36,11 +36,12 @@ interface CommentsDialogProps {
   postId: string | null;
   postTitle?: string;
   type?: 'post' | 'travel';
+  mediaUrl?: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function CommentsDialog({ postId, postTitle, type = 'post', open, onOpenChange }: CommentsDialogProps) {
+export function CommentsDialog({ postId, postTitle, type = 'post', mediaUrl, open, onOpenChange }: CommentsDialogProps) {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [comments, setComments] = useState<Comment[]>([]);
@@ -259,45 +260,69 @@ export function CommentsDialog({ postId, postTitle, type = 'post', open, onOpenC
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg p-0 bg-[#0d1117] border-white/5 overflow-hidden rounded-[28px] h-[85vh] flex flex-col shadow-2xl">
-        <DialogHeader className="p-4 border-b border-white/5 flex flex-row items-center justify-between space-y-0">
-          <div>
-            <DialogTitle className="text-lg font-black uppercase tracking-wider text-white">Comments</DialogTitle>
+      <DialogContent className="w-full h-[100dvh] max-w-full m-0 p-0 border-0 rounded-none bg-[#0d1117] overflow-hidden flex flex-col shadow-2xl">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-white/5 shrink-0 bg-[#0d1117]/90 backdrop-blur-xl z-30">
+          <div className="min-w-0">
+            <DialogTitle className="text-lg font-black uppercase tracking-wider text-white truncate">Comments</DialogTitle>
             <DialogDescription className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate max-w-[240px]">{postTitle || 'Loading post details...'}</DialogDescription>
           </div>
-          <button onClick={() => onOpenChange(false)} className="p-2 rounded-full hover:bg-white/5 text-slate-400"><X className="w-5 h-5" /></button>
-        </DialogHeader>
-
-        <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
-          {fetching ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">Syncing with Lumatha...</p>
-            </div>
-          ) : comments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center space-y-3 opacity-40 grayscale">
-              <MessageCircle className="w-12 h-12 text-slate-600" />
-              <p className="text-sm font-bold uppercase tracking-widest text-slate-500">No comments yet</p>
-              <p className="text-[10px] font-medium text-slate-600">Be the first to share your thoughts!</p>
-            </div>
-          ) : (
-            <div className="pb-10">{comments.map(c => renderComment(c))}</div>
-          )}
+          <button onClick={() => onOpenChange(false)} className="h-10 w-10 rounded-full flex items-center justify-center hover:bg-white/5 text-slate-400 active:scale-95 transition-transform" aria-label="Close comments">
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        <div className="p-4 bg-slate-900/50 backdrop-blur-xl border-t border-white/5">
-          <form onSubmit={handleSubmit} className="relative flex items-center gap-3">
-            <Avatar className="h-9 w-9 border border-white/5 ring-2 ring-primary/10">
-              <AvatarImage src={profile?.avatar_url || undefined} />
-              <AvatarFallback className="bg-primary/10 text-primary font-black uppercase">{profile?.name?.[0]}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 relative">
-              <Input value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="Share your thoughts..." className="pr-12 h-11 bg-muted/20 border-white/5 rounded-2xl focus-visible:ring-primary/30 font-medium text-sm" />
-              <button type="submit" disabled={!newComment.trim() || loading} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-primary hover:scale-110 disabled:opacity-30 disabled:scale-100 transition-all">
-                <Send className="w-5 h-5" />
-              </button>
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div className="relative h-[42svh] min-h-[240px] overflow-hidden border-b border-white/5 bg-slate-950">
+            {mediaUrl ? (
+              <img src={mediaUrl} alt={postTitle || 'Post media'} className="w-full h-full object-cover" />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-b from-slate-800 via-slate-900 to-[#0d1117]" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-[#0d1117]/20 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 p-4">
+              <p className="text-[10px] uppercase tracking-[0.22em] text-white/50 font-black">{type === 'travel' ? 'Travel story' : 'Post'}</p>
+              <h2 className="mt-1 text-2xl font-black text-white leading-tight line-clamp-2">{postTitle || 'Comments'}</h2>
             </div>
-          </form>
+          </div>
+
+          <div className="flex-1 min-h-0 flex flex-col">
+            <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
+              {fetching ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">Syncing with Lumatha...</p>
+                </div>
+              ) : comments.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center space-y-3 opacity-40 grayscale">
+                  <MessageCircle className="w-12 h-12 text-slate-600" />
+                  <p className="text-sm font-bold uppercase tracking-widest text-slate-500">No comments yet</p>
+                  <p className="text-[10px] font-medium text-slate-600">Be the first to share your thoughts!</p>
+                </div>
+              ) : (
+                <div className="pb-10">{comments.map(c => renderComment(c))}</div>
+              )}
+            </div>
+
+            <div className="p-4 bg-slate-900/50 backdrop-blur-xl border-t border-white/5 pb-[max(1rem,env(safe-area-inset-bottom))]">
+              <form onSubmit={handleSubmit} className="relative flex items-center gap-3">
+                <Avatar className="h-10 w-10 border-2 border-primary/20 ring-2 ring-primary/10 shrink-0">
+                  <AvatarImage src={profile?.avatar_url || undefined} />
+                  <AvatarFallback className="bg-primary/10 text-primary font-black uppercase">{profile?.name?.[0] || '?'}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 relative">
+                  <Input
+                    value={newComment}
+                    onChange={e => setNewComment(e.target.value)}
+                    placeholder="Write a comment..."
+                    className="pr-12 h-12 bg-muted/20 border-white/5 rounded-full focus-visible:ring-primary/30 font-medium text-sm"
+                  />
+                  <button type="submit" disabled={!newComment.trim() || loading} className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 flex items-center justify-center rounded-full text-primary hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-all">
+                    <Send className="w-5 h-5" />
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

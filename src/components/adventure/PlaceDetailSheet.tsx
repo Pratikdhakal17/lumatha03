@@ -117,13 +117,14 @@ export function PlaceDetailSheet({
               <img src={place.image} className="w-full h-full object-cover" alt="" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1e] to-transparent" />
             </div>
-            <div className="p-4 -mt-10 relative z-10">
+            <div className="relative z-10 min-h-0 flex-1 flex flex-col">
                <AdventureCommentsDialog 
                  open={true} 
                  onOpenChange={() => {}} 
                  itemId={place.id} 
                  itemTitle={place.name} 
                  itemType="place"
+                   mediaUrl={place.image}
                  inline
                />
             </div>
