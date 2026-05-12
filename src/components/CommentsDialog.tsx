@@ -54,6 +54,13 @@ export function CommentsDialog({ postId, postTitle, type = 'post', mediaUrl, ope
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
   const [likedComments, setLikedPosts] = useState<Set<string>>(new Set());
 
+  const mediaKind = (() => {
+    if (!mediaUrl) return 'none';
+    const cleanUrl = mediaUrl.split('?')[0].toLowerCase();
+    if (/\.(mp4|webm|mov|m4v|ogg)$/.test(cleanUrl) || cleanUrl.includes('video')) return 'video';
+    return 'image';
+  })();
+
   const getDisplayName = (p?: Profile) => {
     if (!p) return 'Lumatha Member';
     if (p.username) return p.username.startsWith('@') ? p.username : `@${p.username}`;
@@ -192,7 +199,7 @@ export function CommentsDialog({ postId, postTitle, type = 'post', mediaUrl, ope
     const displayName = getDisplayName(comment.profiles);
 
     return (
-      <div key={comment.id} className={cn("group flex gap-3", isReply ? "ml-10 mt-3" : "mt-5")}>
+      <div key={comment.id} className={cn("group flex gap-3", isReply ? "ml-5 mt-3 pl-4 border-l border-white/5" : "mt-5")}>
         <Avatar className="h-8 w-8 shrink-0 border border-white/5 cursor-pointer" onClick={() => { onOpenChange(false); navigate(`/profile/${comment.user_id}`); }}>
           <AvatarImage src={comment.profiles?.avatar_url || undefined} />
           <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-black uppercase">{displayName.replace('@', '').slice(0, 2)}</AvatarFallback>
@@ -200,7 +207,7 @@ export function CommentsDialog({ postId, postTitle, type = 'post', mediaUrl, ope
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <div className="bg-muted/40 rounded-2xl px-3 py-2 inline-block max-w-full">
+            <div className={cn("rounded-2xl px-3 py-2 inline-block max-w-full border", isReply ? "bg-slate-900/40 border-white/5" : "bg-muted/40 border-white/5")}>
               <button className="font-bold text-xs hover:underline text-left text-white" onClick={() => { onOpenChange(false); navigate(`/profile/${comment.user_id}`); }}>
                 {displayName}
               </button>
@@ -278,6 +285,11 @@ export function CommentsDialog({ postId, postTitle, type = 'post', mediaUrl, ope
             ) : (
               <div className="absolute inset-0 bg-gradient-to-b from-slate-800 via-slate-900 to-[#0d1117]" />
             )}
+            {mediaKind !== 'none' && (
+              <div className="absolute top-3 right-3 z-20 rounded-full bg-black/40 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/80 backdrop-blur-md">
+                {mediaKind === 'video' ? 'Video' : 'Photo'}
+              </div>
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-[#0d1117]/20 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-4">
               <p className="text-[10px] uppercase tracking-[0.22em] text-white/50 font-black">{type === 'travel' ? 'Travel story' : 'Post'}</p>
@@ -287,6 +299,10 @@ export function CommentsDialog({ postId, postTitle, type = 'post', mediaUrl, ope
 
           <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/45">Previous comments</p>
+                <p className="text-[10px] font-medium text-white/25">{comments.length} total</p>
+              </div>
               {fetching ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
                   <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
@@ -299,7 +315,7 @@ export function CommentsDialog({ postId, postTitle, type = 'post', mediaUrl, ope
                   <p className="text-[10px] font-medium text-slate-600">Be the first to share your thoughts!</p>
                 </div>
               ) : (
-                <div className="pb-10">{comments.map(c => renderComment(c))}</div>
+                <div className="pb-10 space-y-1">{comments.map(c => renderComment(c))}</div>
               )}
             </div>
 

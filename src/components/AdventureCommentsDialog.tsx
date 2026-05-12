@@ -52,6 +52,13 @@ export function AdventureCommentsDialog({
   const { user, profile: currentUserProfile } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const mediaKind = (() => {
+    if (!mediaUrl) return 'none';
+    const cleanUrl = mediaUrl.split('?')[0].toLowerCase();
+    if (/\.(mp4|webm|mov|m4v|ogg)$/.test(cleanUrl) || cleanUrl.includes('video')) return 'video';
+    return 'image';
+  })();
+
   const referenceId = `adventure_${itemType}_${itemId}`;
 
   useEffect(() => {
@@ -190,9 +197,18 @@ export function AdventureCommentsDialog({
     <div className="flex flex-col h-full bg-[#0a0f1e]">
       <div className="relative h-[40svh] min-h-[230px] overflow-hidden border-b border-white/5">
         {mediaUrl ? (
-          <img src={mediaUrl} alt={itemTitle} className="w-full h-full object-cover" />
+          mediaKind === 'video' ? (
+            <video src={mediaUrl} controls playsInline preload="metadata" className="w-full h-full object-cover bg-black" />
+          ) : (
+            <img src={mediaUrl} alt={itemTitle} className="w-full h-full object-cover" />
+          )
         ) : (
           <div className="absolute inset-0 bg-gradient-to-b from-slate-800 via-slate-900 to-[#0a0f1e]" />
+        )}
+        {mediaKind !== 'none' && (
+          <div className="absolute top-3 right-3 z-20 rounded-full bg-black/40 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/80 backdrop-blur-md">
+            {mediaKind === 'video' ? 'Video' : 'Photo'}
+          </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1e] via-[#0a0f1e]/20 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-4">
@@ -203,6 +219,10 @@ export function AdventureCommentsDialog({
 
       {/* List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 no-scrollbar">
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/45">Previous comments</p>
+          <p className="text-[10px] font-medium text-white/25">{comments.length} total</p>
+        </div>
         {loading ? (
           <div className="flex justify-center py-10"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
         ) : comments.length === 0 ? (
@@ -213,16 +233,16 @@ export function AdventureCommentsDialog({
         ) : (
           comments.map((comment) => (
             <div key={comment.id} className="flex gap-3">
-              <Avatar className="w-9 h-9 border border-white/5">
+              <Avatar className="w-10 h-10 border border-white/5 shrink-0">
                 <AvatarImage src={comment.profiles?.avatar_url || ''} />
                 <AvatarFallback className="bg-slate-800 text-primary text-[10px] font-black uppercase">
                   {(comment.profiles?.username || comment.profiles?.name || '?').charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <div className="bg-slate-900/50 border border-white/5 rounded-2xl p-3 relative group">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[13px] font-bold text-white">
+                <div className="bg-slate-900/50 border border-white/5 rounded-2xl p-3 relative group shadow-sm">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <span className="text-[13px] font-bold text-white truncate">
                       {comment.profiles?.username ? (comment.profiles.username.startsWith('@') ? comment.profiles.username : `@${comment.profiles.username}`) : comment.profiles?.name || 'Explorer'}
                     </span>
                     <div className="flex items-center gap-2">
@@ -287,19 +307,19 @@ export function AdventureCommentsDialog({
               ref={inputRef}
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Give reviews..."
-              className="h-12 bg-slate-900/80 border-slate-800 text-white rounded-full px-5 text-sm font-medium focus-visible:ring-primary"
+              placeholder="Write a comment..."
+              className="h-12 bg-slate-900/80 border-slate-800 text-white rounded-full px-5 pr-14 text-sm font-medium focus-visible:ring-primary"
               onKeyPress={(e) => e.key === 'Enter' && addComment()}
             />
+            <button
+              type="button"
+              onClick={addComment}
+              disabled={!newComment.trim() || !user}
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 flex items-center justify-center rounded-full text-primary hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+            >
+              <Send className="w-5 h-5" />
+            </button>
           </div>
-          <Button 
-            size="icon" 
-            onClick={addComment} 
-            disabled={!newComment.trim() || !user} 
-            className={cn("h-12 w-12 rounded-full transition-all", newComment.trim() ? "bg-primary text-white scale-100" : "bg-slate-800 text-slate-500 scale-90")}
-          >
-            <Send className="w-5 h-5" />
-          </Button>
         </div>
       </div>
     </div>
