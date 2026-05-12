@@ -4,7 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 
 export function DailyStreakInsert() {
-  const completed = parseInt(localStorage.getItem('funpun_completed') || '[]', 10) || 0;
+  const completed = parseInt(localStorage.getItem('abdev_completed') || '[]', 10) || 0;
   const target = 5;
   const pct = Math.min((completed / target) * 100, 100);
   const navigate = useNavigate();

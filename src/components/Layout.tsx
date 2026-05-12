@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import {
-  Home, BookOpen, MessageSquare, Gamepad2,
+  Home, BookOpen, MessageSquare, Gamepad2, Code,
   Mountain, Heart, ShoppingCart, Settings, Plus, Sparkles,
   ChevronDown, Menu, X, Globe, Search, Flag, Ghost,
   Lock, BarChart3, Trophy, FileText, ArrowLeft,
@@ -51,7 +51,7 @@ const menuItems: MenuItemConfig[] = [
   { title: 'Adventure', url: '/music-adventure', icon: Mountain, desc: 'Challenges + Discover', managedKey: 'adventure' },
   { title: 'Random Connect', url: '/random-connect', icon: Heart, desc: 'Share a moment', managedKey: 'randomConnect' },
   { title: 'Marketplace', url: '/marketplace', icon: ShoppingCart, desc: 'Buy/Sell/Local', managedKey: 'marketplace' },
-  { title: 'FunPun', url: '/funpun', icon: Gamepad2, desc: 'Old 90s Games' },
+  { title: 'AB Dev', url: '/funpun', icon: Code, desc: 'Developer playground' },
   { title: 'Settings', url: '/settings', icon: Settings, desc: 'Controls + Privacy' },
 ];
 
@@ -127,7 +127,7 @@ const DAILY_PROMOS: DailyPromo[] = [
   { title: 'Look for market exclusive offers', body: 'Check new listings and local deals before they go.', url: '/marketplace', slots: ['midday'] },
   { title: "Today let's do some challenges", body: 'Take one quick challenge and earn a little XP.', url: '/music-adventure', slots: ['midday', 'evening'] },
   { title: 'Share some your docs with everyone', body: 'Sharing is caring. Open your docs and publish one.', url: '/education', slots: ['midday', 'evening'] },
-  { title: "Let's try 90s console games", body: 'Take a quick break with a retro game session in FunPun.', url: '/funpun', slots: ['evening', 'night'] },
+  { title: "Let's try 90s console games", body: 'Take a quick break with a retro game session in AB Dev.', url: '/funpun', slots: ['evening', 'night'] },
   { title: "Let's look out for creating and saving some notes", body: 'Organize your thoughts and save them for later.', url: '/education', slots: ['evening'] },
   { title: 'Try different with posting ghosts posts', body: 'Post a ghost update and keep it playful and anonymous.', url: '/create?mode=ghost', slots: ['evening', 'night'] },
   { title: 'See some world places in home virtually', body: 'Explore new places and hidden gems from Adventure.', url: '/music-adventure', slots: ['midday', 'evening'] },
@@ -599,7 +599,7 @@ function LayoutContent({ children }: LayoutProps) {
                 : location.pathname.startsWith('/random-connect')
                   ? 'Random Connect'
                   : location.pathname.startsWith('/funpun')
-                    ? 'FunPun'
+                    ? 'AB Dev'
                     : location.pathname.startsWith('/marketplace')
                       ? 'Marketplace'
                       : location.pathname.startsWith('/settings')

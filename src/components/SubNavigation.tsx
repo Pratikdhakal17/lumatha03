@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
   Home, Lock, Bell, User, Search, Heart, MessageSquare,
-  Mountain, ShoppingCart, Gamepad2, BarChart3, Trophy,
+  Mountain, ShoppingCart, Code, BarChart3, Trophy,
   Ghost, CheckSquare, StickyNote, Compass, Library, UserCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -60,7 +60,7 @@ const layout2Zones: ZoneConfig[] = [
       { id: 'quests', icon: Mountain, path: '/music-adventure', label: 'Quests' },
       { id: 'challenges', icon: Trophy, path: '/music-adventure?tab=challenges', label: 'Challenges' },
       { id: 'messages', icon: MessageSquare, path: '/chat', label: 'Messages' },
-      { id: 'funpun', icon: Gamepad2, path: '/funpun', label: 'FunPun' },
+      { id: 'funpun', icon: Code, path: '/funpun', label: 'AB Dev' },
     ]
   },
   {
@@ -122,7 +122,7 @@ const layout3Zones: ZoneConfig[] = [
     color: 'text-blue-400',
     subsections: [
       { id: 'stories', icon: Ghost, path: '/create?mode=ghost', label: 'Stories' },
-      { id: 'funpun', icon: Gamepad2, path: '/funpun', label: 'FunPun' },
+      { id: 'funpun', icon: Code, path: '/funpun', label: 'AB Dev' },
       { id: 'notifications', icon: Bell, path: '/notifications', label: 'Notify' },
       { id: 'stats', icon: BarChart3, path: '/education?tab=stats', label: 'Stats' },
       { id: 'ranking', icon: Trophy, path: '/music-adventure?tab=ranking', label: 'Ranking' },

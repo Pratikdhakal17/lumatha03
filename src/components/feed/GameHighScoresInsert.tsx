@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Gamepad2, Trophy } from 'lucide-react';
+import { Code, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const top3 = [
@@ -16,7 +16,7 @@ export function GameHighScoresInsert() {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5">
           <Trophy className="w-4 h-4 text-yellow-500" />
-          <span className="text-xs font-semibold">FunPun Leaderboard</span>
+          <span className="text-xs font-semibold">AB Dev Leaderboard</span>
         </div>
         <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2" onClick={() => navigate('/funpun')}>
           Play Now
