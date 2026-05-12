@@ -2,9 +2,10 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { BarChart3, CheckCircle2 } from 'lucide-react';
 
-// Add CSS for animated percentage fill
-const style = document.createElement('style');
-if (!style.textContent) {
+// Add CSS for animated percentage fill (injected once at module load)
+if (typeof document !== 'undefined' && !document.getElementById('poll-animations-style')) {
+  const style = document.createElement('style');
+  style.id = 'poll-animations-style';
   style.textContent = `
     @keyframes fillBar {
       from {
