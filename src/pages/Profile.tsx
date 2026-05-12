@@ -252,11 +252,11 @@ export default function Profile() {
       setFollowingCount(followingResult.count || 0);
 
       if ((postsResult.data || []).length > 0) {
-        const postIds = (postsResult.data || []).map(p => p.id);
+        const postIds = (postsResult.data || []).map((p: any) => p.id);
         const { data: allLikes } = await supabase.from('likes').select('post_id').in('post_id', postIds);
         const counts: Record<string, number> = {};
         postIds.forEach(id => { counts[id] = 0; });
-        allLikes?.forEach(like => { counts[like.post_id] = (counts[like.post_id] || 0) + 1; });
+        (allLikes as any[])?.forEach((like: any) => { counts[like.post_id] = (counts[like.post_id] || 0) + 1; });
         setLikesCount(counts);
       }
 
@@ -863,14 +863,13 @@ export default function Profile() {
                     key={item.id}
                     onClick={() => setPostFilter(item.id as any)}
                     className={cn(
-                      "shrink-0 px-4 py-1.5 rounded-full text-[11px] font-bold transition-all",
-                      postFilter === item.id ? "bg-primary text-white" : "bg-slate-900 text-slate-400 border border-slate-800"
+                      "text-center group",
+                      postFilter === item.id ? "text-white" : "text-slate-400"
                     )}
                   >
-                    {item.label}
+                    <p className="text-sm font-bold group-active:scale-95 transition-transform">{item.label}</p>
                   </button>
                 ))}
-            </div>
 
             {profileVisiblePosts.length === 0 && postFilter !== 'travel_stories' && postFilter !== 'documents' ? (
               <div className="text-center py-20">
