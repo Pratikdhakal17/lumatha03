@@ -205,15 +205,21 @@ export default function FunPun() {
 
       if (projectFile) {
         const filePath = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}-${projectFile.name.replace(/\s+/g, '_')}`;
+        const safeContentType = projectFile.type && projectFile.type !== 'text/html'
+          ? projectFile.type
+          : 'application/octet-stream';
         const { error: uploadError } = await supabase.storage.from('posts-media').upload(filePath, projectFile, {
           cacheControl: '31536000',
-          contentType: projectFile.type || 'application/octet-stream',
+          contentType: safeContentType,
         });
 
-        if (uploadError) throw uploadError;
-
-        fileUrl = getPublicUrlSafe('posts-media', filePath);
-        fileType = projectFile.type || 'application/octet-stream';
+        if (uploadError) {
+          console.warn('Attachment upload skipped:', uploadError);
+          toast.warning('Project published without file attachment');
+        } else {
+          fileUrl = getPublicUrlSafe('posts-media', filePath);
+          fileType = safeContentType;
+        }
       }
 
       const payload = {
