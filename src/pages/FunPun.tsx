@@ -63,6 +63,10 @@ function guessMime(project: ProjectPost): string | null {
   if (project.file_type) return project.file_type;
   if (project.media_types && project.media_types.length > 0) return project.media_types[0];
   if (project.file_url) {
+    if (project.file_url.startsWith('data:')) {
+      const m = project.file_url.match(/^data:([^;,]+)[;,]/);
+      if (m) return m[1];
+    }
     const url = project.file_url;
     const ext = url.split('?')[0].split('.').pop()?.toLowerCase();
     if (!ext) return null;
@@ -338,7 +342,7 @@ export default function FunPun() {
 
       if (projectFile) {
         const filePath = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}-${projectFile.name.replace(/\s+/g, '_')}`;
-        const safeContentType = projectFile.type && projectFile.type !== 'text/html'
+        const safeContentType = projectFile.type && !projectFile.type.includes('html')
           ? projectFile.type
           : 'application/octet-stream';
 
@@ -349,7 +353,23 @@ export default function FunPun() {
 
         if (uploadError) {
           console.warn('Attachment upload skipped:', uploadError);
-          toast.warning('Project published without file attachment');
+
+          // If storage rejected HTML files, fall back to embedding the HTML as a data URL so preview still works
+          const nameLower = projectFile.name.toLowerCase();
+          const isHtml = (projectFile.type && projectFile.type.includes('html')) || nameLower.endsWith('.html') || nameLower.endsWith('.htm');
+          if (isHtml) {
+            try {
+              const text = await projectFile.text();
+              fileUrl = `data:text/html;charset=utf-8,${encodeURIComponent(text)}`;
+              fileType = 'text/html';
+              toast.success('Project published with inline HTML preview (storage blocked HTML).');
+            } catch (err) {
+              console.warn('Failed to create inline HTML preview:', err);
+              toast.warning('Project published without file attachment');
+            }
+          } else {
+            toast.warning('Project published without file attachment');
+          }
         } else {
           fileUrl = getPublicUrlSafe('posts-media', filePath);
           fileType = safeContentType;
