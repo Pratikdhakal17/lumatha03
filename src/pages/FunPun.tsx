@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Code, MessageCircle, Share2, Bookmark, Heart, Upload, Filter } from 'lucide-react';
+import { Code, MessageCircle, Share2, Bookmark, Heart, Upload } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,7 +9,7 @@ import { Database } from '@/integrations/supabase/types';
 import { getPublicUrlSafe } from '@/lib/storageHelpers';
 import { toast } from 'sonner';
 
-type FilterKey = 'all' | 'liked' | 'saved' | 'commented' | 'yours';
+type FilterKey = 'all' | 'liked' | 'shared' | 'commented' | 'saved' | 'yours';
 type PostRow = Database['public']['Tables']['posts']['Row'];
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 
@@ -17,9 +17,50 @@ interface ProjectPost extends PostRow {
   profiles?: ProfileRow | null;
 }
 
+const DEFAULT_PROJECT_ID = 'default-funpun';
+
+const MENU_FILTERS: Array<{ key: FilterKey; label: string }> = [
+  { key: 'all', label: 'All' },
+  { key: 'yours', label: 'Yours' },
+  { key: 'liked', label: 'Liked' },
+  { key: 'shared', label: 'Shared' },
+  { key: 'commented', label: 'Commented' },
+  { key: 'saved', label: 'Saved' },
+];
+
+function buildPreviewUrl(project: ProjectPost): string {
+  if (project.id === DEFAULT_PROJECT_ID) return '/funpun.html?challenge=1';
+  if (project.file_url) return project.file_url;
+
+  const title = project.title || 'Untitled project';
+  const description = project.content || 'No description provided.';
+  const html = `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style>
+          body { margin: 0; font-family: Arial, sans-serif; background: #0a0f1e; color: #e5f6ff; display: grid; place-items: center; min-height: 100vh; padding: 24px; }
+          .card { max-width: 720px; width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 28px; }
+          h1 { margin: 0 0 12px; font-size: 28px; }
+          p { margin: 0; line-height: 1.6; color: #b9c6da; white-space: pre-wrap; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h1>${title.replace(/</g, '&lt;')}</h1>
+          <p>${description.replace(/</g, '&lt;')}</p>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
+}
+
 export default function FunPun() {
-  const [showPlayer, setShowPlayer] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const { user, profile } = useAuth();
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [filterActive, setFilterActive] = useState<FilterKey>('all');
@@ -29,11 +70,57 @@ export default function FunPun() {
   const [projectFile, setProjectFile] = useState<File | null>(null);
   const [projects, setProjects] = useState<ProjectPost[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
+  const [selectedProject, setSelectedProject] = useState<string>(DEFAULT_PROJECT_ID);
+  const [previewUrl, setPreviewUrl] = useState('/funpun.html?challenge=1');
+  const [showPlayer, setShowPlayer] = useState(false);
   const [likedProjectIds, setLikedProjectIds] = useState<Set<string>>(new Set());
   const [savedProjectIds, setSavedProjectIds] = useState<Set<string>>(new Set());
+  const [sharedProjectIds, setSharedProjectIds] = useState<Set<string>>(new Set());
   const [commentedProjectIds, setCommentedProjectIds] = useState<Set<string>>(new Set());
   const menuRef = useRef<HTMLDivElement>(null);
-  const { user, profile } = useAuth();
+
+  const avatar = profile?.avatar || profile?.photo_url || '/lumatha-logo-new.png';
+
+  const defaultProject = useMemo<ProjectPost>(() => ({
+    id: DEFAULT_PROJECT_ID,
+    user_id: profile?.id || user?.id || DEFAULT_PROJECT_ID,
+    title: 'FunPun',
+    content: 'FunPun is the default AB Dev project. Open it to launch the built-in preview, then upload your own project cards.',
+    file_url: '/funpun.html?challenge=1',
+    file_type: 'text/html',
+    media_type: 'html',
+    media_types: ['text/html'],
+    media_urls: ['/funpun.html?challenge=1'],
+    audience: 'public',
+    bg_color: null,
+    category: 'abdev',
+    created_at: null,
+    expires_at: null,
+    feeling: null,
+    is_anonymous: false,
+    is_private: false,
+    likes_count: 0,
+    location: profile?.country || null,
+    post_type: 'post',
+    shares_count: 0,
+    shield_enabled: false,
+    subcategory: null,
+    tagged_user_ids: [],
+    tags: null,
+    updated_at: null,
+    views_count: 0,
+    visibility: 'public',
+    allow_comments: true,
+    allow_sharing: true,
+    profiles: {
+      id: profile?.id || user?.id || DEFAULT_PROJECT_ID,
+      name: 'AB Dev',
+      username: 'funpun',
+      avatar_url: avatar,
+    } as ProfileRow,
+  } as ProjectPost), [avatar, profile?.country, profile?.id, user?.id]);
+
+  const feedProjects = useMemo(() => [defaultProject, ...projects], [defaultProject, projects]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -41,6 +128,7 @@ export default function FunPun() {
         setShowOptionsMenu(false);
       }
     };
+
     if (showOptionsMenu) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -63,23 +151,26 @@ export default function FunPun() {
       const nextProjects = (postsData || []) as ProjectPost[];
       setProjects(nextProjects);
       setSelectedProject((current) => {
-        if (current && nextProjects.some((project) => project.id === current)) return current;
-        return nextProjects[0]?.id ?? null;
+        if (current && [DEFAULT_PROJECT_ID, ...nextProjects.map((project) => project.id)].includes(current)) return current;
+        return DEFAULT_PROJECT_ID;
       });
 
       if (user?.id) {
-        const [savedResult, likedResult, commentedResult] = await Promise.all([
+        const [savedResult, likedResult, sharedResult, commentedResult] = await Promise.all([
           supabase.from('saved').select('post_id').eq('user_id', user.id),
           supabase.from('likes').select('post_id').eq('user_id', user.id),
+          supabase.from('post_shares').select('post_id').eq('user_id', user.id),
           supabase.from('comments').select('post_id').eq('user_id', user.id).not('post_id', 'is', null),
         ]);
 
         setSavedProjectIds(new Set(savedResult.data?.map((entry) => entry.post_id).filter(Boolean) || []));
         setLikedProjectIds(new Set(likedResult.data?.map((entry) => entry.post_id).filter(Boolean) || []));
+        setSharedProjectIds(new Set(sharedResult.data?.map((entry) => entry.post_id).filter(Boolean) || []));
         setCommentedProjectIds(new Set(commentedResult.data?.map((entry) => entry.post_id).filter(Boolean) || []));
       } else {
         setSavedProjectIds(new Set());
         setLikedProjectIds(new Set());
+        setSharedProjectIds(new Set());
         setCommentedProjectIds(new Set());
       }
     } catch (error) {
@@ -94,16 +185,15 @@ export default function FunPun() {
     void loadProjects();
   }, [loadProjects]);
 
-  const avatar = profile?.avatar || profile?.photo_url || '/lumatha-logo-new.png';
   const currentProject = useMemo(
-    () => projects.find((project) => project.id === selectedProject) || projects[0] || null,
-    [projects, selectedProject],
+    () => feedProjects.find((project) => project.id === selectedProject) || defaultProject,
+    [defaultProject, feedProjects, selectedProject],
   );
 
   const visibleProjects = useMemo(() => {
     const normalizedSearch = searchQuery.trim().toLowerCase();
 
-    return projects.filter((project) => {
+    return feedProjects.filter((project) => {
       const title = (project.title || '').toLowerCase();
       const content = (project.content || '').toLowerCase();
       const authorName = (project.profiles?.name || project.profiles?.username || '').toLowerCase();
@@ -111,29 +201,24 @@ export default function FunPun() {
 
       if (!matchesSearch) return false;
       if (filterActive === 'liked') return likedProjectIds.has(project.id);
-      if (filterActive === 'saved') return savedProjectIds.has(project.id);
+      if (filterActive === 'shared') return sharedProjectIds.has(project.id);
       if (filterActive === 'commented') return commentedProjectIds.has(project.id);
-      if (filterActive === 'yours') return user?.id ? project.user_id === user.id : false;
+      if (filterActive === 'saved') return savedProjectIds.has(project.id);
+      if (filterActive === 'yours') return project.id === DEFAULT_PROJECT_ID || (user?.id ? project.user_id === user.id : false);
       return true;
     });
-  }, [projects, searchQuery, filterActive, likedProjectIds, savedProjectIds, commentedProjectIds, user?.id]);
+  }, [commentedProjectIds, feedProjects, filterActive, likedProjectIds, savedProjectIds, searchQuery, sharedProjectIds, user?.id]);
 
-  const isCurrentLiked = currentProject ? likedProjectIds.has(currentProject.id) : false;
-  const isCurrentSaved = currentProject ? savedProjectIds.has(currentProject.id) : false;
-
-  const openPlayer = useCallback(() => setShowPlayer(true), []);
-  const closePlayer = useCallback(() => setShowPlayer(false), []);
   const openProject = useCallback((project: ProjectPost) => {
-    if (project.file_url) {
-      window.open(project.file_url, '_blank', 'noopener,noreferrer');
-      return;
-    }
     setSelectedProject(project.id);
+    setPreviewUrl(buildPreviewUrl(project));
     setShowPlayer(true);
   }, []);
 
-  const toggleLike = useCallback(async (projectId: string = currentProject?.id || '') => {
-    if (!user?.id || !projectId) return;
+  const closePlayer = useCallback(() => setShowPlayer(false), []);
+
+  const toggleLike = useCallback(async (projectId: string) => {
+    if (!user?.id || projectId === DEFAULT_PROJECT_ID) return;
 
     const nextLiked = !likedProjectIds.has(projectId);
     try {
@@ -161,10 +246,10 @@ export default function FunPun() {
       console.error('Failed to update like:', error);
       toast.error('Could not update like');
     }
-  }, [currentProject, likedProjectIds, user?.id]);
+  }, [likedProjectIds, user?.id]);
 
-  const toggleSave = useCallback(async (projectId: string = currentProject?.id || '') => {
-    if (!user?.id || !projectId) return;
+  const toggleSave = useCallback(async (projectId: string) => {
+    if (!user?.id || projectId === DEFAULT_PROJECT_ID) return;
 
     const nextSaved = !savedProjectIds.has(projectId);
     try {
@@ -186,7 +271,40 @@ export default function FunPun() {
       console.error('Failed to update save:', error);
       toast.error('Could not update save');
     }
-  }, [currentProject, savedProjectIds, user?.id]);
+  }, [savedProjectIds, user?.id]);
+
+  const toggleShare = useCallback(async (projectId: string) => {
+    if (!user?.id || projectId === DEFAULT_PROJECT_ID) return;
+
+    try {
+      const { data: existingShare, error: lookupError } = await supabase
+        .from('post_shares')
+        .select('id')
+        .eq('post_id', projectId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (lookupError) throw lookupError;
+
+      if (existingShare) {
+        toast.info('Already shared');
+        return;
+      }
+
+      const { error } = await supabase.from('post_shares').insert({ post_id: projectId, user_id: user.id });
+      if (error) throw error;
+
+      setSharedProjectIds((prev) => new Set(prev).add(projectId));
+      setProjects((prev) => prev.map((project) => {
+        if (project.id !== projectId) return project;
+        return { ...project, shares_count: (project.shares_count || 0) + 1 };
+      }));
+      toast.success('Project shared');
+    } catch (error) {
+      console.error('Failed to share project:', error);
+      toast.error('Could not share project');
+    }
+  }, [user?.id]);
 
   const handlePublish = useCallback(async () => {
     if (!user?.id) {
@@ -208,6 +326,7 @@ export default function FunPun() {
         const safeContentType = projectFile.type && projectFile.type !== 'text/html'
           ? projectFile.type
           : 'application/octet-stream';
+
         const { error: uploadError } = await supabase.storage.from('posts-media').upload(filePath, projectFile, {
           cacheControl: '31536000',
           contentType: safeContentType,
@@ -253,6 +372,7 @@ export default function FunPun() {
       if (createdProject) {
         setProjects((prev) => [createdProject, ...prev]);
         setSelectedProject(createdProject.id);
+        setPreviewUrl(buildPreviewUrl(createdProject));
       }
 
       toast.success(`${projectName} published successfully!`);
@@ -264,7 +384,7 @@ export default function FunPun() {
       console.error('Failed to publish project:', error);
       toast.error('Failed to publish project');
     }
-  }, [currentProject, projectDesc, projectFile, projectName, profile?.country, user?.id]);
+  }, [profile?.country, projectDesc, projectFile, projectName, user?.id]);
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-[#0a0f1e] to-[#0f1424] text-white p-6 flex flex-col items-center">
@@ -275,7 +395,7 @@ export default function FunPun() {
           </div>
           <div>
             <h1 className="text-2xl font-bold">AB Dev</h1>
-            <p className="text-sm text-muted-foreground mt-1">Ambitious Beginner Developer is a place where you can see developer projects and able to upload yours too with sharing your idea for some suggestion.</p>
+            <p className="text-sm text-muted-foreground mt-1">Ambitious Beginner Developer is a place where you can see developer projects and upload yours too with sharing your idea for some suggestion.</p>
           </div>
         </div>
       </header>
@@ -290,22 +410,18 @@ export default function FunPun() {
           </button>
           {showOptionsMenu && (
             <div ref={menuRef} className="absolute top-12 left-0 bg-[#0a0f1e] border border-white/10 rounded-lg p-2 space-y-1 z-40 w-40">
-              <button onClick={() => { void toggleLike(); setShowOptionsMenu(false); }} disabled={!currentProject} className="w-full text-left px-3 py-2 text-sm hover:bg-white/5 rounded flex items-center gap-2 disabled:opacity-50">
-                <Heart className="w-4 h-4" />
-                {isCurrentLiked ? 'Unlike' : 'Like'}
-              </button>
-              <button onClick={() => { toast.info('Open comments from the project feed card.'); setShowOptionsMenu(false); }} disabled={!currentProject} className="w-full text-left px-3 py-2 text-sm hover:bg-white/5 rounded flex items-center gap-2 disabled:opacity-50">
-                <MessageCircle className="w-4 h-4" />
-                Comment
-              </button>
-              <button onClick={() => { toast.info('Share is available from the project card.'); setShowOptionsMenu(false); }} disabled={!currentProject} className="w-full text-left px-3 py-2 text-sm hover:bg-white/5 rounded flex items-center gap-2 disabled:opacity-50">
-                <Share2 className="w-4 h-4" />
-                Share
-              </button>
-              <button onClick={() => { void toggleSave(); setShowOptionsMenu(false); }} disabled={!currentProject} className="w-full text-left px-3 py-2 text-sm hover:bg-white/5 rounded flex items-center gap-2 disabled:opacity-50">
-                <Bookmark className="w-4 h-4" />
-                {isCurrentSaved ? 'Unsave' : 'Save'}
-              </button>
+              {MENU_FILTERS.map((entry) => (
+                <button
+                  key={entry.key}
+                  onClick={() => {
+                    setFilterActive(entry.key);
+                    setShowOptionsMenu(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 rounded ${filterActive === entry.key ? 'bg-white/5 text-cyan-300' : ''}`}
+                >
+                  {entry.label}
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -323,25 +439,6 @@ export default function FunPun() {
           <Upload className="w-4 h-4" />
           Upload
         </Button>
-      </div>
-
-      <div className="w-full max-w-4xl mb-6 flex items-center gap-2">
-        <Filter className="w-4 h-4 text-muted-foreground" />
-        <div className="flex gap-2 flex-wrap">
-          {(['all', 'liked', 'saved', 'commented', 'yours'] as FilterKey[]).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilterActive(f)}
-              className={`px-3 py-1 rounded-full text-sm capitalize transition ${
-                filterActive === f
-                  ? 'bg-cyan-500 text-black font-semibold'
-                  : 'bg-white/5 text-muted-foreground hover:bg-white/10'
-              }`}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="w-full max-w-4xl">
@@ -365,9 +462,7 @@ export default function FunPun() {
               return (
                 <div
                   key={project.id}
-                  className={`bg-white/5 border rounded-xl overflow-hidden backdrop-blur-sm transition cursor-pointer ${
-                    selectedProject === project.id ? 'border-cyan-500 bg-white/10' : 'border-white/10 hover:border-white/20'
-                  }`}
+                  className={`bg-white/5 border rounded-xl overflow-hidden backdrop-blur-sm transition cursor-pointer ${selectedProject === project.id ? 'border-cyan-500 bg-white/10' : 'border-white/10 hover:border-white/20'}`}
                   onClick={() => setSelectedProject(project.id)}
                 >
                   <div className="p-4 border-b border-white/5 flex items-center justify-between gap-3">
@@ -381,7 +476,9 @@ export default function FunPun() {
                         <p className="text-xs text-muted-foreground truncate">{authorName} • {publishedLabel}</p>
                       </div>
                     </div>
-                    {project.user_id === user?.id ? (
+                    {project.id === DEFAULT_PROJECT_ID ? (
+                      <span className="text-[11px] rounded-full px-2 py-1 bg-cyan-500/15 text-cyan-300 border border-cyan-500/20">Default</span>
+                    ) : project.user_id === user?.id ? (
                       <span className="text-[11px] rounded-full px-2 py-1 bg-cyan-500/15 text-cyan-300 border border-cyan-500/20">Yours</span>
                     ) : null}
                   </div>
@@ -397,31 +494,46 @@ export default function FunPun() {
                   <div className="px-4 py-3 border-t border-white/5 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-4">
                       <button
-                        onClick={(event) => { event.stopPropagation(); void toggleLike(project.id); }}
-                        className={`flex items-center gap-1 transition ${isCurrentLiked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void toggleLike(project.id);
+                        }}
+                        className={`flex items-center gap-1 transition ${likedProjectIds.has(project.id) ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'}`}
+                        disabled={project.id === DEFAULT_PROJECT_ID}
                       >
-                        <Heart className={`w-4 h-4 ${isCurrentLiked ? 'fill-red-500' : ''}`} />
+                        <Heart className={`w-4 h-4 ${likedProjectIds.has(project.id) ? 'fill-red-500' : ''}`} />
                         <span className="text-xs">{project.likes_count || 0}</span>
                       </button>
                       <button
-                        onClick={(event) => { event.stopPropagation(); toast.info('Open comments from the main feed card.'); }}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          toast.info('Open comments from the main feed card.');
+                        }}
                         className="flex items-center gap-1 text-muted-foreground hover:text-cyan-500 transition"
                       >
                         <MessageCircle className="w-4 h-4" />
                         <span className="text-xs">Comment</span>
                       </button>
                       <button
-                        onClick={(event) => { event.stopPropagation(); toast.info('Share from the main feed card.'); }}
-                        className="flex items-center gap-1 text-muted-foreground hover:text-cyan-500 transition"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void toggleShare(project.id);
+                        }}
+                        className={`flex items-center gap-1 transition ${sharedProjectIds.has(project.id) ? 'text-cyan-300' : 'text-muted-foreground hover:text-cyan-500'}`}
+                        disabled={project.id === DEFAULT_PROJECT_ID}
                       >
-                        <Share2 className="w-4 h-4" />
+                        <Share2 className={`w-4 h-4 ${sharedProjectIds.has(project.id) ? 'fill-cyan-300' : ''}`} />
                         <span className="text-xs">Share</span>
                       </button>
                       <button
-                        onClick={(event) => { event.stopPropagation(); void toggleSave(project.id); }}
-                        className={`transition ${isCurrentSaved ? 'text-yellow-500' : 'text-muted-foreground hover:text-yellow-500'}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void toggleSave(project.id);
+                        }}
+                        className={`transition ${savedProjectIds.has(project.id) ? 'text-yellow-500' : 'text-muted-foreground hover:text-yellow-500'}`}
+                        disabled={project.id === DEFAULT_PROJECT_ID}
                       >
-                        <Bookmark className={`w-4 h-4 ${isCurrentSaved ? 'fill-yellow-500' : ''}`} />
+                        <Bookmark className={`w-4 h-4 ${savedProjectIds.has(project.id) ? 'fill-yellow-500' : ''}`} />
                       </button>
                     </div>
                     <Button
@@ -452,7 +564,7 @@ export default function FunPun() {
               <label className="text-sm font-semibold">Project Name</label>
               <input
                 value={projectName}
-                onChange={e => setProjectName(e.target.value)}
+                onChange={(event) => setProjectName(event.target.value)}
                 placeholder="Enter project name"
                 className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 mt-1 placeholder:text-muted-foreground focus:outline-none"
               />
@@ -461,14 +573,18 @@ export default function FunPun() {
               <label className="text-sm font-semibold">Description</label>
               <textarea
                 value={projectDesc}
-                onChange={e => setProjectDesc(e.target.value)}
+                onChange={(event) => setProjectDesc(event.target.value)}
                 placeholder="Describe your project"
                 className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 mt-1 placeholder:text-muted-foreground focus:outline-none h-20 resize-none"
               />
             </div>
             <div>
               <label className="text-sm font-semibold">Project File</label>
-              <input type="file" className="w-full text-sm mt-1" onChange={(event) => setProjectFile(event.target.files?.[0] || null)} />
+              <input
+                type="file"
+                className="w-full text-sm mt-1"
+                onChange={(event) => setProjectFile(event.target.files?.[0] || null)}
+              />
               {projectFile ? <p className="mt-2 text-xs text-cyan-300">Selected: {projectFile.name}</p> : null}
             </div>
             <div className="flex gap-2 justify-end">
@@ -482,11 +598,13 @@ export default function FunPun() {
       {showPlayer && (
         <div className="fixed inset-0 z-50 bg-black/90 flex flex-col">
           <div className="flex items-center justify-between p-3 max-w-3xl w-full mx-auto">
-            <div />
+            <div className="text-xs text-muted-foreground truncate max-w-[70%]">
+              {currentProject?.title || 'Project preview'}
+            </div>
             <button onClick={closePlayer} className="text-white text-sm bg-white/10 px-3 py-1 rounded">Close</button>
           </div>
           <div className="flex-1">
-            <iframe title="AB Dev Player" src="/funpun.html" className="w-full h-full border-none" />
+            <iframe title="AB Dev Player" src={previewUrl} className="w-full h-full border-none" />
           </div>
         </div>
       )}
