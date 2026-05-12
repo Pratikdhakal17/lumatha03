@@ -74,6 +74,44 @@ const MessageItem = memo(function MessageItem({
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const swipeHandledRef = useRef(false);
 
+  // Helper function to determine message type and status text
+  const getMessageTypeIndicator = () => {
+    const senderName = isOwn ? 'You' : (displayName || 'User');
+    
+    if (msg.content?.startsWith('[POLL]') || msg.media_type === 'poll') {
+      return `${senderName} created a poll`;
+    }
+    if (msg.content?.startsWith('📎 ') || msg.media_type === 'document') {
+      return `${senderName} shared a document`;
+    }
+    if (msg.content?.trim().toLowerCase().startsWith('sketch drawing') || msg.media_type === 'drawing') {
+      return `${senderName} shared a drawing`;
+    }
+    if (msg.media_type === 'capturing_moment') {
+      return `${senderName} shared a captured moment`;
+    }
+    if (msg.media_type === 'view_once_image' || msg.media_type === 'view_once_video') {
+      return `${senderName} sent you a private moment`;
+    }
+    if (msg.media_type === 'image' || msg.media_type === 'images') {
+      return `${senderName} shared media`;
+    }
+    if (msg.media_type === 'video') {
+      return `${senderName} shared a video`;
+    }
+    if (msg.content?.includes('[Location]') || msg.media_type === 'location') {
+      return `${senderName} shared their location`;
+    }
+    if (msg.content && isSharedPostMessage(msg.content)) {
+      return `${senderName} shared a post`;
+    }
+    if (msg.content === '🎤 Voice message' || msg.media_type === 'audio') {
+      return `${senderName} sent a voice message`;
+    }
+    
+    return `${senderName} sent you a message`;
+  };
+
   const clearLongPressTimer = () => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
@@ -99,7 +137,17 @@ const MessageItem = memo(function MessageItem({
           </span>
         </div>
       )}
-      <div className={cn('flex mb-1 items-start gap-1 group', isOwn ? 'justify-end' : 'justify-start')}>
+      
+      {/* Outer Status Indicator */}
+      {!isOwn && (
+        <div className="flex justify-start mb-1 px-1">
+          <span className="text-[10px] font-medium text-violet-300 bg-violet-500/10 px-2 py-1 rounded-full">
+            {getMessageTypeIndicator()}
+          </span>
+        </div>
+      )}
+      
+      <div className={cn('flex mb-2 items-start gap-1 group', isOwn ? 'justify-end' : 'justify-start')}>
         <div
           className={cn(
             'relative group select-none',
@@ -420,13 +468,13 @@ const MessageItem = memo(function MessageItem({
 
           {/* Meta (owner for media, time/read for text) */}
           {msg.media_url ? (
-            <div className={cn('flex items-center mt-0.5 px-0.5', isOwn ? 'justify-end' : 'justify-start')}>
+            <div className={cn('flex items-center mt-1 px-0.5', isOwn ? 'justify-end' : 'justify-start')}>
               <span className="text-[11px]" style={{ color: '#64748B' }}>
                 {isOwn ? 'You' : displayName || 'User'}
               </span>
             </div>
           ) : (
-            <div className={cn('flex items-center gap-1 mt-0.5 px-0.5', isOwn ? 'justify-end' : 'justify-start')}>
+            <div className={cn('flex items-center gap-1 mt-1 px-0.5', isOwn ? 'justify-end' : 'justify-start')}>
               <span className="text-[11px]" style={{ color: '#4B5563' }}>
                 {formatMsgTime(msg.created_at || '')}
               </span>
