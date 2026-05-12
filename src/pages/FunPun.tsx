@@ -59,6 +59,21 @@ function buildPreviewUrl(project: ProjectPost): string {
   return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
 }
 
+function guessMime(project: ProjectPost): string | null {
+  if (project.file_type) return project.file_type;
+  if (project.media_types && project.media_types.length > 0) return project.media_types[0];
+  if (project.file_url) {
+    const url = project.file_url;
+    const ext = url.split('?')[0].split('.').pop()?.toLowerCase();
+    if (!ext) return null;
+    if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext)) return `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+    if (['mp4', 'webm', 'ogg'].includes(ext)) return `video/${ext}`;
+    if (ext === 'pdf') return 'application/pdf';
+    if (ext === 'html' || ext === 'htm') return 'text/html';
+  }
+  return null;
+}
+
 export default function FunPun() {
   const { user, profile } = useAuth();
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -603,8 +618,44 @@ export default function FunPun() {
             </div>
             <button onClick={closePlayer} className="text-white text-sm bg-white/10 px-3 py-1 rounded">Close</button>
           </div>
-          <div className="flex-1">
-            <iframe title="AB Dev Player" src={previewUrl} className="w-full h-full border-none" />
+          <div className="flex-1 flex items-center justify-center">
+            {(() => {
+              const project = currentProject;
+              const src = previewUrl;
+              const mime = guessMime(project || ({} as ProjectPost));
+
+              if (!src) {
+                return <div className="text-muted-foreground">No preview available</div>;
+              }
+
+              if (mime && mime.startsWith('image')) {
+                return <img src={src} alt={project?.title || 'project'} className="max-w-full max-h-full object-contain" />;
+              }
+
+              if (mime && mime.startsWith('video')) {
+                return <video controls className="w-full h-full max-h-[85vh] bg-black" src={src} />;
+              }
+
+              if (mime === 'application/pdf') {
+                return <iframe title="PDF Preview" src={src} className="w-full h-full border-none" />;
+              }
+
+              if (mime === 'text/html') {
+                return (
+                  <div className="w-full h-full flex flex-col">
+                    <div className="p-3 border-b border-white/5 bg-white/5 text-sm text-yellow-200">HTML preview may be blocked by browser or storage CORS; open in a new tab if it doesn't render.</div>
+                    <div className="flex-1">
+                      <iframe title="HTML Preview" src={src} sandbox="allow-scripts allow-forms" className="w-full h-full border-none" />
+                    </div>
+                    <div className="p-3 text-right">
+                      <Button className="bg-cyan-500 hover:bg-cyan-600 text-black" onClick={() => window.open(src, '_blank')}>Open in new tab</Button>
+                    </div>
+                  </div>
+                );
+              }
+
+              return <iframe title="AB Dev Player" src={src} className="w-full h-full border-none" />;
+            })()}
           </div>
         </div>
       )}
