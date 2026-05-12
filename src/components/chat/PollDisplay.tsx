@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { BarChart3, CheckCircle2 } from 'lucide-react';
+import { BarChart3, CheckCircle2, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 // Add CSS for animated percentage fill (injected once at module load)
 if (typeof document !== 'undefined' && !document.getElementById('poll-animations-style')) {
@@ -104,10 +105,26 @@ export function PollDisplay({ content, isOwn, messageId, peerId, onVote }: PollD
 
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [pollState, setPollState] = useState(() => ({ ...parsedPoll }));
+  const [hasVoted, setHasVoted] = useState(false);
 
   useEffect(() => {
     setPollState({ ...parsedPoll });
-  }, [parsedPoll]);
+    
+    // Check if user has already voted in this poll
+    if (user && messageId) {
+      try {
+        const voteKey = `poll_vote_${parsedPoll.question || messageId}_${user.id}`;
+        const storedVote = localStorage.getItem(voteKey);
+        if (storedVote) {
+          const voteData = JSON.parse(storedVote);
+          setSelectedOption(voteData.optionIndex);
+          setHasVoted(true);
+        }
+      } catch (error) {
+        // Ignore storage errors
+      }
+    }
+  }, [parsedPoll, messageId, user]);
 
   const actualVotes = useMemo(
     () => pollState.options.map((option) => option.votes || 0),
@@ -116,9 +133,12 @@ export function PollDisplay({ content, isOwn, messageId, peerId, onVote }: PollD
   const totalVotes = actualVotes.reduce((sum, count) => sum + count, 0);
 
   const handleVote = (idx: number) => {
-    // allow changing vote: send vote message every time
-    const wasChangingVote = selectedOption !== null && selectedOption !== idx;
+    // Prevent voting if user has already voted and not changing vote
+    if (hasVoted && selectedOption === idx) return;
+    
+    const wasChangingVote = hasVoted && selectedOption !== idx;
     setSelectedOption(idx);
+    setHasVoted(true);
     
     // Update local state immediately for better UX
     if (wasChangingVote) {
@@ -152,6 +172,21 @@ export function PollDisplay({ content, isOwn, messageId, peerId, onVote }: PollD
     
     if (onVote) onVote(idx);
     
+    // Store vote in localStorage for persistence
+    try {
+      const voteKey = `poll_vote_${parsedPoll.question || messageId}_${user?.id || 'anonymous'}`;
+      localStorage.setItem(voteKey, JSON.stringify({
+        pollId: messageId,
+        question: parsedPoll.question,
+        userId: user?.id || 'anonymous',
+        optionIndex: idx,
+        isChangingVote: wasChangingVote,
+        timestamp: new Date().toISOString()
+      }));
+    } catch (storageError) {
+      // Ignore storage errors
+    }
+    
     // send poll vote message via chat system so peers get realtime update
     try {
       // lazy import hook to avoid cycles
@@ -161,21 +196,7 @@ export function PollDisplay({ content, isOwn, messageId, peerId, onVote }: PollD
       // Since hooks cannot be called conditionally, dispatch a custom event to request a vote send
       window.dispatchEvent(new CustomEvent('request-poll-vote', { detail: { pollMessageId: messageId, peerId, optionIndex: idx, isChangingVote: wasChangingVote } }));
     } catch (e) {
-      // Fallback: store locally only
-      // Store vote in localStorage for persistence
-      try {
-        const voteKey = `poll_vote_${parsedPoll.question || messageId}_${user?.id || 'anonymous'}`;
-        localStorage.setItem(voteKey, JSON.stringify({
-          pollId: messageId,
-          question: parsedPoll.question,
-          userId: user?.id || 'anonymous',
-          optionIndex: idx,
-          isChangingVote: wasChangingVote,
-          timestamp: new Date().toISOString()
-        }));
-      } catch (storageError) {
-        // Ignore storage errors
-      }
+      // Fallback: local storage already handled
     }
   };
 
@@ -193,8 +214,10 @@ export function PollDisplay({ content, isOwn, messageId, peerId, onVote }: PollD
           payload = msg;
         }
         if (!payload) return;
+        
         const pollId = payload.pollId || payload.pollMessageId;
         if (!pollId) return;
+        
         // Match by poll id inside parsedPoll
         const myPollId = (parsedPoll as any).id || parsedPoll.question;
         if (String(pollId) !== String(myPollId) && String(pollId) !== String(messageId)) return;
@@ -203,32 +226,65 @@ export function PollDisplay({ content, isOwn, messageId, peerId, onVote }: PollD
         const optionIndex = Number(payload.optionIndex);
         if (Number.isNaN(optionIndex)) return;
 
+        // Prevent processing own votes from remote events (to avoid duplicates)
+        if (user && voterId === user.id) return;
+
         setPollState(prev => {
-          const next = { ...prev, options: prev.options.map(o => ({ ...o, voters: Array.isArray(o.voters) ? [...o.voters] : [] })) };
-          // remove voter from any previous option
-          next.options.forEach((opt) => {
-            const idx = opt.voters.indexOf(voterId);
-            if (idx !== -1) opt.voters.splice(idx, 1);
-          });
-          // add to new option
-          if (!next.options[optionIndex]) return prev;
-          next.options[optionIndex].voters = next.options[optionIndex].voters || [];
-          if (!next.options[optionIndex].voters.includes(voterId)) next.options[optionIndex].voters.push(voterId);
-          // update votes counts
-          next.options = next.options.map(o => ({ ...o, votes: (o.voters || []).length }));
-          return next;
+          // Ensure voters arrays exist
+          const optionsWithVoters = prev.options.map(option => ({
+            ...option,
+            voters: Array.isArray(option.voters) ? [...option.voters] : []
+          }));
+          
+          // Remove voter from all options first (prevents duplicate votes)
+          const cleanedOptions = optionsWithVoters.map(option => ({
+            ...option,
+            voters: option.voters.filter(id => id !== voterId)
+          }));
+          
+          // Add voter to the selected option
+          if (cleanedOptions[optionIndex]) {
+            cleanedOptions[optionIndex] = {
+              ...cleanedOptions[optionIndex],
+              voters: [...cleanedOptions[optionIndex].voters, voterId]
+            };
+          }
+          
+          // Update vote counts based on voter arrays
+          return {
+            ...prev,
+            options: cleanedOptions.map(option => ({
+              ...option,
+              votes: option.voters.length
+            }))
+          };
         });
       } catch (err) {
-        // ignore
+        console.error('Error processing poll vote:', err);
       }
     };
     window.addEventListener('poll-vote', onVoteEvent as EventListener);
     return () => window.removeEventListener('poll-vote', onVoteEvent as EventListener);
-  }, [parsedPoll, messageId]);
+  }, [parsedPoll, messageId, user]);
 
   if (pollState.options.length === 0) return <p className="text-white">{content}</p>;
 
   const currentTotal = totalVotes;
+
+  // Helper function to get voter avatars for an option
+  const getVoterAvatars = (option: any) => {
+    if (!option.voters || !Array.isArray(option.voters)) return [];
+    
+    // Show up to 3 voter avatars, exclude current user
+    const otherVoters = option.voters.filter((voterId: string) => voterId !== user?.id);
+    return otherVoters.slice(0, 3).map((voterId: string) => {
+      // For demo purposes, generate avatar from voter ID
+      // In real app, you'd fetch user data from your user context
+      const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${voterId}`;
+      const initials = voterId.slice(0, 2).toUpperCase();
+      return { id: voterId, avatarUrl, initials };
+    });
+  };
 
   return (
     <div className={cn(
@@ -274,11 +330,13 @@ export function PollDisplay({ content, isOwn, messageId, peerId, onVote }: PollD
             <button
               key={idx}
               onClick={() => handleVote(idx)}
-              disabled={!pollState.isActive}
+              disabled={!pollState.isActive || (hasVoted && selectedOption === idx)}
               type="button"
               className={cn(
                 "relative w-full text-left rounded-xl overflow-hidden transition-all poll-option",
-                !pollState.isActive ? "cursor-not-allowed opacity-60" : "cursor-pointer active:scale-[0.98] hover:bg-white/5",
+                !pollState.isActive ? "cursor-not-allowed opacity-60" : 
+                (hasVoted && selectedOption === idx) ? "cursor-default opacity-80" : 
+                "cursor-pointer active:scale-[0.98] hover:bg-white/5",
                 isSelected && "ring-2 ring-violet-500/30"
               )}
             >
@@ -301,25 +359,73 @@ export function PollDisplay({ content, isOwn, messageId, peerId, onVote }: PollD
 
               {/* Content */}
               <div className="relative flex items-center justify-between gap-3 px-3 py-3">
-                <div className="flex items-start gap-2 min-w-0">
+                <div className="flex items-start gap-2 min-w-0 flex-1">
                   {hasVoted && isSelected && (
-                    <CheckCircle2 className="w-4 h-4 text-violet-400 flex-shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-violet-400 flex-shrink-0 mt-0.5" />
                   )}
-                  <span className={cn(
-                    "text-[13px] font-medium leading-snug whitespace-normal break-words",
-                    isSelected ? "text-white" : "text-white/90"
-                  )}>
-                    {option.text}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <span className={cn(
+                      "text-[13px] font-medium leading-snug whitespace-normal break-words block",
+                      isSelected ? "text-white" : "text-white/90"
+                    )}>
+                      {option.text}
+                    </span>
+                    
+                    {/* Show voter avatars */}
+                    {voteCount > 0 && (
+                      <div className="flex items-center gap-1 mt-2">
+                        {/* Show current user's avatar if they voted for this option */}
+                        {isSelected && user && (
+                          <div 
+                            className="w-5 h-5 rounded-full border-2 border-violet-400 flex-shrink-0"
+                            title="You voted for this"
+                          >
+                            <Avatar className="w-full h-full">
+                              <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email?.[0]} />
+                              <AvatarFallback className="text-[8px] bg-violet-500 text-white border-0">
+                                {user.email?.[0]?.toUpperCase() || 'Y'}
+                              </AvatarFallback>
+                            </Avatar>
+                          </div>
+                        )}
+                        
+                        {/* Show other voters */}
+                        {getVoterAvatars(option).map((voter, idx) => (
+                          <div 
+                            key={voter.id} 
+                            className={cn(
+                              "w-5 h-5 rounded-full border border-white/20 flex-shrink-0",
+                              idx > 0 && "-ml-1"
+                            )}
+                            title={`Voter: ${voter.id}`}
+                          >
+                            <Avatar className="w-full h-full">
+                              <AvatarImage src={voter.avatarUrl} alt={voter.initials} />
+                              <AvatarFallback className="text-[8px] bg-violet-500/20 text-violet-300 border-0">
+                                {voter.initials}
+                              </AvatarFallback>
+                            </Avatar>
+                          </div>
+                        ))}
+                        
+                        {/* Show remaining voters count */}
+                        {option.voters && option.voters.length > (isSelected ? 4 : 3) && (
+                          <span className="text-[10px] text-white/50 ml-1">
+                            +{option.voters.length - (isSelected ? 4 : 3)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {hasVoted && (
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-col items-end gap-1 shrink-0">
                     <span className="text-[12px] font-bold text-white/80 transition-all duration-500">
                       {percentage}%
                     </span>
                     <span className="text-[11px] text-white/40 transition-all duration-500">
-                      ({voteCount})
+                      {voteCount} {voteCount === 1 ? 'vote' : 'votes'}
                     </span>
                   </div>
                 )}
