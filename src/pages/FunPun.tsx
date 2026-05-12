@@ -737,39 +737,45 @@ export default function FunPun() {
 
       {showPlayer && (
         <div className="fixed inset-0 z-50 bg-black/90 flex flex-col">
-          <div className="flex items-center justify-between p-3 max-w-3xl w-full mx-auto">
-            <button onClick={closePlayer} className="p-2 bg-white/10 rounded"><X className="w-4 h-4" /></button>
-            <div className="text-xs text-muted-foreground text-center truncate max-w-[70%]">{previewError || 'Preview'}</div>
-            <button onClick={() => window.open(previewUrl, '_blank')} className="p-2 bg-white/10 rounded" aria-label="open-new-tab"><ExternalLink className="w-4 h-4" /></button>
+          <div className="flex items-center justify-between p-1.5 px-3">
+            <button onClick={closePlayer} className="p-1.5 hover:bg-white/5 rounded" aria-label="close"><X className="w-3.5 h-3.5" /></button>
+            <button onClick={() => window.open(previewUrl, '_blank')} className="p-1.5 hover:bg-white/5 rounded" aria-label="open-new-tab"><ExternalLink className="w-3.5 h-3.5" /></button>
           </div>
           <div className="flex-1 flex items-center justify-center">
-            {(() => {
-              const project = currentProject;
-              const src = previewUrl;
-              const mime = guessMime(project || ({} as ProjectPost));
+            {previewError ? (
+              <div className="text-center space-y-2">
+                <div className="text-sm text-yellow-300">⚠ Preview Error</div>
+                <div className="text-xs text-muted-foreground max-w-xs">{previewError}</div>
+              </div>
+            ) : (
+              (() => {
+                const project = currentProject;
+                const src = previewUrl;
+                const mime = guessMime(project || ({} as ProjectPost));
 
-              if (!src) {
-                return <div className="text-muted-foreground">No preview available</div>;
-              }
+                if (!src) {
+                  return <div className="text-xs text-muted-foreground">No preview available</div>;
+                }
 
-              if (mime && mime.startsWith('image')) {
-                return <img src={src} alt={project?.title || 'project'} className="max-w-full max-h-full object-contain" onLoad={() => setPreviewError(null)} onError={() => setPreviewError('Preview failed to load')} />;
-              }
+                if (mime && mime.startsWith('image')) {
+                  return <img src={src} alt={project?.title || 'project'} className="max-w-full max-h-full object-contain" onLoad={() => setPreviewError(null)} onError={() => setPreviewError('This file may be too big or errors occurred while previewing')} />;
+                }
 
-              if (mime && mime.startsWith('video')) {
-                return <video controls className="w-full h-full max-h-[85vh] bg-black" src={src} onLoadedData={() => setPreviewError(null)} onError={() => setPreviewError('Preview failed to load')} />;
-              }
+                if (mime && mime.startsWith('video')) {
+                  return <video controls className="w-full h-full max-h-[85vh] bg-black" src={src} onLoadedData={() => setPreviewError(null)} onError={() => setPreviewError('This file may be too big or errors occurred while previewing')} />;
+                }
 
-              if (mime === 'application/pdf') {
-                return <iframe title="PDF Preview" src={src} className="w-full h-full border-none" onLoad={() => setPreviewError(null)} onError={() => setPreviewError('Preview may be blocked or failed to load')} />;
-              }
+                if (mime === 'application/pdf') {
+                  return <iframe title="PDF Preview" src={src} className="w-full h-full border-none" onLoad={() => setPreviewError(null)} onError={() => setPreviewError('PDF preview failed. File may be too big or have compatibility issues')} />;
+                }
 
-              if (mime === 'text/html') {
-                return <iframe title="HTML Preview" src={src} sandbox="allow-scripts allow-forms" className="w-full h-full border-none" onLoad={() => setPreviewError(null)} onError={() => setPreviewError('Preview may be blocked or failed to load')} />;
-              }
+                if (mime === 'text/html') {
+                  return <iframe title="HTML Preview" src={src} sandbox="allow-scripts allow-forms" className="w-full h-full border-none" onLoad={() => setPreviewError(null)} onError={() => setPreviewError('HTML preview may be blocked by browser or CORS policy')} />;
+                }
 
-              return <iframe title="AB Dev Player" src={src} className="w-full h-full border-none" onLoad={() => setPreviewError(null)} onError={() => setPreviewError('Preview may be blocked or failed to load')} />;
-            })()}
+                return <iframe title="AB Dev Player" src={src} className="w-full h-full border-none" onLoad={() => setPreviewError(null)} onError={() => setPreviewError('This file may be too big or errors occurred while previewing')} />;
+              })()
+            )}
           </div>
         </div>
       )}
