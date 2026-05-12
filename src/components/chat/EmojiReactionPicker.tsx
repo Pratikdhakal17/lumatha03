@@ -1,14 +1,24 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
-const REACTION_EMOJIS = [
-  '❤️', // Love - Heart with texture
+// Top 5 reaction emojis - most commonly used
+const TOP_REACTIONS = [
+  '🙏', // Namaste - Purposeful greeting
   '😂', // Haha - Laughing face with texture  
+  '❤️', // Love - Heart with texture
+  '😮', // Wow - Surprised face with texture
+  '😢', // Sad - Crying face with texture
+];
+
+// All available reactions for "more" option
+const ALL_REACTIONS = [
+  '🙏', // Namaste - Purposeful greeting
+  '😂', // Haha - Laughing face with texture  
+  '❤️', // Love - Heart with texture
   '😮', // Wow - Surprised face with texture
   '😢', // Sad - Crying face with texture
   '😡', // Angry - Angry face with texture
   '👍', // Like - Thumbs up with texture
-  '🙏', // Pray - Namaste/Purposeful
   '😄', // Happy - Wide smile with texture
   '💜', // Purple heart - Support/Love
   '😕', // Confused - Thinking face
@@ -18,19 +28,23 @@ const REACTION_EMOJIS = [
   '👏', // Clap - Applause
   '🤝', // Handshake - Agreement
   '💯', // 100 - Perfect/Agree
+  '👎', // Disappearing message - Self-destruct
+  '🕐', // Disappearing message - Rabbit
+  '👻', // Disappearing message - Ghost
+  '💨', // Disappearing message - Poof/Dissolve
 ];
 
 // Helper function to get emoji title for tooltip
 const getEmojiTitle = (emoji: string): string => {
   const titles: Record<string, string> = {
-    '❤️': 'Love',
+    '🙏': 'Namaste',
     '😂': 'Haha',
+    '❤️': 'Love',
     '😮': 'Wow',
     '😢': 'Sad',
     '😡': 'Angry',
     '👍': 'Like',
-    '🙏': 'Pray',
-    '😄': 'Happy',
+    '': 'Happy',
     '💜': 'Support',
     '😕': 'Confused',
     '🔥': 'Fire',
@@ -38,7 +52,11 @@ const getEmojiTitle = (emoji: string): string => {
     '🎉': 'Celebrate',
     '👏': 'Clap',
     '🤝': 'Agree',
-    '💯': '100'
+    '💯': '100',
+    '👎': 'Disappearing',
+    '🕐': 'Rabbit',
+    '👻': 'Ghost',
+    '💨': 'Poof'
   };
   return titles[emoji] || emoji;
 };
@@ -61,6 +79,7 @@ interface EmojiReactionPickerProps {
 
 export function EmojiReactionPicker({ reactions, onReact, isOwn }: EmojiReactionPickerProps) {
   const [showPicker, setShowPicker] = useState(false);
+  const [showAllReactions, setShowAllReactions] = useState(false);
 
   const totalReactions = Object.values(reactions).reduce((sum, c) => sum + c, 0);
   const topReactions = Object.entries(reactions)
@@ -114,7 +133,7 @@ export function EmojiReactionPicker({ reactions, onReact, isOwn }: EmojiReaction
             isOwn ? "right-0" : "left-0"
           )}>
             <div className="grid grid-cols-6 gap-2 mb-3">
-              {REACTION_EMOJIS.slice(0, 18).map((emoji) => (
+              {TOP_REACTIONS.map((emoji) => (
                 <button
                   key={emoji}
                   className="text-2xl hover:scale-125 transition-transform active:scale-95 p-2 rounded-lg hover:bg-muted/20"
@@ -182,6 +201,48 @@ export function EmojiReactionPicker({ reactions, onReact, isOwn }: EmojiReaction
                     {emoji}
                   </button>
                 ))}
+              </div>
+              
+              {/* All reactions section */}
+              <div className="border-t border-border pt-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-muted-foreground">All reactions</span>
+                  <button 
+                    className="text-xs bg-violet-500 text-white px-2 py-1 rounded hover:bg-violet-600 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Toggle between showing top reactions and all reactions
+                      setShowAllReactions(!showAllReactions);
+                    }}
+                  >
+                    {showAllReactions ? 'Show less' : 'Show more'}
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-6 gap-1">
+                  {(showAllReactions ? ALL_REACTIONS : TOP_REACTIONS).map((emoji) => (
+                    <button
+                      key={emoji}
+                      className="text-lg hover:scale-110 transition-transform active:scale-95 p-1 rounded hover:bg-muted/10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Store emoji in recent emojis
+                        try {
+                          const recentEmojis = getRecentEmojis();
+                          const updatedRecent = [emoji, ...recentEmojis.filter(e => e !== emoji)].slice(0, 16);
+                          localStorage.setItem('recent_emojis', JSON.stringify(updatedRecent));
+                        } catch (error) {
+                          console.log('Could not store recent emoji:', error);
+                        }
+                        onReact(emoji);
+                        setShowPicker(false);
+                      }}
+                      title={getEmojiTitle(emoji)}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
