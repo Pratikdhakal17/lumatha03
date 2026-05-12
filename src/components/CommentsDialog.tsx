@@ -279,12 +279,16 @@ export function CommentsDialog({ postId, postTitle, type = 'post', mediaUrl, ope
         </div>
 
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          <div className="relative h-[42svh] min-h-[240px] overflow-hidden border-b border-white/5 bg-slate-950">
-            {mediaUrl ? (
-              <img src={mediaUrl} alt={postTitle || 'Post media'} className="w-full h-full object-cover" />
-            ) : (
-              <div className="absolute inset-0 bg-gradient-to-b from-slate-800 via-slate-900 to-[#0d1117]" />
-            )}
+          <div className="relative w-full aspect-square max-h-[60vh] min-h-[240px] overflow-hidden border-b border-white/5 bg-slate-950">
+              {mediaUrl ? (
+                mediaKind === 'video' ? (
+                  <video src={mediaUrl} controls playsInline preload="metadata" className="w-full h-full object-cover bg-black" />
+                ) : (
+                  <img src={mediaUrl} alt={postTitle || 'Post media'} className="w-full h-full object-cover" />
+                )
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-b from-slate-800 via-slate-900 to-[#0d1117]" />
+              )}
             {mediaKind !== 'none' && (
               <div className="absolute top-3 right-3 z-20 rounded-full bg-black/40 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/80 backdrop-blur-md">
                 {mediaKind === 'video' ? 'Video' : 'Photo'}

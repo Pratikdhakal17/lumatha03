@@ -195,7 +195,7 @@ export function AdventureCommentsDialog({
 
   const Content = (
     <div className="flex flex-col h-full bg-[#0a0f1e]">
-      <div className="relative h-[40svh] min-h-[230px] overflow-hidden border-b border-white/5">
+      <div className="relative w-full aspect-square max-h-[60vh] min-h-[230px] overflow-hidden border-b border-white/5">
         {mediaUrl ? (
           mediaKind === 'video' ? (
             <video src={mediaUrl} controls playsInline preload="metadata" className="w-full h-full object-cover bg-black" />
