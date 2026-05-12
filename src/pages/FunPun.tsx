@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { getPublicUrlSafe } from '@/lib/storageHelpers';
 import { toast } from 'sonner';
+import { CommentsDialog } from '@/components/CommentsDialog';
 
 type FilterKey = 'all' | 'liked' | 'shared' | 'commented' | 'saved' | 'yours';
 type PostRow = Database['public']['Tables']['posts']['Row'];
@@ -101,6 +102,8 @@ export default function FunPun() {
   const [savedProjectIds, setSavedProjectIds] = useState<Set<string>>(new Set());
   const [sharedProjectIds, setSharedProjectIds] = useState<Set<string>>(new Set());
   const [commentedProjectIds, setCommentedProjectIds] = useState<Set<string>>(new Set());
+  const [showCommentsDialog, setShowCommentsDialog] = useState(false);
+  const [selectedProjectForComments, setSelectedProjectForComments] = useState<{ id: string; title: string } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const avatar = profile?.avatar || profile?.photo_url || '/lumatha-logo-new.png';
@@ -649,7 +652,8 @@ export default function FunPun() {
                       <button
                         onClick={(event) => {
                           event.stopPropagation();
-                          toast.info('Open comments from the main feed card.');
+                          setSelectedProjectForComments({ id: project.id, title: project.title || 'Untitled' });
+                          setShowCommentsDialog(true);
                         }}
                         className="flex items-center gap-1 text-muted-foreground hover:text-cyan-500 transition"
                       >
@@ -874,6 +878,14 @@ export default function FunPun() {
           </div>
         </div>
       )}
+
+      <CommentsDialog
+        postId={selectedProjectForComments?.id || null}
+        postTitle={selectedProjectForComments?.title}
+        type="post"
+        open={showCommentsDialog}
+        onOpenChange={setShowCommentsDialog}
+      />
     </div>
   );
 }
