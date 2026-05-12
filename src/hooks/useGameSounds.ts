@@ -1,6 +1,6 @@
 import { useCallback, useRef, useEffect } from 'react';
 
-// Web Audio API based sound system for FUNPUN games
+// Web Audio API based sound system for AB Dev games
 export type SoundType = 
   | 'start' | 'correct' | 'wrong' | 'complete' | 'tick' | 'levelUp'
   | 'glass' | 'ceramic' | 'wood' | 'metal' | 'cardboard'

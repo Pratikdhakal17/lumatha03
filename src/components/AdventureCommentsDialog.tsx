@@ -141,23 +141,27 @@ export function AdventureCommentsDialog({
 
   const addComment = async () => {
     if (!user) { toast.error('Please login to comment'); return; }
-    if (!itemId) { toast.error('Missing item id — cannot save comment'); return; }
+    if (!itemId) { toast.error('Missing item id — cannot save comment'); console.warn('[AdventureCommentsDialog] Attempted add without itemId', { itemType, itemId }); return; }
     if (!newComment.trim()) return;
 
+    console.log('[AdventureCommentsDialog] Adding comment', { referenceId, userId: user.id, contentLength: newComment.length });
     try {
       // @ts-ignore
-      const { error } = await supabase.from('comments').insert({
+      const { error, data } = await supabase.from('comments').insert({
         reference_id: referenceId,
         user_id: user.id,
         content: newComment.trim()
-      });
+      }).select();
 
-      if (error) throw error;
+      if (error) throw new Error(`[DB] ${error.message} (Code: ${error.code})`);
+      console.log('[AdventureCommentsDialog] Comment saved:', data);
       setNewComment('');
       fetchComments();
       toast.success('Comment posted!');
     } catch (error) {
-      toast.error('Failed to post comment');
+      const errMsg = error instanceof Error ? error.message : String(error);
+      console.error('[AdventureCommentsDialog] Error posting comment:', errMsg);
+      toast.error(`Failed: ${errMsg.substring(0, 50)}`);
     }
   };
 

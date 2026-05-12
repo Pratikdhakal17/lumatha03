@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageCircle, BookOpen, CheckSquare, Bookmark, TrendingUp, Globe, Plus, ArrowRight, Crown, PenLine, Image, Music, Gamepad2, Star } from 'lucide-react';
+import { MessageCircle, BookOpen, CheckSquare, Bookmark, TrendingUp, Globe, Plus, ArrowRight, Crown, PenLine, Image, Music, Code, Star } from 'lucide-react';
 
 // ... (existing code)
 
@@ -12,13 +12,13 @@ export function FunpunPreviewWidget({ className }: WidgetProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-gradient-to-br from-orange-500 to-yellow-500 flex items-center justify-center relative">
-                <Gamepad2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
+                <Code className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
                 <span className="absolute -top-1 -right-1 flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
                 </span>
               </div>
-              <CardTitle className="text-xs sm:text-sm font-semibold">FunPun</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-semibold">AB Dev</CardTitle>
             </div>
             <Badge variant="outline" className="text-[8px] h-4 border-green-500/50 text-green-500 font-black animate-pulse">PLAY NOW</Badge>
           </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Leaf, Mountain, Gamepad2, Target, Coffee } from 'lucide-react';
+import { Leaf, Mountain, Code, Target, Coffee } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BreakModeScreen } from './BreakModeScreen';
 
@@ -22,7 +22,7 @@ export function StopPointCard() {
           <Mountain className="w-3.5 h-3.5" /> Adventure
         </Button>
         <Button size="sm" variant="outline" className="h-8 text-xs rounded-xl gap-1" onClick={() => navigate('/funpun')}>
-          <Gamepad2 className="w-3.5 h-3.5" /> FunPun
+          <Code className="w-3.5 h-3.5" /> AB Dev
         </Button>
         <Button size="sm" variant="outline" className="h-8 text-xs rounded-xl gap-1" onClick={() => navigate('/music-adventure')}>
           <Target className="w-3.5 h-3.5" /> Goals

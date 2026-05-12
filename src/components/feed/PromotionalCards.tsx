@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import {
   CheckSquare, StickyNote, Mountain, Compass, Plane,
-  Shuffle, Gamepad2, ShoppingBag, BookOpen, Target,
+  Shuffle, Code, Gamepad2, ShoppingBag, BookOpen, Target,
   ArrowRight, Sparkles, Zap, Star
 } from 'lucide-react';
 import { ReactNode } from 'react';
@@ -124,10 +124,10 @@ const allCards = [
     route: '/education',
   },
   {
-    type: 'dual' as const,
+      { type: 'dual' as const,
     items: [
       { gradient: 'linear-gradient(135deg, #4a044e, #701a75)', icon: <Shuffle className="w-4.5 h-4.5 text-fuchsia-300" />, title: 'Random Connect', route: '/random-connect' },
-      { gradient: 'linear-gradient(135deg, #1c1917, #292524)', icon: <Gamepad2 className="w-4.5 h-4.5 text-purple-300" />, title: 'Arcade Games', route: '/funpun' },
+      { gradient: 'linear-gradient(135deg, #1c1917, #292524)', icon: <Code className="w-4.5 h-4.5 text-purple-300" />, title: 'Arcade Games', route: '/funpun' },
     ],
   },
   {

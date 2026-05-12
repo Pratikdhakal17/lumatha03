@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { ArrowLeft, ChevronRight, LogOut, Share2, Globe, HelpCircle, Info, Smartphone, Fingerprint, LayoutGrid, GripVertical, RotateCcw, Sparkles, Bell, Shield, Palette, Clock, Bot, Mail, FileText, Star, CreditCard, Lock, Eye, EyeOff, Users, MessageSquare, BookOpen, Mountain, ShoppingCart, Home, Search, Flag, Ghost, Gamepad2, BarChart3, Trophy, FileText as DocIcon, Heart, User, Settings as SettingsIcon, GripHorizontal, Plus, ChevronDown, CheckSquare, StickyNote, Compass, Library, UserCircle } from 'lucide-react';
+import { ArrowLeft, ChevronRight, LogOut, Share2, Globe, HelpCircle, Info, Smartphone, Fingerprint, LayoutGrid, GripVertical, RotateCcw, Sparkles, Bell, Shield, Palette, Clock, Bot, Mail, FileText, Star, CreditCard, Lock, Eye, EyeOff, Users, MessageSquare, BookOpen, Mountain, ShoppingCart, Home, Search, Flag, Ghost, Code, Gamepad2, BarChart3, Trophy, FileText as DocIcon, Heart, User, Settings as SettingsIcon, GripHorizontal, Plus, ChevronDown, CheckSquare, StickyNote, Compass, Library, UserCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -1040,7 +1040,7 @@ export default function Settings() {
                       { icon: Mountain, label: 'Quests', color: 'text-purple-400' },
                       { icon: Trophy, label: 'Challenges', color: 'text-purple-400' },
                       { icon: MessageSquare, label: 'Messages', color: 'text-purple-400' },
-                      { icon: Gamepad2, label: 'FunPun', color: 'text-purple-400' },
+                      { icon: Code, label: 'AB Dev', color: 'text-purple-400' },
                     ].map((item, i) => (
                       <div key={i} className="flex flex-col items-center gap-1 p-1.5 rounded-lg bg-white/5">
                         <item.icon className={cn("w-4 h-4", item.color)} />
@@ -1187,7 +1187,7 @@ export default function Settings() {
                   <div className="grid grid-cols-5 gap-2">
                     {[
                       { icon: Ghost, label: 'Stories', color: 'text-blue-400' },
-                      { icon: Gamepad2, label: 'FunPun', color: 'text-blue-400' },
+                      { icon: Code, label: 'AB Dev', color: 'text-blue-400' },
                       { icon: Bell, label: 'Notify', color: 'text-blue-400' },
                       { icon: BarChart3, label: 'Stats', color: 'text-blue-400' },
                       { icon: Trophy, label: 'Ranking', color: 'text-blue-400' },

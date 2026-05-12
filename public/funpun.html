@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>FunPun FP-333</title>
+<title>AB Dev FP-333</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
@@ -360,7 +360,7 @@ html,body{
 <!-- TOP BODY -->
 <div class="top-body">
   <div class="top-bar">
-    <span class="brand">FUNPUN</span>
+    <span class="brand">AB DEV</span>
     <div class="led-group">
       <div class="led green pulse" id="led-g"></div>
       <div class="led red" id="led-r"></div>
@@ -1788,6 +1788,26 @@ ENG.labyrinth=(()=>{
 // ═══════════════════════════════════════════════════════════════
 applyFilter("all");
 renderMenu();
+
+// Auto-launch when ?challenge= is provided in the iframe URL.
+(function(){
+  try{
+    const params=new URLSearchParams(location.search);
+    const ch=params.get('challenge');
+    if(!ch) return;
+    let g=null;
+    if(/^\d+$/.test(ch)){
+      const idx = Math.max(0, Math.min(DB.length-1, parseInt(ch,10)-1));
+      g = DB[idx];
+    } else {
+      g = DB.find(x=>x.id===ch);
+    }
+    if(g){
+      // small delay to ensure canvas/init is ready
+      setTimeout(()=>{ launch(g); }, 250);
+    }
+  }catch(e){console.warn('challenge launch failed',e);}
+})();
 </script>
 </body>
 </html>
