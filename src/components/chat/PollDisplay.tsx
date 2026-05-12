@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { BarChart3, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Add CSS for animated percentage fill (injected once at module load)
 if (typeof document !== 'undefined' && !document.getElementById('poll-animations-style')) {
@@ -48,6 +49,7 @@ interface PollDisplayProps {
 }
 
 export function PollDisplay({ content, isOwn, messageId, peerId, onVote }: PollDisplayProps) {
+  const { user } = useAuth();
   const parsedPoll = useMemo(() => {
     if (content.startsWith('[POLL]')) {
       try {
@@ -107,16 +109,49 @@ export function PollDisplay({ content, isOwn, messageId, peerId, onVote }: PollD
     setPollState({ ...parsedPoll });
   }, [parsedPoll]);
 
-  const mockVotes = useMemo(
-    () => pollState.options.map((option, index) => (pollState.structured ? option.votes : 1 + (hashString(`${pollState.question}:${option.text}:${index}`) % 4))),
+  const actualVotes = useMemo(
+    () => pollState.options.map((option) => option.votes || 0),
     [pollState]
   );
-  const totalVotes = mockVotes.reduce((sum, count) => sum + count, 0);
+  const totalVotes = actualVotes.reduce((sum, count) => sum + count, 0);
 
   const handleVote = (idx: number) => {
     // allow changing vote: send vote message every time
+    const wasChangingVote = selectedOption !== null && selectedOption !== idx;
     setSelectedOption(idx);
+    
+    // Update local state immediately for better UX
+    if (wasChangingVote) {
+      // User is changing their vote
+      setPollState(prev => {
+        const updatedOptions = prev.options.map((option, optionIdx) => {
+          if (optionIdx === selectedOption) {
+            // Remove vote from previous option
+            return { ...option, votes: Math.max(0, option.votes - 1) };
+          }
+          if (optionIdx === idx) {
+            // Add vote to new option
+            return { ...option, votes: option.votes + 1 };
+          }
+          return option;
+        });
+        return { ...prev, options: updatedOptions };
+      });
+    } else {
+      // First time voting
+      setPollState(prev => {
+        const updatedOptions = prev.options.map((option, optionIdx) => {
+          if (optionIdx === idx) {
+            return { ...option, votes: option.votes + 1 };
+          }
+          return option;
+        });
+        return { ...prev, options: updatedOptions };
+      });
+    }
+    
     if (onVote) onVote(idx);
+    
     // send poll vote message via chat system so peers get realtime update
     try {
       // lazy import hook to avoid cycles
@@ -124,9 +159,23 @@ export function PollDisplay({ content, isOwn, messageId, peerId, onVote }: PollD
       const { useChat } = require('@/hooks/useChat');
       // call sendMessage from hook by creating a temporary instance
       // Since hooks cannot be called conditionally, dispatch a custom event to request a vote send
-      window.dispatchEvent(new CustomEvent('request-poll-vote', { detail: { pollMessageId: messageId, peerId, optionIndex: idx } }));
+      window.dispatchEvent(new CustomEvent('request-poll-vote', { detail: { pollMessageId: messageId, peerId, optionIndex: idx, isChangingVote: wasChangingVote } }));
     } catch (e) {
       // Fallback: store locally only
+      // Store vote in localStorage for persistence
+      try {
+        const voteKey = `poll_vote_${parsedPoll.question || messageId}_${user?.id || 'anonymous'}`;
+        localStorage.setItem(voteKey, JSON.stringify({
+          pollId: messageId,
+          question: parsedPoll.question,
+          userId: user?.id || 'anonymous',
+          optionIndex: idx,
+          isChangingVote: wasChangingVote,
+          timestamp: new Date().toISOString()
+        }));
+      } catch (storageError) {
+        // Ignore storage errors
+      }
     }
   };
 
@@ -179,7 +228,7 @@ export function PollDisplay({ content, isOwn, messageId, peerId, onVote }: PollD
 
   if (pollState.options.length === 0) return <p className="text-white">{content}</p>;
 
-  const currentTotal = totalVotes + (selectedOption !== null ? 1 : 0);
+  const currentTotal = totalVotes;
 
   return (
     <div className={cn(
@@ -197,7 +246,7 @@ export function PollDisplay({ content, isOwn, messageId, peerId, onVote }: PollD
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-violet-200">Poll</span>
                 <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/5 text-white/55 border border-white/10">
-                  {poll.isActive ? 'Live' : 'Ended'}
+                  {pollState.isActive ? 'Live' : 'Ended'}
                 </span>
               </div>
               <p className="text-[11px] text-white/45 mt-0.5">
@@ -216,7 +265,7 @@ export function PollDisplay({ content, isOwn, messageId, peerId, onVote }: PollD
       {/* Options */}
       <div className="px-4 py-4 space-y-2.5">
         {pollState.options.map((option, idx) => {
-          const voteCount = mockVotes[idx] + (selectedOption === idx ? 1 : 0);
+          const voteCount = actualVotes[idx];
           const percentage = currentTotal > 0 ? Math.round((voteCount / currentTotal) * 100) : 0;
           const isSelected = selectedOption === idx;
           const hasVoted = selectedOption !== null;
@@ -225,11 +274,12 @@ export function PollDisplay({ content, isOwn, messageId, peerId, onVote }: PollD
             <button
               key={idx}
               onClick={() => handleVote(idx)}
-              disabled={hasVoted}
+              disabled={!pollState.isActive}
               type="button"
               className={cn(
                 "relative w-full text-left rounded-xl overflow-hidden transition-all poll-option",
-                hasVoted ? "cursor-default" : "cursor-pointer active:scale-[0.98] hover:bg-white/5"
+                !pollState.isActive ? "cursor-not-allowed opacity-60" : "cursor-pointer active:scale-[0.98] hover:bg-white/5",
+                isSelected && "ring-2 ring-violet-500/30"
               )}
             >
               {/* Background track */}
@@ -282,8 +332,8 @@ export function PollDisplay({ content, isOwn, messageId, peerId, onVote }: PollD
       {/* Footer */}
       <div className="px-4 py-3 border-t border-white/8 bg-white/[0.02]">
         <div className="flex items-center justify-between gap-3 text-[10px] text-white/42">
-          <span>{selectedOption !== null ? `${currentTotal} votes recorded` : 'Tap one option to vote'}</span>
-          <span>{poll.isActive ? 'Results update instantly' : 'Voting closed'}</span>
+          <span>{selectedOption !== null ? `${currentTotal} votes • You voted` : currentTotal > 0 ? `${currentTotal} votes` : 'Tap one option to vote'}</span>
+          <span>{pollState.isActive ? 'Results update instantly' : 'Voting closed'}</span>
         </div>
       </div>
     </div>
