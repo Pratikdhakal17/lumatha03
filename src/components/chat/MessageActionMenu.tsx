@@ -43,6 +43,10 @@ export const MessageActionMenu = memo(function MessageActionMenu({
   if (!targetId || !menuPos || !targetMsg) return null;
 
   const isOwn = targetMsg.sender_id === currentUserId;
+  const menuWidth = Math.min(292, menuPos.width);
+  const viewportHeight = window.innerHeight;
+  const estimatedMenuHeight = Math.min(Math.floor(viewportHeight * 0.74), 560);
+  const top = Math.max(12, Math.min(menuPos.top - 10, viewportHeight - estimatedMenuHeight - 12));
 
   const actions = [
     { icon: <CornerUpLeft className="w-5 h-5" />, label: 'Reply', action: () => onReply(targetMsg), color: '#94A3B8' },
@@ -71,10 +75,10 @@ export const MessageActionMenu = memo(function MessageActionMenu({
           background: 'rgba(15, 23, 42, 0.98)', 
           backdropFilter: 'blur(14px)',
           left: menuPos.left, 
-          top: menuPos.top,
-          width: Math.min(292, menuPos.width),
+          top,
+          width: menuWidth,
           maxWidth: 'calc(100vw - 24px)',
-          transformOrigin: 'top center',
+          transformOrigin: isOwn ? 'top right' : 'top left',
           willChange: 'transform, opacity',
         }}
       >

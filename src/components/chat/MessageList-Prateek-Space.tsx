@@ -5,7 +5,7 @@ import { ChatImageGrid } from '@/components/chat/ChatImageGrid';
 import { ChatVideoPlayer } from '@/components/chat/ChatVideoPlayer';
 import { LinkPreviewCard, extractUrls } from '@/components/chat/LinkPreviewCard';
 import { SharedPostPreview, extractInternalPostId, isSharedPostMessage } from '@/components/chat/SharedPostPreview';
-import { PollMessage } from '@/components/chat/PollMessage';
+import { PollDisplay } from '@/components/chat/PollDisplay';
 import type { Message } from '@/types/chat';
 import { VariableSizeList as List } from 'react-window';
 
@@ -86,6 +86,9 @@ const MessageItem = memo(function MessageItem({
     ? `https://docs.google.com/viewer?url=${encodeURIComponent(msg.media_url)}&embedded=true`
     : '';
   const isSharedPost = Boolean(msg.content && isSharedPostMessage(msg.content));
+  const isPollMessage = Boolean(
+    msg.content && ((msg.media_type === 'poll') || msg.content.startsWith('[POLL]') || msg.content.startsWith('📊 POLL:'))
+  );
 
   return (
     <div id={`msg-${msg.id}`}>
@@ -101,7 +104,10 @@ const MessageItem = memo(function MessageItem({
 
         <div
           className={cn(
-            'relative group select-none max-w-[82%] md:max-w-[72%] xl:max-w-[68%]'
+            'relative group select-none',
+            isPollMessage
+              ? 'w-[min(92vw,620px)] max-w-[92vw] md:w-[min(80vw,620px)] md:max-w-[620px] xl:w-[min(66vw,680px)] xl:max-w-[680px]'
+              : 'max-w-[82%] md:max-w-[72%] xl:max-w-[68%]'
           )}
           onDoubleClick={() => onReact(msg.id, '❤️')}
           onContextMenu={e => {
@@ -354,11 +360,9 @@ const MessageItem = memo(function MessageItem({
             )}
 
             {/* Poll Message */}
-            {msg.content && msg.content.startsWith('[POLL]') && (
-              <PollMessage
+            {msg.content && (msg.media_type === 'poll' || msg.content.startsWith('[POLL]') || msg.content.startsWith('📊 POLL:')) && (
+              <PollDisplay
                 content={msg.content}
-                messageId={msg.id}
-                senderId={msg.sender_id}
                 isOwn={isOwn}
               />
             )}

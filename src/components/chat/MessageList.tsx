@@ -86,6 +86,9 @@ const MessageItem = memo(function MessageItem({
     ? `https://docs.google.com/viewer?url=${encodeURIComponent(msg.media_url)}&embedded=true`
     : '';
   const isSharedPost = Boolean(msg.content && isSharedPostMessage(msg.content));
+  const isPollMessage = Boolean(
+    msg.content && ((msg.media_type === 'poll') || msg.content.startsWith('[POLL]') || msg.content.startsWith('📊 POLL:'))
+  );
 
   return (
     <div id={`msg-${msg.id}`}>
@@ -99,7 +102,10 @@ const MessageItem = memo(function MessageItem({
       <div className={cn('flex mb-1 items-start gap-1 group', isOwn ? 'justify-end' : 'justify-start')}>
         <div
           className={cn(
-            'relative group select-none max-w-[82%] md:max-w-[72%] xl:max-w-[68%]'
+            'relative group select-none',
+            isPollMessage
+              ? 'w-[min(92vw,620px)] max-w-[92vw] md:w-[min(80vw,620px)] md:max-w-[620px] xl:w-[min(66vw,680px)] xl:max-w-[680px]'
+              : 'max-w-[82%] md:max-w-[72%] xl:max-w-[68%]'
           )}
           onDoubleClick={() => onReact(msg.id, '❤️')}
           onContextMenu={e => {
@@ -197,11 +203,13 @@ const MessageItem = memo(function MessageItem({
             className={cn(
               'relative overflow-hidden',
               (msg.media_url || isSharedPost) ? 'rounded-2xl' : '',
-              (msg.media_url || isSharedPost) ? '' : (isOwn ? 'rounded-[18px_18px_4px_18px] px-3.5 py-2.5' : 'rounded-[18px_18px_18px_4px] px-3.5 py-2.5'),
+              isPollMessage ? 'rounded-2xl overflow-visible px-0 py-0 bg-transparent' : (msg.media_url || isSharedPost) ? '' : (isOwn ? 'rounded-[18px_18px_4px_18px] px-3.5 py-2.5' : 'rounded-[18px_18px_18px_4px] px-3.5 py-2.5'),
               isPinned && 'ring-1 ring-[#7C3AED]/30',
             )}
             style={
-              (msg.media_url || isSharedPost)
+              isPollMessage
+                ? { background: 'transparent' }
+                : (msg.media_url || isSharedPost)
                 ? {}
                 : isOwn
                   ? { background: bubbleGradient }

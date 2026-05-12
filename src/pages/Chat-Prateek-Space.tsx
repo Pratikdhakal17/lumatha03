@@ -1987,11 +1987,15 @@ export default function Chat() {
       try {
         const el = document.getElementById(`msg-${longPressTarget}`);
         if (!el) return null;
+        const target = messages.find((item) => item.id === longPressTarget);
         const rect = el.getBoundingClientRect();
         const margin = 12;
         const preferredWidth = Math.min(292, Math.max(252, Math.floor(window.innerWidth * 0.8)));
-        const left = Math.min(window.innerWidth - preferredWidth - margin, Math.max(margin, rect.right - preferredWidth + 8));
-        const top = Math.max(margin, Math.min(rect.top - 10, window.innerHeight - 330));
+        const isOwnMessage = target?.sender_id === user?.id;
+        const left = isOwnMessage
+          ? Math.max(margin, rect.left - preferredWidth - 10)
+          : Math.min(window.innerWidth - preferredWidth - margin, rect.right + 10);
+        const top = Math.max(margin, Math.min(rect.top - 18, window.innerHeight - 340));
         return { left, top, width: preferredWidth };
       } catch {
         return null;
