@@ -162,12 +162,14 @@ export function useChat() {
 
       // Data comes back newest-first; reverse to chronological order
       const reversed = (messagesData || []).slice().reverse();
+      // Filter out internal control messages such as poll votes from the regular chat stream
+      const visible = reversed.filter(m => (m.media_type || '') !== 'poll_vote');
       setHasMoreMessages((messagesData?.length || 0) === PAGE_SIZE);
 
       const senderIds = [...new Set(reversed.map(m => m.sender_id))];
       const profilesMap = await hydrateProfiles(senderIds);
 
-      const data = reversed.map(m => ({
+      const data = visible.map(m => ({
         ...m,
         sender: profilesMap.get(m.sender_id) || { id: m.sender_id, name: 'Unknown', avatar_url: null }
       }));
@@ -344,6 +346,17 @@ export function useChat() {
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${user.id}` },
         (payload) => {
           const newMsg = payload.new as any;
+          // If this is an internal poll vote message, broadcast an event and do not add to message list
+          if (newMsg.media_type === 'poll_vote') {
+            try {
+              window.dispatchEvent(new CustomEvent('poll-vote', { detail: newMsg }));
+            } catch (e) {
+              // noop
+            }
+            scheduleConversationsRefresh();
+            return;
+          }
+
           if (currentChatUserRef.current === newMsg.sender_id) {
             setMessages(prev => {
               if (prev.some(m => m.id === newMsg.id)) return prev;
@@ -400,6 +413,47 @@ export function useChat() {
   }, [scheduleConversationsRefresh, user]);
 
   useEffect(() => { fetchConversations(); }, [fetchConversations]);
+
+  // Listen for UI requests to send poll votes from non-hook components
+  useEffect(() => {
+    const onRequest = (e: any) => {
+      try {
+        const detail = e.detail || {};
+        const { peerId, pollMessageId, optionIndex } = detail;
+        if (!peerId || !pollMessageId || typeof optionIndex !== 'number') return;
+        const votePayload = {
+          pollId: pollMessageId,
+          optionIndex,
+          voterId: user?.id || null,
+        };
+        // send as control message
+        void sendMessage(peerId, `[POLL_VOTE]${JSON.stringify(votePayload)}`, undefined, 'poll_vote');
+        
+        // Persist vote to poll_votes table for server-side aggregation
+        if (user?.id) {
+          db.from('poll_votes')
+            .upsert(
+              {
+                poll_message_id: pollMessageId,
+                user_id: user.id,
+                option_index: optionIndex,
+              },
+              { onConflict: 'poll_message_id,user_id' }
+            )
+            .then(() => {
+              // Silently succeed
+            })
+            .catch((err) => {
+              console.error('Failed to persist poll vote:', err);
+            });
+        }
+      } catch (err) {
+        // ignore
+      }
+    };
+    window.addEventListener('request-poll-vote', onRequest as EventListener);
+    return () => window.removeEventListener('request-poll-vote', onRequest as EventListener);
+  }, [user?.id, sendMessage]);
 
   return {
     conversations,

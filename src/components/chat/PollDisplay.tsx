@@ -1,14 +1,52 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { BarChart3, CheckCircle2 } from 'lucide-react';
+
+// Add CSS for animated percentage fill
+const style = document.createElement('style');
+if (!style.textContent) {
+  style.textContent = `
+    @keyframes fillBar {
+      from {
+        width: 0%;
+        opacity: 0.5;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(2px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .poll-bar-fill {
+      animation: fillBar 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    
+    .poll-option {
+      animation: slideIn 0.5s ease-out;
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 interface PollDisplayProps {
   content: string;
   isOwn: boolean;
+  messageId?: string;
+  peerId?: string; // id of chat peer to send vote messages to
   onVote?: (optionIndex: number) => void;
 }
 
-export function PollDisplay({ content, isOwn, onVote }: PollDisplayProps) {
+export function PollDisplay({ content, isOwn, messageId, peerId, onVote }: PollDisplayProps) {
   const parsedPoll = useMemo(() => {
     if (content.startsWith('[POLL]')) {
       try {
@@ -62,19 +100,83 @@ export function PollDisplay({ content, isOwn, onVote }: PollDisplayProps) {
   };
 
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [pollState, setPollState] = useState(() => ({ ...parsedPoll }));
+
+  useEffect(() => {
+    setPollState({ ...parsedPoll });
+  }, [parsedPoll]);
+
   const mockVotes = useMemo(
-    () => parsedPoll.options.map((option, index) => (parsedPoll.structured ? option.votes : 1 + (hashString(`${parsedPoll.question}:${option.text}:${index}`) % 4))),
-    [parsedPoll]
+    () => pollState.options.map((option, index) => (pollState.structured ? option.votes : 1 + (hashString(`${pollState.question}:${option.text}:${index}`) % 4))),
+    [pollState]
   );
   const totalVotes = mockVotes.reduce((sum, count) => sum + count, 0);
 
   const handleVote = (idx: number) => {
-    if (selectedOption !== null) return;
+    // allow changing vote: send vote message every time
     setSelectedOption(idx);
     if (onVote) onVote(idx);
+    // send poll vote message via chat system so peers get realtime update
+    try {
+      // lazy import hook to avoid cycles
+      // @ts-ignore
+      const { useChat } = require('@/hooks/useChat');
+      // call sendMessage from hook by creating a temporary instance
+      // Since hooks cannot be called conditionally, dispatch a custom event to request a vote send
+      window.dispatchEvent(new CustomEvent('request-poll-vote', { detail: { pollMessageId: messageId, peerId, optionIndex: idx } }));
+    } catch (e) {
+      // Fallback: store locally only
+    }
   };
 
-  if (parsedPoll.options.length === 0) return <p className="text-white">{content}</p>;
+  // Listen for incoming poll vote events from useChat realtime handler
+  useEffect(() => {
+    const onVoteEvent = (e: any) => {
+      try {
+        const msg = e.detail as any;
+        let payload = null;
+        if (typeof msg === 'string' && msg.startsWith('[POLL_VOTE]')) {
+          payload = JSON.parse(msg.slice(11));
+        } else if (msg && msg.content && typeof msg.content === 'string' && msg.content.startsWith('[POLL_VOTE]')) {
+          payload = JSON.parse(msg.content.slice(11));
+        } else if (msg && msg.pollId) {
+          payload = msg;
+        }
+        if (!payload) return;
+        const pollId = payload.pollId || payload.pollMessageId;
+        if (!pollId) return;
+        // Match by poll id inside parsedPoll
+        const myPollId = (parsedPoll as any).id || parsedPoll.question;
+        if (String(pollId) !== String(myPollId) && String(pollId) !== String(messageId)) return;
+
+        const voterId = payload.voterId || payload.userId || payload.voter;
+        const optionIndex = Number(payload.optionIndex);
+        if (Number.isNaN(optionIndex)) return;
+
+        setPollState(prev => {
+          const next = { ...prev, options: prev.options.map(o => ({ ...o, voters: Array.isArray(o.voters) ? [...o.voters] : [] })) };
+          // remove voter from any previous option
+          next.options.forEach((opt) => {
+            const idx = opt.voters.indexOf(voterId);
+            if (idx !== -1) opt.voters.splice(idx, 1);
+          });
+          // add to new option
+          if (!next.options[optionIndex]) return prev;
+          next.options[optionIndex].voters = next.options[optionIndex].voters || [];
+          if (!next.options[optionIndex].voters.includes(voterId)) next.options[optionIndex].voters.push(voterId);
+          // update votes counts
+          next.options = next.options.map(o => ({ ...o, votes: (o.voters || []).length }));
+          return next;
+        });
+      } catch (err) {
+        // ignore
+      }
+    };
+    window.addEventListener('poll-vote', onVoteEvent as EventListener);
+    return () => window.removeEventListener('poll-vote', onVoteEvent as EventListener);
+  }, [parsedPoll, messageId]);
+
+  if (pollState.options.length === 0) return <p className="text-white">{content}</p>;
 
   const currentTotal = totalVotes + (selectedOption !== null ? 1 : 0);
 
@@ -107,12 +209,12 @@ export function PollDisplay({ content, isOwn, onVote }: PollDisplayProps) {
             <p className="text-[11px] text-white/50">Vote to show results</p>
           </div>
         </div>
-        <h4 className="mt-3 text-[15px] font-semibold text-white leading-snug">{parsedPoll.question}</h4>
+        <h4 className="mt-3 text-[15px] font-semibold text-white leading-snug">{pollState.question}</h4>
       </div>
 
       {/* Options */}
       <div className="px-4 py-4 space-y-2.5">
-        {parsedPoll.options.map((option, idx) => {
+        {pollState.options.map((option, idx) => {
           const voteCount = mockVotes[idx] + (selectedOption === idx ? 1 : 0);
           const percentage = currentTotal > 0 ? Math.round((voteCount / currentTotal) * 100) : 0;
           const isSelected = selectedOption === idx;
@@ -125,21 +227,24 @@ export function PollDisplay({ content, isOwn, onVote }: PollDisplayProps) {
               disabled={hasVoted}
               type="button"
               className={cn(
-                "relative w-full text-left rounded-xl overflow-hidden transition-all",
+                "relative w-full text-left rounded-xl overflow-hidden transition-all poll-option",
                 hasVoted ? "cursor-default" : "cursor-pointer active:scale-[0.98] hover:bg-white/5"
               )}
             >
               {/* Background track */}
               <div className="absolute inset-0 bg-white/5 rounded-xl" />
 
-              {/* Progress fill */}
+              {/* Progress fill with animation */}
               {hasVoted && (
                 <div
                   className={cn(
-                    "absolute inset-y-0 left-0 rounded-xl transition-all duration-700 ease-out",
-                    isSelected ? "bg-violet-500/25" : "bg-white/5"
+                    "absolute inset-y-0 left-0 rounded-xl poll-bar-fill",
+                    isSelected ? "bg-gradient-to-r from-violet-500/30 to-violet-500/10" : "bg-white/8"
                   )}
-                  style={{ width: `${percentage}%` }}
+                  style={{ 
+                    width: `${percentage}%`,
+                    animation: `fillBar 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards`
+                  }}
                 />
               )}
 
@@ -159,8 +264,12 @@ export function PollDisplay({ content, isOwn, onVote }: PollDisplayProps) {
 
                 {hasVoted && (
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[12px] font-bold text-white/80">{percentage}%</span>
-                    <span className="text-[11px] text-white/40">({voteCount})</span>
+                    <span className="text-[12px] font-bold text-white/80 transition-all duration-500">
+                      {percentage}%
+                    </span>
+                    <span className="text-[11px] text-white/40 transition-all duration-500">
+                      ({voteCount})
+                    </span>
                   </div>
                 )}
               </div>

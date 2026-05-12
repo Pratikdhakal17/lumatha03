@@ -541,8 +541,47 @@ export default function FunPun() {
           </div>
         ) : visibleProjects.length === 0 ? (
           <div className="rounded-xl border border-white/10 bg-white/5 p-8 text-center space-y-3">
-            <p className="text-lg font-semibold">No published projects yet</p>
-            <p className="text-sm text-muted-foreground">Upload your first project and it will appear here for everyone in AB Dev.</p>
+            {filterActive === 'liked' && (
+              <>
+                <Heart className="w-12 h-12 mx-auto text-red-400/40" />
+                <p className="text-lg font-semibold">No liked posts yet</p>
+                <p className="text-sm text-muted-foreground">Try liking a post to see it here!</p>
+              </>
+            )}
+            {filterActive === 'saved' && (
+              <>
+                <Bookmark className="w-12 h-12 mx-auto text-blue-400/40" />
+                <p className="text-lg font-semibold">No saved posts yet</p>
+                <p className="text-sm text-muted-foreground">Save posts to view them later here.</p>
+              </>
+            )}
+            {filterActive === 'shared' && (
+              <>
+                <Share2 className="w-12 h-12 mx-auto text-green-400/40" />
+                <p className="text-lg font-semibold">No shared posts yet</p>
+                <p className="text-sm text-muted-foreground">You haven't shared any posts yet.</p>
+              </>
+            )}
+            {filterActive === 'commented' && (
+              <>
+                <MessageCircle className="w-12 h-12 mx-auto text-yellow-400/40" />
+                <p className="text-lg font-semibold">No commented posts yet</p>
+                <p className="text-sm text-muted-foreground">Posts you've commented on will appear here.</p>
+              </>
+            )}
+            {filterActive === 'yours' && (
+              <>
+                <Code className="w-12 h-12 mx-auto text-cyan-400/40" />
+                <p className="text-lg font-semibold">No projects uploaded yet</p>
+                <p className="text-sm text-muted-foreground">Upload your first project to share with AB Dev!</p>
+              </>
+            )}
+            {filterActive === 'all' && (
+              <>
+                <p className="text-lg font-semibold">No published projects yet</p>
+                <p className="text-sm text-muted-foreground">Upload your first project and it will appear here for everyone in AB Dev.</p>
+              </>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
@@ -658,11 +697,23 @@ export default function FunPun() {
       </div>
 
       <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
-        <DialogContent className="bg-[#0a0f1e] border-white/10">
+        <DialogContent className="max-w-4xl bg-[#0a0f1e] border-white/10 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Upload New Project</DialogTitle>
+            <DialogTitle>Upload New Project to AB Dev</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 mt-4">
+          <div className="space-y-6 mt-4">
+            {/* Policy Notes */}
+            <div className="bg-white/5 border border-emerald-500/20 rounded-lg p-4 space-y-2">
+              <p className="text-emerald-400 text-sm font-semibold">📋 Upload Guidelines</p>
+              <ul className="text-xs text-emerald-300/80 space-y-1">
+                <li>• Maximum file size: 50 MB (temporary)</li>
+                <li>• Ads or promotion files will be taken down by system</li>
+                <li>• Nudity and violated content will be taken down</li>
+                <li>• Ensure content follows community standards</li>
+              </ul>
+            </div>
+
+            {/* Project Name */}
             <div>
               <label className="text-sm font-semibold">Project Name</label>
               <input
@@ -672,27 +723,71 @@ export default function FunPun() {
                 className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 mt-1 placeholder:text-muted-foreground focus:outline-none"
               />
             </div>
+
+            {/* Description */}
             <div>
               <label className="text-sm font-semibold">Description</label>
               <textarea
                 value={projectDesc}
                 onChange={(event) => setProjectDesc(event.target.value)}
                 placeholder="Describe your project"
-                className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 mt-1 placeholder:text-muted-foreground focus:outline-none h-20 resize-none"
+                className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 mt-1 placeholder:text-muted-foreground focus:outline-none h-24 resize-none"
               />
             </div>
+
+            {/* Project File */}
             <div>
               <label className="text-sm font-semibold">Project File</label>
-              <input
-                type="file"
-                className="w-full text-sm mt-1"
-                onChange={(event) => setProjectFile(event.target.files?.[0] || null)}
-              />
-              {projectFile ? <p className="mt-2 text-xs text-cyan-300">Selected: {projectFile.name}</p> : null}
+              <div className="border-2 border-dashed border-white/10 rounded-lg p-6 mt-2 text-center hover:border-white/20 transition cursor-pointer">
+                <input
+                  type="file"
+                  className="hidden"
+                  id="project-file-input"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) {
+                      if (file.size > 50 * 1024 * 1024) {
+                        toast.error('File size exceeds 50 MB limit');
+                        return;
+                      }
+                      setProjectFile(file);
+                    }
+                  }}
+                />
+                <label htmlFor="project-file-input" className="cursor-pointer block">
+                  <p className="text-sm text-muted-foreground">Click to select file or drag and drop</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">Supports HTML, images, videos, PDFs, and more</p>
+                </label>
+              </div>
+              {projectFile && (
+                <div className="mt-3 p-3 bg-white/5 border border-white/10 rounded-md flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-cyan-300 font-semibold">{projectFile.name}</p>
+                    <p className="text-xs text-muted-foreground/60 mt-0.5">
+                      {(projectFile.size / (1024 * 1024)).toFixed(2)} MB
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setProjectFile(null)}
+                    className="text-red-400 hover:text-red-300 transition"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setShowUploadModal(false)}>Cancel</Button>
-              <Button onClick={handlePublish} className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold">Publish</Button>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2 justify-end pt-2">
+              <Button variant="outline" onClick={() => setShowUploadModal(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handlePublish} 
+                className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold"
+              >
+                Publish
+              </Button>
             </div>
           </div>
         </DialogContent>

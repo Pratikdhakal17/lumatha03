@@ -383,7 +383,7 @@ const MessageItem = memo(function MessageItem({
 
             {/* Poll Display */}
             {msg.content && (msg.media_type === 'poll' || msg.content.startsWith('📊 POLL:')) && (
-              <PollDisplay content={msg.content} isOwn={isOwn} />
+              <PollDisplay content={msg.content} isOwn={isOwn} messageId={msg.id} peerId={isOwn ? msg.receiver_id : msg.sender_id} />
             )}
 
             {/* Text */}

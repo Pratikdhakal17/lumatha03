@@ -364,6 +364,8 @@ const MessageItem = memo(function MessageItem({
               <PollDisplay
                 content={msg.content}
                 isOwn={isOwn}
+                messageId={msg.id}
+                peerId={isOwn ? msg.receiver_id : msg.sender_id}
               />
             )}
 
