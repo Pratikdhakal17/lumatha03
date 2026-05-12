@@ -639,6 +639,16 @@ export default function FunPun() {
                         <Bookmark className={`w-4 h-4 ${savedProjectIds.has(project.id) ? 'fill-yellow-500' : ''}`} />
                       </button>
                     </div>
+                    <Button
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        openProject(project);
+                      }}
+                      size="sm"
+                      className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold"
+                    >
+                      Open
+                    </Button>
                   </div>
                 </div>
               );
