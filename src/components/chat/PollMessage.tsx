@@ -54,9 +54,30 @@ export function PollMessage({ content, messageId, senderId, isOwn }: PollMessage
             }
           }
         }
+        return;
       } catch (error) {
         console.error('Failed to parse poll data:', error);
       }
+    }
+
+    const lines = content.split('\n');
+    if (lines.length >= 2) {
+      const question = lines[0].replace(/^📊 POLL:\s*/i, '').trim();
+      const options = lines.slice(1).map((line, index) => ({
+        id: `legacy-${index + 1}`,
+        text: line.replace(/^\d+\.\s+/, '').trim(),
+        votes: 0,
+        voters: [],
+      })).filter(option => Boolean(option.text));
+
+      setPoll({
+        id: `legacy-${Date.now()}`,
+        question,
+        options,
+        createdBy: senderId,
+        createdAt: new Date().toISOString(),
+        isActive: true,
+      });
     }
   }, [content, user]);
 

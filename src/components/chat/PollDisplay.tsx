@@ -9,9 +9,48 @@ interface PollDisplayProps {
 }
 
 export function PollDisplay({ content, isOwn, onVote }: PollDisplayProps) {
-  const lines = content.split('\n');
-  const question = lines[0].replace('📊 POLL: ', '').trim();
-  const options = lines.slice(1).map(line => line.replace(/^\d+\.\s+/, '').trim()).filter(Boolean);
+  const parsedPoll = useMemo(() => {
+    if (content.startsWith('[POLL]')) {
+      try {
+        const raw = JSON.parse(content.slice(6));
+        const structuredOptions = Array.isArray(raw?.options)
+          ? raw.options
+              .map((option: any, index: number) => ({
+                id: option?.id || `option-${index + 1}`,
+                text: typeof option === 'string' ? option : String(option?.text ?? option?.label ?? '').trim(),
+                votes: Number(option?.votes || 0),
+              }))
+              .filter((option: { text: string }) => Boolean(option.text))
+          : [];
+
+        return {
+          question: String(raw?.question || raw?.title || '').trim(),
+          options: structuredOptions,
+          createdAt: String(raw?.createdAt || raw?.created_at || ''),
+          isActive: raw?.isActive !== false,
+          structured: true,
+        };
+      } catch {
+        // Fall through to legacy parsing.
+      }
+    }
+
+    const lines = content.split('\n');
+    const question = lines[0].replace(/^📊 POLL:\s*/i, '').trim();
+    const options = lines
+      .slice(1)
+      .map((line) => line.replace(/^\d+\.\s+/, '').trim())
+      .filter(Boolean)
+      .map((text, index) => ({ id: `legacy-${index + 1}`, text, votes: 0 }));
+
+    return {
+      question,
+      options,
+      createdAt: '',
+      isActive: true,
+      structured: false,
+    };
+  }, [content]);
 
   const hashString = (value: string) => {
     let hash = 0;
@@ -24,8 +63,8 @@ export function PollDisplay({ content, isOwn, onVote }: PollDisplayProps) {
 
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const mockVotes = useMemo(
-    () => options.map((option, index) => 1 + (hashString(`${question}:${option}:${index}`) % 4)),
-    [options, question]
+    () => parsedPoll.options.map((option, index) => (parsedPoll.structured ? option.votes : 1 + (hashString(`${parsedPoll.question}:${option.text}:${index}`) % 4))),
+    [parsedPoll]
   );
   const totalVotes = mockVotes.reduce((sum, count) => sum + count, 0);
 
@@ -35,7 +74,7 @@ export function PollDisplay({ content, isOwn, onVote }: PollDisplayProps) {
     if (onVote) onVote(idx);
   };
 
-  if (options.length === 0) return <p className="text-white">{content}</p>;
+  if (parsedPoll.options.length === 0) return <p className="text-white">{content}</p>;
 
   const currentTotal = totalVotes + (selectedOption !== null ? 1 : 0);
 
@@ -50,12 +89,12 @@ export function PollDisplay({ content, isOwn, onVote }: PollDisplayProps) {
           <BarChart3 className="w-4 h-4 text-violet-400" />
           <span className="text-[10px] font-bold uppercase tracking-wider text-violet-300">Poll</span>
         </div>
-        <h4 className="font-semibold text-[15px] text-white leading-snug">{question}</h4>
+        <h4 className="font-semibold text-[15px] text-white leading-snug">{parsedPoll.question}</h4>
       </div>
 
       {/* Options */}
       <div className="p-3 space-y-2">
-        {options.map((option, idx) => {
+        {parsedPoll.options.map((option, idx) => {
           const voteCount = mockVotes[idx] + (selectedOption === idx ? 1 : 0);
           const percentage = currentTotal > 0 ? Math.round((voteCount / currentTotal) * 100) : 0;
           const isSelected = selectedOption === idx;
@@ -96,7 +135,7 @@ export function PollDisplay({ content, isOwn, onVote }: PollDisplayProps) {
                     "text-[13px] font-medium truncate",
                     isSelected ? "text-white" : "text-white/90"
                   )}>
-                    {option}
+                    {option.text}
                   </span>
                 </div>
 

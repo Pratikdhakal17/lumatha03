@@ -2705,7 +2705,19 @@ export default function Chat() {
             onSubmit={async (poll) => {
               if (!currentChatUser) return;
               try {
-                const pollContent = `[Poll] ${poll.question}\nOptions: ${poll.options.join(', ')}`;
+                const pollContent = `[POLL]${JSON.stringify({
+                  id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `poll-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                  question: poll.question,
+                  options: poll.options.map((option, index) => ({
+                    id: `option-${index + 1}`,
+                    text: option,
+                    votes: 0,
+                    voters: [],
+                  })),
+                  createdBy: user?.id || '',
+                  createdAt: new Date().toISOString(),
+                  isActive: true,
+                })}`;
                 await sendMessage(currentChatUser, pollContent);
                 setShowAttachments(false);
                 setSelectedAttachmentType(null);

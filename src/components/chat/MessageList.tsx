@@ -1,5 +1,5 @@
 import React, { memo, useEffect, useMemo, RefObject, useState, useRef, useCallback } from 'react';
-import { Check, CheckCheck, Eye, EyeOff, Forward, Paperclip, Pin, CornerUpLeft, ChevronUp, Loader2, Camera, MapPin, Shield, X as XIcon } from 'lucide-react';
+import { Check, CheckCheck, Eye, EyeOff, Forward, Paperclip, Pin, CornerUpLeft, ChevronUp, Loader2, Camera, MapPin, Shield, X as XIcon, MoreVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ChatImageGrid } from '@/components/chat/ChatImageGrid';
 import { ChatVideoPlayer } from '@/components/chat/ChatVideoPlayer';
@@ -97,8 +97,6 @@ const MessageItem = memo(function MessageItem({
         </div>
       )}
       <div className={cn('flex mb-1 items-start gap-1 group', isOwn ? 'justify-end' : 'justify-start')}>
-        {/* Three dots removed - using long press for message options */}
-
         <div
           className={cn(
             'relative group select-none max-w-[82%] md:max-w-[72%] xl:max-w-[68%]'
@@ -156,6 +154,22 @@ const MessageItem = memo(function MessageItem({
             }, 100);
           }}
         >
+          <button
+            type="button"
+            aria-label="Open message actions"
+            className={cn(
+              'hidden md:flex absolute top-1/2 -translate-y-1/2 h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-slate-950/80 text-slate-300 opacity-0 transition-all duration-150 group-hover:opacity-100 hover:bg-white/10 hover:text-white',
+              isOwn ? 'left-[-2.5rem]' : 'right-[-2.5rem]'
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (navigator.vibrate) navigator.vibrate(15);
+              onOpenActions(msg.id);
+            }}
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
+
           {msg.is_forwarded && (
             <p className="text-[12px] mb-0.5 flex items-center gap-1 italic" style={{ color: '#94A3B8' }}>
               <Forward className="w-3 h-3" /> Forwarded
