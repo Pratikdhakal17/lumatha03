@@ -765,17 +765,7 @@ export default function FunPun() {
               }
 
               if (mime === 'text/html') {
-                return (
-                  <div className="w-full h-full flex flex-col">
-                    <div className="p-3 border-b border-white/5 bg-white/5 text-sm text-yellow-200">HTML preview may be blocked by browser or storage CORS; open in a new tab if it doesn't render.</div>
-                    <div className="flex-1">
-                      <iframe title="HTML Preview" src={src} sandbox="allow-scripts allow-forms" className="w-full h-full border-none" onLoad={() => setPreviewError(null)} onError={() => setPreviewError('Preview may be blocked or failed to load')} />
-                    </div>
-                    <div className="p-3 text-right">
-                      <button onClick={() => window.open(src, '_blank')} className="p-2 bg-cyan-500 hover:bg-cyan-600 rounded" aria-label="open-new-tab"><ExternalLink className="w-4 h-4 text-black" /></button>
-                    </div>
-                  </div>
-                );
+                return <iframe title="HTML Preview" src={src} sandbox="allow-scripts allow-forms" className="w-full h-full border-none" onLoad={() => setPreviewError(null)} onError={() => setPreviewError('Preview may be blocked or failed to load')} />;
               }
 
               return <iframe title="AB Dev Player" src={src} className="w-full h-full border-none" onLoad={() => setPreviewError(null)} onError={() => setPreviewError('Preview may be blocked or failed to load')} />;
