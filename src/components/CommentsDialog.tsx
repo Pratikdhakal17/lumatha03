@@ -30,6 +30,7 @@ interface Comment {
   likes_count: number;
   profiles?: Profile;
   replies?: Comment[];
+  media_url?: string | null;
 }
 
 interface CommentsDialogProps {
@@ -72,6 +73,8 @@ export function CommentsDialog({ postId, postTitle, type = 'post', mediaUrl, ope
     if (open && postId) {
       fetchComments();
       fetchLikedComments();
+    } else if (open && !postId) {
+      toast.error('Missing post id — comments cannot be loaded or saved');
     }
   }, [open, postId]);
 
@@ -114,7 +117,9 @@ export function CommentsDialog({ postId, postTitle, type = 'post', mediaUrl, ope
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !postId || !newComment.trim()) return;
+    if (!user) { toast.error('Please sign in to comment'); return; }
+    if (!postId) { toast.error('Missing post id — cannot save comment'); return; }
+    if (!newComment.trim()) return;
 
     setLoading(true);
     try {
@@ -199,11 +204,15 @@ export function CommentsDialog({ postId, postTitle, type = 'post', mediaUrl, ope
     const displayName = getDisplayName(comment.profiles);
 
     return (
-      <div key={comment.id} className={cn("group flex gap-3", isReply ? "ml-5 mt-3 pl-4 border-l border-white/5" : "mt-5")}>
-        <Avatar className="h-8 w-8 shrink-0 border border-white/5 cursor-pointer" onClick={() => { onOpenChange(false); navigate(`/profile/${comment.user_id}`); }}>
-          <AvatarImage src={comment.profiles?.avatar_url || undefined} />
-          <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-black uppercase">{displayName.replace('@', '').slice(0, 2)}</AvatarFallback>
-        </Avatar>
+      <div key={comment.id} className={cn("group flex gap-3 items-start", isReply ? "ml-5 mt-3 pl-4 border-l border-white/5" : "mt-5")}>
+        {comment.media_url ? (
+          <img src={comment.media_url} alt="attachment" className="w-12 h-12 object-cover rounded-lg shrink-0 border border-white/5" />
+        ) : (
+          <Avatar className="h-8 w-8 shrink-0 border border-white/5 cursor-pointer" onClick={() => { onOpenChange(false); navigate(`/profile/${comment.user_id}`); }}>
+            <AvatarImage src={comment.profiles?.avatar_url || undefined} />
+            <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-black uppercase">{displayName.replace('@', '').slice(0, 2)}</AvatarFallback>
+          </Avatar>
+        )}
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">

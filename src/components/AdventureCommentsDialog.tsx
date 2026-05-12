@@ -23,6 +23,7 @@ interface Comment {
   };
   likeCount: number;
   userLiked: boolean;
+  media_url?: string | null;
 }
 
 interface AdventureCommentsDialogProps {
@@ -64,6 +65,8 @@ export function AdventureCommentsDialog({
   useEffect(() => {
     if ((open || inline) && itemId) {
       fetchComments();
+    } else if ((open || inline) && !itemId) {
+      toast.error('Missing item id — comments cannot be loaded or saved');
     }
   }, [open, itemId, inline]);
 
@@ -137,10 +140,9 @@ export function AdventureCommentsDialog({
   };
 
   const addComment = async () => {
-    if (!newComment.trim() || !user) {
-      if (!user) toast.error('Please login to comment');
-      return;
-    }
+    if (!user) { toast.error('Please login to comment'); return; }
+    if (!itemId) { toast.error('Missing item id — cannot save comment'); return; }
+    if (!newComment.trim()) return;
 
     try {
       // @ts-ignore
@@ -230,15 +232,19 @@ export function AdventureCommentsDialog({
             <MessageCircle className="w-12 h-12 mx-auto mb-3" />
             <p className="font-bold text-sm uppercase tracking-widest">No comments yet</p>
           </div>
-        ) : (
+          ) : (
           comments.map((comment) => (
-            <div key={comment.id} className="flex gap-3">
-              <Avatar className="w-10 h-10 border border-white/5 shrink-0">
-                <AvatarImage src={comment.profiles?.avatar_url || ''} />
-                <AvatarFallback className="bg-slate-800 text-primary text-[10px] font-black uppercase">
-                  {(comment.profiles?.username || comment.profiles?.name || '?').charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+            <div key={comment.id} className="flex gap-3 items-start">
+              {comment.media_url ? (
+                <img src={comment.media_url} alt="attachment" className="w-12 h-12 object-cover rounded-lg shrink-0 border border-white/5" />
+              ) : (
+                <Avatar className="w-10 h-10 border border-white/5 shrink-0">
+                  <AvatarImage src={comment.profiles?.avatar_url || ''} />
+                  <AvatarFallback className="bg-slate-800 text-primary text-[10px] font-black uppercase">
+                    {(comment.profiles?.username || comment.profiles?.name || '?').charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="bg-slate-900/50 border border-white/5 rounded-2xl p-3 relative group shadow-sm">
                   <div className="flex items-start justify-between gap-2 mb-1">
