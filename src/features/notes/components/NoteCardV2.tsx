@@ -143,6 +143,11 @@ export const NoteCardV2: React.FC<NoteCardV2Props> = ({
             <img 
               src={note.firstImageUrl} 
               alt="Note media" 
+              loading="lazy"
+              decoding="async"
+              onError={(event) => {
+                event.currentTarget.style.display = 'none';
+              }}
               className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />

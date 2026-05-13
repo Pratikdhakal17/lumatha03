@@ -221,7 +221,7 @@ export function SavedItemsWidget({ className }: WidgetProps) {
   useEffect(() => {
     if (!user) return;
     const fetchSaved = async () => {
-      const { count } = await supabase.from('saved').select('*', { count: 'exact', head: true }).eq('user_id', user.id);
+      const { count } = await supabase.from('saved').select('id', { count: 'exact' }).eq('user_id', user.id);
       setSavedCount(count || 0);
     };
     fetchSaved();

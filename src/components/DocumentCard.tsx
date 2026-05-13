@@ -54,7 +54,7 @@ export default function DocumentCard({ doc, onDelete, onDownload, onOpenInBrowse
       // Get reaction count
       const { count } = await supabase
         .from('document_reactions')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact' })
         .eq('document_id', doc.id);
       
       setLoveCount(count || 0);

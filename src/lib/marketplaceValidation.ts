@@ -155,7 +155,7 @@ export const getMarketplaceProfileSummary = async (
         .maybeSingle(),
       supabase
         .from('marketplace_listings')
-        .select('id', { count: 'exact', head: true })
+        .select('id', { count: 'exact' })
         .eq('user_id', userId)
         .eq('status', 'active'),
     ]);

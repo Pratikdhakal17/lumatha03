@@ -111,9 +111,9 @@ export function DesktopRightRail({ onCollapseToggle }: DesktopRightRailProps) {
 
       // Load Stats
       const [postsCount, followingCount, followersCount] = await Promise.all([
-        supabase.from('posts').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
-        supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', user.id),
-        supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', user.id),
+        supabase.from('posts').select('id', { count: 'exact' }).eq('user_id', user.id),
+        supabase.from('follows').select('id', { count: 'exact' }).eq('follower_id', user.id),
+        supabase.from('follows').select('id', { count: 'exact' }).eq('following_id', user.id),
       ]);
 
       if (!active) return;

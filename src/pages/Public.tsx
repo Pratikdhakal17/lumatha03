@@ -97,7 +97,7 @@ export default function Public() {
 
       const { count } = await supabase
         .from('likes')
-        .select('id', { count: 'exact', head: true })
+        .select('id', { count: 'exact' })
         .eq('post_id', sharedPostId);
 
       if (!active) return;

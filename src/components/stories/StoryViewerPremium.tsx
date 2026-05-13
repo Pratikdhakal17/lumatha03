@@ -322,7 +322,7 @@ export function StoryViewerPremium({ groups, startGroupIndex, onClose, onDeleteS
 
         const { count: reactionCount, error: reactionCountError } = await supabase
           .from('story_reactions')
-          .select('*', { count: 'exact', head: true })
+          .select('id', { count: 'exact' })
           .eq('story_id', currentStory.id);
 
         if (reactionCountError) throw reactionCountError;

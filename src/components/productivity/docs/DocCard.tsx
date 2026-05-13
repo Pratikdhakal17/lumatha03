@@ -73,7 +73,7 @@ function DocCardComponent({
   const fetchReactions = async () => {
     const { data: likes } = await supabase.from('document_reactions').select('id').eq('document_id', doc.id).eq('reaction', 'heart');
     const { data: userLike } = await supabase.from('document_reactions').select('id').eq('document_id', doc.id).eq('user_id', user?.id).eq('reaction', 'heart').maybeSingle();
-    const { count: comments } = await supabase.from('comments').select('*', { count: 'exact', head: true }).eq('document_id', doc.id);
+    const { count: comments } = await supabase.from('comments').select('id', { count: 'exact' }).eq('document_id', doc.id);
 
     setLikesCount(likes?.length || 0);
     setIsLiked(!!userLike);

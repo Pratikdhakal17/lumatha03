@@ -207,9 +207,9 @@ export default function Profile() {
       const [profileResult, postsResult, friendsCountResult, followersResult, followingResult] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).single(),
         supabase.from('posts').select('*, profiles(*)').eq('user_id', userId).eq('visibility', 'public').neq('category', 'ghost').order('created_at', { ascending: false }).limit(20),
-        supabase.from('friend_requests').select('*', { count: 'exact', head: true }).or(`sender_id.eq.${userId},receiver_id.eq.${userId}`).eq('status', 'accepted'),
-        supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', userId),
-        supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', userId),
+        supabase.from('friend_requests').select('id', { count: 'exact' }).or(`sender_id.eq.${userId},receiver_id.eq.${userId}`).eq('status', 'accepted'),
+        supabase.from('follows').select('id', { count: 'exact' }).eq('following_id', userId),
+        supabase.from('follows').select('id', { count: 'exact' }).eq('follower_id', userId),
       ]);
       
       setProfile(profileResult.data);
