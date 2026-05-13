@@ -208,7 +208,7 @@ export function SubNavigation({ visible = true }: { visible?: boolean }) {
     const fetchUnreadCount = async () => {
       const { count } = await supabase
         .from('notifications')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact' })
         .eq('user_id', user.id)
         .eq('is_read', false);
       setUnreadCount(count || 0);

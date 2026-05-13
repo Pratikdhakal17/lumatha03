@@ -34,6 +34,7 @@ const Create = lazy(() => import('@/pages/Create'));
 const Diary = lazy(() => import('@/pages/Diary'));
 const Notifications = lazy(() => import('@/pages/Notifications'));
 const Search = lazy(() => import('@/pages/Search'));
+const Admin = lazy(() => import('@/pages/Admin'));
 const PerformanceDebug = lazy(() => import('@/pages/PerformanceDebug'));
 const Privacy = lazy(() => import('@/pages/Privacy'));
 const Terms = lazy(() => import('@/pages/Terms'));
@@ -66,6 +67,20 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 
   if (user) {
     // Redirect to home if already logged in
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, profile } = useAuth();
+
+  if (!user || !profile) {
+    return <PageLoader />;
+  }
+
+  if (profile.role !== 'admin') {
     return <Navigate to="/" replace />;
   }
 
@@ -118,6 +133,16 @@ export default function Index() {
                     </div>
                   </AuthRoute>
                 } />
+
+                <Route path="/admin" element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <div className="animate-page-enter">
+                        <Admin />
+                      </div>
+                    </AdminRoute>
+                  </ProtectedRoute>
+                } />
                 
                 {/* Protected routes - with Layout wrapper */}
                 <Route path="/*" element={
@@ -137,8 +162,8 @@ export default function Index() {
                           <Route path="/marketplace/edit-profile" element={<MarketplaceEditProfile />} />
                           <Route path="/marketplace/profile/edit" element={<MarketplaceEditProfile />} />
                           <Route path="/settings" element={<Settings />} />
-                          <Route path="/profile/:userId" element={<Profile />} />
-                          <Route path="/chat/:userId?" element={<Chat />} />
+                          {/* <Route path="/profile/:userId" element={<Profile />} /> */}
+                            <Route path="/profile/:userId" element={<Profile />} />
                           <Route path="/public" element={<Public />} />
                           <Route path="/media" element={<Media />} />
                           <Route path="/private" element={<Private />} />

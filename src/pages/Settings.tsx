@@ -47,6 +47,7 @@ export default function Settings() {
   const { setManualTheme } = useAutoTheme();
   const navigate = useNavigate();
   const [page, setPage] = useState<SettingsPage>('main');
+  const isAdmin = userProfile?.role === 'admin';
 
   // Theme state
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('auto');
@@ -184,6 +185,19 @@ export default function Settings() {
         <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
       </div>
       {right || <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+    </button>
+  );
+
+  const AdminRow = () => (
+    <button onClick={() => navigate('/admin')} className="w-full flex items-center gap-3 px-5 py-4 hover:bg-[var(--bg-hover)] active:scale-[0.99] transition-all">
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg" style={{ background: '#06B6D420' }}>
+        🛡️
+      </div>
+      <div className="flex-1 text-left min-w-0">
+        <p className="text-[15px] font-semibold text-foreground" style={{ fontFamily: 'Space Grotesk' }}>Admin Console</p>
+        <p className="text-xs text-muted-foreground truncate">Moderate posts, messages, comments, likes, users</p>
+      </div>
+      <ChevronRight className="w-4 h-4 text-muted-foreground" />
     </button>
   );
 
@@ -747,6 +761,7 @@ export default function Settings() {
       {/* Support */}
       <SectionLabel>Support</SectionLabel>
       <div className="mx-4 rounded-2xl overflow-hidden border border-border bg-card/30">
+        {isAdmin && <AdminRow />}
         {SECTION_ROWS.support.map((row, i) => (
           <div key={row.id}>
             {i > 0 && <div className="h-px bg-border/50 mx-5" />}

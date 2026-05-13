@@ -191,8 +191,8 @@ export function EnhancedPostCard({
 
     const fetchPostMetrics = async () => {
       const [commentsResult, savesResult] = await Promise.all([
-        supabase.from('comments').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
-        supabase.from('saved').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
+        supabase.from('comments').select('id', { count: 'exact' }).eq('post_id', post.id),
+        supabase.from('saved').select('id', { count: 'exact' }).eq('post_id', post.id),
       ]);
 
       if (!active) return;

@@ -3,7 +3,6 @@ type RouteImporter = () => Promise<unknown>;
 const routeImporters: Record<string, RouteImporter> = {
   '/auth': () => import('@/pages/Auth'),
   '/': () => import('@/pages/Home'),
-  '/profile': () => import('@/pages/Profile'),
   '/education': () => import('@/pages/Education'),
   '/learn': () => import('@/pages/Education'),
   '/music-adventure': () => import('@/pages/MusicAdventureFixed'),
@@ -22,6 +21,7 @@ const routeImporters: Record<string, RouteImporter> = {
   '/create': () => import('@/pages/Create'),
   '/diary': () => import('@/pages/Diary'),
   '/notifications': () => import('@/pages/Notifications'),
+  '/profile': () => import('@/pages/Profile'),
 };
 
 const prefetched = new Set<string>();

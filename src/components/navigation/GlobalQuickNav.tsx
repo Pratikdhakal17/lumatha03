@@ -980,8 +980,8 @@ export function usePremiumWidgets() {
 
     const fetchSavedLikedCounts = async () => {
       const [{ count: liked }, { count: saved }] = await Promise.all([
-        supabase.from('likes').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
-        supabase.from('saved').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('likes').select('id', { count: 'exact' }).eq('user_id', user.id),
+        supabase.from('saved').select('id', { count: 'exact' }).eq('user_id', user.id),
       ]);
       setLikedCount(liked || 0);
       setSavedCount(saved || 0);
