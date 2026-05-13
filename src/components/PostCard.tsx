@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LazyImage } from '@/components/LazyImage';
+import { LazyBlurImage } from '@/components/LazyBlurImage';
 import { Star, MoreVertical, Copy, Edit, Trash2, Heart, ChevronLeft, ChevronRight, Play, MessageCircle, Share2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
@@ -26,10 +26,10 @@ interface PostCardProps {
   onDelete?: (id: string) => void;
   onUpdate?: (id: string, updates: Partial<Post>) => void;
   onOpenComments?: (id: string, title: string) => void;
+  priority?: boolean;
 }
 
-export function PostCard({ post, isSaved, isLiked, likesCount, currentUserId, onToggleSave, onToggleLike, onDelete, onUpdate, onOpenComments }: PostCardProps) {
-function PostCardContent({ post, isSaved, isLiked, likesCount, currentUserId, onToggleSave, onToggleLike, onDelete, onUpdate, onOpenComments }: PostCardProps) {
+function PostCardContent({ post, isSaved, isLiked, likesCount, currentUserId, onToggleSave, onToggleLike, onDelete, onUpdate, onOpenComments, priority }: PostCardProps) {
   const navigate = useNavigate();
   const [imageOpen, setImageOpen] = useState(false);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
@@ -109,11 +109,11 @@ function PostCardContent({ post, isSaved, isLiked, likesCount, currentUserId, on
             </div>
           ) : (
             <div className="relative">
-              <LazyImage
+              <LazyBlurImage
                 src={currentMedia}
                 alt={post.title}
                 className="w-full h-auto max-h-[500px] object-contain bg-black/5 transition-transform duration-500 group-hover:scale-[1.02]"
-                aspectRatio="auto"
+                priority={priority}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
             </div>
@@ -323,7 +323,8 @@ function PostCardContent({ post, isSaved, isLiked, likesCount, currentUserId, on
       </CardContent>
     </Card>
   );
-  }
-  // Export memoized component - uses default shallow comparison
-  export const PostCard = memo(PostCardContent);
 }
+
+// Export memoized component - uses default shallow comparison
+export const PostCard = memo(PostCardContent);
+
