@@ -99,7 +99,7 @@ export function ChatPreviewWidget({ className }: WidgetProps) {
   useEffect(() => {
     if (!user) return;
     const fetchUnread = async () => {
-      const { count } = await supabase.from('messages').select('*', { count: 'exact', head: true }).eq('receiver_id', user.id).eq('is_read', false);
+      const { count } = await supabase.from('messages').select('id', { count: 'exact' }).eq('receiver_id', user.id).eq('is_read', false);
       setUnreadCount(count || 0);
     };
     fetchUnread();
@@ -141,7 +141,7 @@ export function NotesPreviewWidget({ className }: WidgetProps) {
   useEffect(() => {
     if (!user) return;
     const fetchNotes = async () => {
-      const { count } = await supabase.from('notes').select('*', { count: 'exact', head: true }).eq('user_id', user.id);
+      const { count } = await supabase.from('keep_notes').select('id', { count: 'exact' }).eq('user_id', user.id);
       setNotesCount(count || 0);
     };
     fetchNotes();

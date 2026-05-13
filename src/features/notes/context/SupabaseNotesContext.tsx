@@ -159,9 +159,8 @@ export const SupabaseNotesProvider: React.FC<{ children: React.ReactNode }> = ({
       // Backup to localStorage
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(loadedNotes));
     } catch (err: any) {
-      console.error('Failed to fetch notes:', err);
-
       if (isKeepNotesMissingTableError(err)) {
+        console.warn('[Notes] keep_notes table unavailable, falling back to local storage');
         setNotesTableMissing(true);
         setError('Notes table missing. Using local notes only.');
         if (!missingTableNotified.current) {
@@ -169,6 +168,7 @@ export const SupabaseNotesProvider: React.FC<{ children: React.ReactNode }> = ({
           missingTableNotified.current = true;
         }
       } else {
+        console.error('Failed to fetch notes:', err);
         setError(err.message);
       }
 

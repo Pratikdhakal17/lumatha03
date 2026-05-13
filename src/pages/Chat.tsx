@@ -557,13 +557,18 @@ export default function Chat() {
     let cancelled = false;
 
     const loadChatSettings = async () => {
-      const { data } = await db
+      const { data, error } = await db
         .from('chat_settings')
-        .select('chat_user_id, is_muted, is_archived, is_private, nickname')
+        .select('*')
         .eq('user_id', user.id)
         .limit(500);
 
-      if (!data || cancelled) return;
+      if (error || !data || cancelled) {
+        if (error) {
+          console.warn('[Chat] Unable to load chat settings:', error.message || error);
+        }
+        return;
+      }
 
       const nextMuted = new Set<string>();
       const nextArchived = new Set<string>();

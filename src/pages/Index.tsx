@@ -162,8 +162,9 @@ export default function Index() {
                           <Route path="/marketplace/edit-profile" element={<MarketplaceEditProfile />} />
                           <Route path="/marketplace/profile/edit" element={<MarketplaceEditProfile />} />
                           <Route path="/settings" element={<Settings />} />
-                          {/* <Route path="/profile/:userId" element={<Profile />} /> */}
-                            <Route path="/profile/:userId" element={<Profile />} />
+                          <Route path="/profile/:userId" element={<Profile />} />
+                          <Route path="/chat" element={<Chat />} />
+                          <Route path="/chat/:userId" element={<Chat />} />
                           <Route path="/public" element={<Public />} />
                           <Route path="/media" element={<Media />} />
                           <Route path="/private" element={<Private />} />
