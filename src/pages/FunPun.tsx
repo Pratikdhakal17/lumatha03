@@ -180,18 +180,36 @@ export default function FunPun() {
   const loadProjects = useCallback(async () => {
     setLoadingProjects(true);
     try {
-      // Load all public AB Dev projects (visible to everyone)
+      // Load all public AB Dev projects (visibility='public' AND is_private=false AND audience='global')
       const publicQuery = supabase
         .from('posts')
         .select('*, profiles(*)')
         .eq('category', 'abdev')
         .eq('visibility', 'public')
+        .eq('is_private', false)
         .order('created_at', { ascending: false })
         .limit(60);
 
       const { data: publicData, error: publicError } = await publicQuery;
+      
       if (publicError) {
-        console.error('[AB Dev] Error loading public projects:', publicError);
+        console.error('[AB Dev] RLS Error loading public projects:', {
+          message: publicError.message,
+          code: publicError.code,
+          details: publicError.details,
+        });
+      } else {
+        console.log('[AB Dev] Loaded public projects:', {
+          count: publicData?.length || 0,
+          projects: publicData?.map((p) => ({
+            id: p.id,
+            title: p.title,
+            visibility: p.visibility,
+            audience: p.audience,
+            is_private: p.is_private,
+            user: p.profiles?.name,
+          })) || [],
+        });
       }
 
       let allProjects = publicData || [];
@@ -209,6 +227,16 @@ export default function FunPun() {
         const { data: userPrivateData, error: userPrivateError } = await userPrivateQuery;
         if (userPrivateError) {
           console.error('[AB Dev] Error loading user private projects:', userPrivateError);
+        } else {
+          console.log('[AB Dev] Loaded user private projects:', {
+            userId: user.id,
+            count: userPrivateData?.length || 0,
+            projects: userPrivateData?.map((p) => ({
+              id: p.id,
+              title: p.title,
+              visibility: p.visibility,
+            })) || [],
+          });
         }
 
         // Merge: public projects + user's own private projects
@@ -220,6 +248,7 @@ export default function FunPun() {
       }
 
       const nextProjects = allProjects as ProjectPost[];
+      console.log('[AB Dev] Total projects loaded:', nextProjects.length);
       setProjects(nextProjects);
       setSelectedProject((current) => {
         if (current && [DEFAULT_PROJECT_ID, ...nextProjects.map((project) => project.id)].includes(current)) return current;
@@ -456,7 +485,7 @@ export default function FunPun() {
         visibility: projectVisibility,
         category: 'abdev',
         post_type: 'post',
-        audience: projectVisibility,
+        audience: projectVisibility === 'public' ? 'global' : 'private',
         is_anonymous: false,
         is_private: projectVisibility === 'private',
         allow_comments: true,
@@ -473,6 +502,15 @@ export default function FunPun() {
       if (error) throw error;
 
       const createdProject = data as ProjectPost | null;
+      console.log('[AB Dev] Project published:', {
+        id: createdProject?.id,
+        title: createdProject?.title,
+        visibility: createdProject?.visibility,
+        audience: createdProject?.audience,
+        is_private: createdProject?.is_private,
+        category: createdProject?.category,
+      });
+
       if (createdProject) {
         setProjects((prev) => [createdProject, ...prev]);
         setSelectedProject(createdProject.id);
@@ -503,7 +541,7 @@ export default function FunPun() {
           title: editTitle.trim(),
           content: editDesc.trim() || null,
           visibility: editVisibility,
-          audience: editVisibility,
+          audience: editVisibility === 'public' ? 'global' : 'private',
           is_private: editVisibility === 'private',
         })
         .eq('id', editProject.id)
