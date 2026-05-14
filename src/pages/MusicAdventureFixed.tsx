@@ -307,7 +307,16 @@ export default function MusicAdventureFixed() {
     const { data } = await supabase.from('user_points').select('total_points').eq('user_id', user.id).maybeSingle();
     const current = (data as any)?.total_points || 0;
     const next = current + delta;
-    await supabase.from('user_points').upsert({ user_id: user.id, total_points: next }, { onConflict: 'user_id' });
+    try {
+      const { data: existing } = await supabase.from('user_points').select('id').eq('user_id', user.id).maybeSingle();
+      if (existing) {
+        await supabase.from('user_points').update({ total_points: next }).eq('user_id', user.id);
+      } else {
+        await supabase.from('user_points').insert({ user_id: user.id, total_points: next });
+      }
+    } catch (err) {
+      console.error('Failed to award points:', err);
+    }
     setUserPoints(next);
   }, [user?.id]);
 

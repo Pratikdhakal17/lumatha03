@@ -132,11 +132,29 @@ export function StoryViewerV2({ groups, startGroupIndex, onClose }: StoryViewerV
     if (!currentStory?.id || isOwnStory || !user) return;
 
     const markViewed = async () => {
-      await supabase.from('story_views').upsert({
-        story_id: currentStory.id,
-        viewer_id: user.id,
-        viewed_at: new Date().toISOString(),
-      });
+      try {
+        const { data: existing } = await supabase
+          .from('story_views')
+          .select('id')
+          .eq('story_id', currentStory.id)
+          .eq('viewer_id', user.id)
+          .maybeSingle();
+        if (existing) {
+          await supabase
+            .from('story_views')
+            .update({ viewed_at: new Date().toISOString() })
+            .eq('story_id', currentStory.id)
+            .eq('viewer_id', user.id);
+        } else {
+          await supabase.from('story_views').insert({
+            story_id: currentStory.id,
+            viewer_id: user.id,
+            viewed_at: new Date().toISOString(),
+          });
+        }
+      } catch (err) {
+        console.error('Failed to mark story viewed:', err);
+      }
     };
 
     markViewed();

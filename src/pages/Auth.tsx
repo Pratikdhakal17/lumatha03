@@ -346,14 +346,30 @@ export default function Auth() {
           const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, profilePicFile, { upsert: true });
           if (!uploadError) { avatarUrl = getPublicUrlSafe('avatars', fileName) ?? null; }
         }
-        await supabase.from('profiles').upsert({
-          id: data.user.id, email: email.trim().toLowerCase(), name: sanitizedName, first_name: firstName.trim(), last_name: lastName.trim(),
-          username: username.toLowerCase().trim(), country, detected_city: detectedCity, timezone: detectedTimezone,
-          location: detectedCity ? `${detectedCity}, ${country}` : country,
-          age_group: ageGroup,
-          avatar_url: avatarUrl,
-          gender: gender || null
-        } as any);
+        try {
+          const { data: existing } = await supabase.from('profiles').select('id').eq('id', data.user.id).maybeSingle();
+          if (existing) {
+            await supabase.from('profiles').update({
+              email: email.trim().toLowerCase(), name: sanitizedName, first_name: firstName.trim(), last_name: lastName.trim(),
+              username: username.toLowerCase().trim(), country, detected_city: detectedCity, timezone: detectedTimezone,
+              location: detectedCity ? `${detectedCity}, ${country}` : country,
+              age_group: ageGroup,
+              avatar_url: avatarUrl,
+              gender: gender || null
+            }).eq('id', data.user.id);
+          } else {
+            await supabase.from('profiles').insert({
+              id: data.user.id, email: email.trim().toLowerCase(), name: sanitizedName, first_name: firstName.trim(), last_name: lastName.trim(),
+              username: username.toLowerCase().trim(), country, detected_city: detectedCity, timezone: detectedTimezone,
+              location: detectedCity ? `${detectedCity}, ${country}` : country,
+              age_group: ageGroup,
+              avatar_url: avatarUrl,
+              gender: gender || null
+            } as any);
+          }
+        } catch (err) {
+          console.error('Failed to create profile:', err);
+        }
       }
       toast.success('Account created!');
       setSignupUserId(data.user?.id || '');

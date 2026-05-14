@@ -338,11 +338,29 @@ export function StoryViewerPremium({ groups, startGroupIndex, onClose, onDeleteS
 
         // Record view
         if (!isOwnStory && user) {
-          await supabase.from('story_views').upsert({
-            story_id: currentStory.id,
-            viewer_id: user.id,
-            viewed_at: new Date().toISOString()
-          }, { onConflict: 'story_id,viewer_id' });
+          try {
+            const { data: existing } = await supabase
+              .from('story_views')
+              .select('id')
+              .eq('story_id', currentStory.id)
+              .eq('viewer_id', user.id)
+              .maybeSingle();
+            if (existing) {
+              await supabase
+                .from('story_views')
+                .update({ viewed_at: new Date().toISOString() })
+                .eq('story_id', currentStory.id)
+                .eq('viewer_id', user.id);
+            } else {
+              await supabase.from('story_views').insert({
+                story_id: currentStory.id,
+                viewer_id: user.id,
+                viewed_at: new Date().toISOString()
+              });
+            }
+          } catch (err) {
+            console.error('Failed to record story view:', err);
+          }
         }
       } catch (err: any) {
         if (isMissingStoryAuxTableError(err)) {

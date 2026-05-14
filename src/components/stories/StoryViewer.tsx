@@ -124,11 +124,31 @@ export function StoryViewer({ groups, startGroupIndex, onClose }: StoryViewerPro
 
   useEffect(() => {
     if (!currentStory || !user || isOwnStory) return;
-    supabase.from('story_views').upsert({
-      story_id: currentStory.id,
-      viewer_id: user.id,
-      viewed_at: new Date().toISOString(),
-    }, { onConflict: 'story_id,viewer_id', ignoreDuplicates: true }).then(() => {});
+    (async () => {
+      try {
+        const { data: existing } = await supabase
+          .from('story_views')
+          .select('id')
+          .eq('story_id', currentStory.id)
+          .eq('viewer_id', user.id)
+          .maybeSingle();
+        if (existing) {
+          await supabase
+            .from('story_views')
+            .update({ viewed_at: new Date().toISOString() })
+            .eq('story_id', currentStory.id)
+            .eq('viewer_id', user.id);
+        } else {
+          await supabase.from('story_views').insert({
+            story_id: currentStory.id,
+            viewer_id: user.id,
+            viewed_at: new Date().toISOString(),
+          });
+        }
+      } catch (err) {
+        console.error('Failed to record story view:', err);
+      }
+    })();
   }, [currentStory?.id, user?.id, isOwnStory]);
 
   const toggleLike = async (e?: { clientX: number; clientY: number }) => {
@@ -142,11 +162,29 @@ export function StoryViewer({ groups, startGroupIndex, onClose }: StoryViewerPro
       heartRef.current?.spawn(spawnX, spawnY, true);
     }
     
-    await supabase.from('story_views').upsert({
-      story_id: currentStory.id,
-      viewer_id: user.id,
-      reaction: nextState ? '❤️' : null,
-    }, { onConflict: 'story_id,viewer_id' });
+    try {
+      const { data: existing } = await supabase
+        .from('story_views')
+        .select('id')
+        .eq('story_id', currentStory.id)
+        .eq('viewer_id', user.id)
+        .maybeSingle();
+      if (existing) {
+        await supabase
+          .from('story_views')
+          .update({ reaction: nextState ? '❤️' : null })
+          .eq('story_id', currentStory.id)
+          .eq('viewer_id', user.id);
+      } else {
+        await supabase.from('story_views').insert({
+          story_id: currentStory.id,
+          viewer_id: user.id,
+          reaction: nextState ? '❤️' : null,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to update story reaction:', err);
+    }
   };
 
   const handleInteractionStart = (e: React.MouseEvent | React.TouchEvent) => {

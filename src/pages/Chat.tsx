@@ -1033,9 +1033,18 @@ export default function Chat() {
       };
       const field = dbField[key];
       if (field) {
-        db.from('chat_settings').upsert({
-          user_id: user.id, chat_user_id: id, [field]: !wasInSet, updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id,chat_user_id' }).then(() => {});
+        (async () => {
+          try {
+            const { data: existing } = await db.from('chat_settings').select('id').eq('user_id', user.id).eq('chat_user_id', id).maybeSingle();
+            if (existing) {
+              await db.from('chat_settings').update({ [field]: !wasInSet, updated_at: new Date().toISOString() }).eq('user_id', user.id).eq('chat_user_id', id);
+            } else {
+              await db.from('chat_settings').insert({ user_id: user.id, chat_user_id: id, [field]: !wasInSet, updated_at: new Date().toISOString() });
+            }
+          } catch (err) {
+            console.error('Failed to update chat setting:', err);
+          }
+        })();
       }
     }
   }, [user]);
@@ -1049,18 +1058,18 @@ export default function Chat() {
       const updatedAt = new Date().toISOString();
 
       Promise.allSettled([
-        db.from('chat_settings').upsert({
-          user_id: user.id,
-          chat_user_id: currentChatUser,
-          theme_color: theme,
-          updated_at: updatedAt,
-        }, { onConflict: 'user_id,chat_user_id' }),
-        db.from('chat_settings').upsert({
-          user_id: currentChatUser,
-          chat_user_id: user.id,
-          theme_color: theme,
-          updated_at: updatedAt,
-        }, { onConflict: 'user_id,chat_user_id' }),
+        (async () => {
+          const { data: existing } = await db.from('chat_settings').select('id').eq('user_id', user.id).eq('chat_user_id', currentChatUser).maybeSingle();
+          return existing
+            ? db.from('chat_settings').update({ theme_color: theme, updated_at: updatedAt }).eq('user_id', user.id).eq('chat_user_id', currentChatUser)
+            : db.from('chat_settings').insert({ user_id: user.id, chat_user_id: currentChatUser, theme_color: theme, updated_at: updatedAt });
+        })(),
+        (async () => {
+          const { data: existing } = await db.from('chat_settings').select('id').eq('user_id', currentChatUser).eq('chat_user_id', user.id).maybeSingle();
+          return existing
+            ? db.from('chat_settings').update({ theme_color: theme, updated_at: updatedAt }).eq('user_id', currentChatUser).eq('chat_user_id', user.id)
+            : db.from('chat_settings').insert({ user_id: currentChatUser, chat_user_id: user.id, theme_color: theme, updated_at: updatedAt });
+        })(),
       ]).then(([primaryResult, mirrorResult]) => {
         if (primaryResult.status === 'rejected') {
           console.error('Failed to persist chat theme:', primaryResult.reason);
@@ -1082,9 +1091,18 @@ export default function Chat() {
       const modes = parseRecord<number>(localStorage.getItem('chatGhostModes'));
       modes[currentChatUser] = mode;
       localStorage.setItem('chatGhostModes', JSON.stringify(modes));
-      db.from('chat_settings').upsert({
-        user_id: user.id, chat_user_id: currentChatUser, disappear_timer: mode, updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id,chat_user_id' }).then(() => {});
+      (async () => {
+        try {
+          const { data: existing } = await db.from('chat_settings').select('id').eq('user_id', user.id).eq('chat_user_id', currentChatUser).maybeSingle();
+          if (existing) {
+            await db.from('chat_settings').update({ disappear_timer: mode, updated_at: new Date().toISOString() }).eq('user_id', user.id).eq('chat_user_id', currentChatUser);
+          } else {
+            await db.from('chat_settings').insert({ user_id: user.id, chat_user_id: currentChatUser, disappear_timer: mode, updated_at: new Date().toISOString() });
+          }
+        } catch (err) {
+          console.error('Failed to save ghost mode:', err);
+        }
+      })();
     }
   }, [currentChatUser, user]);
 
@@ -1095,9 +1113,18 @@ export default function Chat() {
     setChatNicknames(updated);
     localStorage.setItem('chatNicknames', JSON.stringify(updated));
     if (user) {
-      db.from('chat_settings').upsert({
-        user_id: user.id, chat_user_id: currentChatUser, nickname: name || null, updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id,chat_user_id' }).then(() => {});
+      (async () => {
+        try {
+          const { data: existing } = await db.from('chat_settings').select('id').eq('user_id', user.id).eq('chat_user_id', currentChatUser).maybeSingle();
+          if (existing) {
+            await db.from('chat_settings').update({ nickname: name || null, updated_at: new Date().toISOString() }).eq('user_id', user.id).eq('chat_user_id', currentChatUser);
+          } else {
+            await db.from('chat_settings').insert({ user_id: user.id, chat_user_id: currentChatUser, nickname: name || null, updated_at: new Date().toISOString() });
+          }
+        } catch (err) {
+          console.error('Failed to save nickname:', err);
+        }
+      })();
     }
   }, [currentChatUser, chatNicknames, user]);
 
@@ -1609,12 +1636,12 @@ export default function Chat() {
     setChatNicknames(updated);
     localStorage.setItem('chatNicknames', JSON.stringify(updated));
     try {
-      await db.from('chat_settings').upsert({
-        user_id: user.id,
-        chat_user_id: targetUserId,
-        nickname: name || null,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id,chat_user_id' });
+      const { data: existing } = await db.from('chat_settings').select('id').eq('user_id', user.id).eq('chat_user_id', targetUserId).maybeSingle();
+      if (existing) {
+        await db.from('chat_settings').update({ nickname: name || null, updated_at: new Date().toISOString() }).eq('user_id', user.id).eq('chat_user_id', targetUserId);
+      } else {
+        await db.from('chat_settings').insert({ user_id: user.id, chat_user_id: targetUserId, nickname: name || null, updated_at: new Date().toISOString() });
+      }
       toast.success(name ? 'Nickname saved' : 'Nickname removed');
     } catch (err) {
       console.error('Failed to save nickname:', err);

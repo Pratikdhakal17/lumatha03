@@ -41,6 +41,33 @@ if (!window.__lumatha_supabase) {
       autoRefreshToken: true,
     }
   });
+  
+  // Add error diagnostics for WebSocket/auth failures in production
+  try {
+    const client = window.__lumatha_supabase;
+    const logAuthError = (event: any) => {
+      const msg = event?.message || String(event);
+      if (msg && (msg.includes('ERR_NAME_NOT_RESOLVED') || msg.includes('net::') || msg.includes('DNS') || msg.includes('auth'))) {
+        // Log masked URL and error to help diagnose DNS/auth issues
+        const maskedUrl = SUPABASE_URL.replace(/(:\/\/)(.*@)?/, '$1***@');
+        console.error('[supabase auth error] URL:', maskedUrl, 'Error:', msg);
+      }
+    };
+    
+    // Listen for auth state changes to catch refresh token errors
+    const { data: authListener } = client.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' && !session && localStorage.getItem('supabase.auth.token')) {
+        console.warn('[supabase auth] Token exists but session lost - possible refresh failure');
+      }
+    });
+    
+    // Cleanup on page unload
+    if (authListener?.subscription) {
+      window.addEventListener('beforeunload', () => authListener.subscription.unsubscribe());
+    }
+  } catch (e) {
+    console.warn('[supabase diagnostics] Error setting up error listeners:', e);
+  }
 }
 
 export const supabase = window.__lumatha_supabase as ReturnType<typeof createClient>;
