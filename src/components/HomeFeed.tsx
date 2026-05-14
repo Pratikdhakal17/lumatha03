@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { PostCard } from '@/components/PostCard';
+import { EnhancedPostCard } from '@/components/EnhancedPostCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
@@ -331,11 +332,11 @@ export function HomeFeed({ activeTab }: HomeFeedProps) {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="flex flex-col gap-0 md:gap-4 max-w-full mx-auto">
         {allPosts.map((post, index) => (
-          <PostCard
+          <EnhancedPostCard
             key={post.id}
-            post={post}
+            post={post as any}
             isSaved={savedPosts.has(post.id)}
             isLiked={likedPosts.has(post.id)}
             likesCount={likeCounts[post.id] || 0}
@@ -344,7 +345,6 @@ export function HomeFeed({ activeTab }: HomeFeedProps) {
             onToggleLike={toggleLike}
             onDelete={deletePost}
             onUpdate={updatePost}
-            priority={index < 3}
           />
         ))}
       </div>

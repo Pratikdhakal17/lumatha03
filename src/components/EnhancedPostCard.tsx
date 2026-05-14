@@ -1466,57 +1466,86 @@ export function EnhancedPostCard({
           />
         </Suspense>
 
-        {/* Actions Bar */}
-        <div className="flex items-center justify-between px-2 md:px-4 pt-2 mt-auto">
-          <div className="flex items-center gap-6">
-            {/* Save/Bookmark */}
-            <button onClick={handleToggleSave} aria-label="Save post" className="transition-transform hover:scale-110">
-              <Bookmark
-                className="w-[22px] h-[22px]"
-                style={{
-                  color: isSaved ? '#FBBF24' : 'var(--text-2)',
-                  fill: isSaved ? '#FBBF24' : 'none',
-                }}
-              />
+        {/* Actions Bar - Five Subsections */}
+        <div className="flex items-center justify-between px-2 md:px-4 py-2.5 mt-auto border-t border-white/5">
+          <div className="flex items-center justify-between w-full">
+            {/* AB Dev */}
+            <button 
+              onClick={() => navigate('/funpun')}
+              className="flex flex-col items-center gap-1 group transition-all active:scale-95"
+              aria-label="AB Dev"
+            >
+              <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
+                <Code className="w-5 h-5 text-blue-500" />
+              </div>
+              <span className="text-[9px] font-bold text-blue-500/80 uppercase tracking-tighter">AB Dev</span>
             </button>
 
-            {/* Share */}
-            <button
-              onClick={openShareDialog}
-              aria-label="Share post"
-              className="transition-transform hover:scale-110 disabled:opacity-40"
-              disabled={!!postSettings.shareOff}
+            {/* Like */}
+            <button 
+              onClick={handleLikeWithAnimation}
+              className="flex flex-col items-center gap-1 group transition-all active:scale-95"
+              aria-label="Like"
+              style={{ transform: heartAnimating ? 'scale(1.14)' : 'scale(1)' }}
             >
-              <Share2 className="w-[22px] h-[22px]" style={{ color: 'var(--text-2)' }} />
+              <div className={cn(
+                "w-9 h-9 flex items-center justify-center rounded-xl transition-colors",
+                isLiked ? "bg-red-500/20" : "bg-red-500/10 group-hover:bg-red-500/20"
+              )}>
+                <Heart 
+                  className={cn("w-5 h-5", isLiked ? "text-red-500 fill-red-500" : "text-red-500/70")} 
+                />
+              </div>
+              <span className={cn(
+                "text-[9px] font-bold uppercase tracking-tighter",
+                isLiked ? "text-red-500" : "text-red-500/80"
+              )}>
+                {likesCount > 0 ? likesCount : 'Like'}
+              </span>
             </button>
 
             {/* Comment */}
-            <button
-              onClick={() => {
-                if (!postSettings.commentsOff) setCommentsOpen(true);
-              }}
-              className="flex items-center gap-1.5 transition-transform hover:scale-110 disabled:opacity-40"
-              aria-label="Comment on post"
+            <button 
+              onClick={() => !postSettings.commentsOff && setCommentsOpen(true)}
+              className="flex flex-col items-center gap-1 group transition-all active:scale-95 disabled:opacity-40"
+              aria-label="Comment"
               disabled={!!postSettings.commentsOff}
             >
-              <MessageCircle className="w-[22px] h-[22px]" style={{ color: 'var(--text-2)' }} />
+              <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-emerald-500/10 group-hover:bg-emerald-500/20 transition-colors">
+                <MessageCircle className="w-5 h-5 text-emerald-500" />
+              </div>
+              <span className="text-[9px] font-bold text-emerald-500/80 uppercase tracking-tighter">
+                {commentsCount > 0 ? commentsCount : 'Comment'}
+              </span>
+            </button>
+
+            {/* Upload/Share */}
+            <button 
+              onClick={openShareDialog}
+              className="flex flex-col items-center gap-1 group transition-all active:scale-95 disabled:opacity-40"
+              aria-label="Upload"
+              disabled={!!postSettings.shareOff}
+            >
+              <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
+                <Upload className="w-5 h-5 text-amber-500" />
+              </div>
+              <span className="text-[9px] font-bold text-amber-500/80 uppercase tracking-tighter">Upload</span>
+            </button>
+
+            {/* Seen/Views */}
+            <button 
+              onClick={fetchAnalytics}
+              className="flex flex-col items-center gap-1 group transition-all active:scale-95"
+              aria-label="Seen"
+            >
+              <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
+                <Eye className="w-5 h-5 text-purple-500" />
+              </div>
+              <span className="text-[9px] font-bold text-purple-500/80 uppercase tracking-tighter">
+                {analyticsData.views > 0 ? analyticsData.views : 'Seen'}
+              </span>
             </button>
           </div>
-
-          <button
-            onClick={handleLikeWithAnimation}
-            className="transition-transform hover:scale-110"
-            style={{ transform: heartAnimating ? 'scale(1.14)' : 'scale(1)' }}
-            aria-label="Like post"
-          >
-            <Heart
-              className="w-[22px] h-[22px]"
-              style={{
-                color: isLiked ? '#EF4444' : 'var(--text-2)',
-                fill: isLiked ? '#EF4444' : 'none',
-              }}
-            />
-          </button>
         </div>
       </div>
 

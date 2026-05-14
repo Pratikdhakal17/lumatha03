@@ -584,6 +584,7 @@ export default function Profile() {
         const hasVideo = types.some((type) => typeof type === 'string' && type.includes('video'));
         return hasMedia && hasVideo;
       }
+      if (postFilter === 'abdev') return post.category === 'abdev';
       if (postFilter === 'thoughts') return isThought && !hasMedia;
       return true;
     })
@@ -807,13 +808,14 @@ export default function Profile() {
             <div className="px-4 py-3 flex items-center gap-2 overflow-x-auto no-scrollbar border-b border-slate-900">
                 {[
                   { id: 'all', label: 'All' },
+                  { id: 'abdev', label: 'AB Dev' },
                   { id: 'pictures', label: 'Pictures' },
                   { id: 'videos', label: 'Videos' },
                   { id: 'thoughts', label: 'Thoughts' },
                   { id: 'news', label: 'News' },
                   { id: 'nature', label: 'Nature' },
                   { id: 'fun', label: 'Fun' },
-                  { id: 'love', label: 'Love' },
+                  { id: 'love', label: 'love' },
                   { id: 'nepal', label: 'Nepal' },
                   { id: 'popular', label: 'Popular' },
                 ].map((item) => (

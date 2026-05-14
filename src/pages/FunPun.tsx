@@ -180,70 +180,40 @@ export default function FunPun() {
   const loadProjects = useCallback(async () => {
     setLoadingProjects(true);
     try {
-      // Load all public AB Dev projects (visibility='public' AND is_private=false AND audience='global')
+      // Load all public AB Dev projects (everyone can see these)
       const publicQuery = supabase
         .from('posts')
         .select('*, profiles(*)')
         .eq('category', 'abdev')
         .eq('visibility', 'public')
-        .eq('is_private', false)
         .order('created_at', { ascending: false })
-        .limit(60);
+        .limit(100);
 
       const { data: publicData, error: publicError } = await publicQuery;
       
       if (publicError) {
-        console.error('[AB Dev] RLS Error loading public projects:', {
-          message: publicError.message,
-          code: publicError.code,
-          details: publicError.details,
-        });
-      } else {
-        console.log('[AB Dev] Loaded public projects:', {
-          count: publicData?.length || 0,
-          projects: publicData?.map((p) => ({
-            id: p.id,
-            title: p.title,
-            visibility: p.visibility,
-            audience: p.audience,
-            is_private: p.is_private,
-            user: p.profiles?.name,
-          })) || [],
-        });
+        console.error('[AB Dev] Error loading public projects:', publicError);
       }
 
       let allProjects = publicData || [];
 
-      // If user is logged in, also load their private projects
+      // If user is logged in, also load ALL their own projects (public AND private)
       if (user?.id) {
-        const userPrivateQuery = supabase
+        const userProjectsQuery = supabase
           .from('posts')
           .select('*, profiles(*)')
           .eq('category', 'abdev')
           .eq('user_id', user.id)
-          .eq('visibility', 'private')
           .order('created_at', { ascending: false });
 
-        const { data: userPrivateData, error: userPrivateError } = await userPrivateQuery;
-        if (userPrivateError) {
-          console.error('[AB Dev] Error loading user private projects:', userPrivateError);
-        } else {
-          console.log('[AB Dev] Loaded user private projects:', {
-            userId: user.id,
-            count: userPrivateData?.length || 0,
-            projects: userPrivateData?.map((p) => ({
-              id: p.id,
-              title: p.title,
-              visibility: p.visibility,
-            })) || [],
-          });
-        }
-
-        // Merge: public projects + user's own private projects
-        if (userPrivateData && userPrivateData.length > 0) {
+        const { data: userData, error: userError } = await userProjectsQuery;
+        if (userError) {
+          console.error('[AB Dev] Error loading user projects:', userError);
+        } else if (userData) {
+          // Merge: all public projects + current user's projects (including their private ones)
           const publicIds = new Set(allProjects.map((p) => p.id));
-          const privateOnly = userPrivateData.filter((p) => !publicIds.has(p.id));
-          allProjects = [...allProjects, ...privateOnly];
+          const ownOnly = userData.filter((p) => !publicIds.has(p.id));
+          allProjects = [...allProjects, ...ownOnly];
         }
       }
 
