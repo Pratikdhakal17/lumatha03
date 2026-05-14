@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef, memo } from 'react';
 import { Code, MessageCircle, Share2, Bookmark, Heart, Upload, MoreHorizontal, ExternalLink, X } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Database } from '@/integrations/supabase/types';
 import { getPublicUrlSafe } from '@/lib/storageHelpers';
 import { toast } from 'sonner';
 import { ABDevCommentsDialog } from '@/components/ABDevCommentsDialog';
+import { CommentsDialog } from '@/components/CommentsDialog';
 
 type FilterKey = 'all' | 'liked' | 'shared' | 'commented' | 'saved' | 'yours';
 type PostRow = Database['public']['Tables']['posts']['Row'];
@@ -17,13 +18,6 @@ type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 interface ProjectPost extends PostRow {
   profiles?: ProfileRow | null;
 }
-
-type ProjectEngagement = {
-  likes: number;
-  saves: number;
-  shares: number;
-  comments: number;
-};
 
 const DEFAULT_PROJECT_ID = 'default-funpun';
 
@@ -102,7 +96,6 @@ export default function FunPun() {
   const [showPlayer, setShowPlayer] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editProject, setEditProject] = useState<ProjectPost | null>(null);
-  const [projectEngagement, setProjectEngagement] = useState<Record<string, ProjectEngagement>>({});
   const [editTitle, setEditTitle] = useState('');
   const [editDesc, setEditDesc] = useState('');
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -135,6 +128,7 @@ export default function FunPun() {
     is_anonymous: false,
     is_private: false,
     likes_count: 0,
+    saves_count: 0,
     location: profile?.country || null,
     post_type: 'post',
     shares_count: 0,
@@ -155,16 +149,6 @@ export default function FunPun() {
     } as ProfileRow,
   } as ProjectPost), [avatar, profile?.country, profile?.id, user?.id]);
 
-
-  const updateEngagement = useCallback((projectId: string, updater: (current: ProjectEngagement) => ProjectEngagement) => {
-    setProjectEngagement((prev) => {
-      const current = prev[projectId] || { likes: 0, saves: 0, shares: 0, comments: 0 };
-      return {
-        ...prev,
-        [projectId]: updater(current),
-      };
-    });
-  }, []);
   const feedProjects = useMemo(() => [defaultProject, ...projects], [defaultProject, projects]);
 
   useEffect(() => {
@@ -209,38 +193,6 @@ export default function FunPun() {
         if (current && [DEFAULT_PROJECT_ID, ...nextProjects.map((project) => project.id)].includes(current)) return current;
         return DEFAULT_PROJECT_ID;
       });
-
-      const projectIds = nextProjects.map((project) => project.id).filter(Boolean);
-      if (projectIds.length > 0) {
-        const [likesResult, savesResult, sharesResult, commentsResult] = await Promise.all([
-          supabase.from('likes').select('post_id').in('post_id', projectIds),
-          supabase.from('saved').select('post_id').in('post_id', projectIds),
-          supabase.from('post_shares').select('post_id').in('post_id', projectIds),
-          supabase.from('comments').select('post_id').in('post_id', projectIds).not('post_id', 'is', null),
-        ]);
-
-        const nextEngagement: Record<string, ProjectEngagement> = {};
-        projectIds.forEach((id) => {
-          nextEngagement[id] = { likes: 0, saves: 0, shares: 0, comments: 0 };
-        });
-
-        likesResult.data?.forEach((entry) => {
-          if (entry.post_id && nextEngagement[entry.post_id]) nextEngagement[entry.post_id].likes += 1;
-        });
-        savesResult.data?.forEach((entry) => {
-          if (entry.post_id && nextEngagement[entry.post_id]) nextEngagement[entry.post_id].saves += 1;
-        });
-        sharesResult.data?.forEach((entry) => {
-          if (entry.post_id && nextEngagement[entry.post_id]) nextEngagement[entry.post_id].shares += 1;
-        });
-        commentsResult.data?.forEach((entry) => {
-          if (entry.post_id && nextEngagement[entry.post_id]) nextEngagement[entry.post_id].comments += 1;
-        });
-
-        setProjectEngagement(nextEngagement);
-      } else {
-        setProjectEngagement({});
-      }
 
       if (user?.id) {
         const [savedResult, likedResult, sharedResult, commentedResult] = await Promise.all([
@@ -324,11 +276,6 @@ export default function FunPun() {
         return next;
       });
 
-      updateEngagement(projectId, (current) => ({
-        ...current,
-        likes: Math.max(0, current.likes + (nextLiked ? 1 : -1)),
-      }));
-
       setProjects((prev) => prev.map((project) => {
         if (project.id !== projectId) return project;
         const currentLikes = project.likes_count || 0;
@@ -338,7 +285,7 @@ export default function FunPun() {
       console.error('Failed to update like:', error);
       toast.error('Could not update like');
     }
-  }, [likedProjectIds, updateEngagement, user?.id]);
+  }, [likedProjectIds, user?.id]);
 
   const toggleSave = useCallback(async (projectId: string) => {
     if (!user?.id || projectId === DEFAULT_PROJECT_ID) return;
@@ -360,15 +307,17 @@ export default function FunPun() {
         return next;
       });
 
-      updateEngagement(projectId, (current) => ({
-        ...current,
-        saves: Math.max(0, current.saves + (nextSaved ? 1 : -1)),
+      // Update the project's save count
+      setProjects((prev) => prev.map((project) => {
+        if (project.id !== projectId) return project;
+        const currentSaves = project.saves_count || 0;
+        return { ...project, saves_count: nextSaved ? currentSaves + 1 : Math.max(0, currentSaves - 1) };
       }));
     } catch (error) {
       console.error('Failed to update save:', error);
       toast.error('Could not update save');
     }
-  }, [savedProjectIds, updateEngagement, user?.id]);
+  }, [savedProjectIds, user?.id]);
 
   const toggleShare = useCallback(async (projectId: string) => {
     if (!user?.id || projectId === DEFAULT_PROJECT_ID) return;
@@ -389,10 +338,6 @@ export default function FunPun() {
       }
 
       const { error } = await supabase.from('post_shares').insert({ post_id: projectId, user_id: user.id });
-      updateEngagement(projectId, (current) => ({
-        ...current,
-        shares: current.shares + 1,
-      }));
       if (error) throw error;
 
       setSharedProjectIds((prev) => new Set(prev).add(projectId));
@@ -405,7 +350,7 @@ export default function FunPun() {
       console.error('Failed to share project:', error);
       toast.error('Could not share project');
     }
-  }, [updateEngagement, user?.id]);
+  }, [user?.id]);
 
   const handlePublish = useCallback(async () => {
     if (!user?.id) {
@@ -656,7 +601,6 @@ export default function FunPun() {
               const authorName = project.profiles?.name || project.profiles?.username || 'AB Dev Creator';
               const authorAvatar = project.profiles?.avatar_url || avatar;
               const publishedLabel = project.created_at ? new Date(project.created_at).toLocaleDateString() : 'Just now';
-              const engagement = projectEngagement[project.id] || { likes: project.likes_count || 0, saves: 0, shares: project.shares_count || 0, comments: 0 };
 
               return (
                 <div
@@ -712,7 +656,7 @@ export default function FunPun() {
                         disabled={project.id === DEFAULT_PROJECT_ID}
                       >
                         <Heart className={`w-4 h-4 ${likedProjectIds.has(project.id) ? 'fill-red-500' : ''}`} />
-                        <span className="text-xs">{engagement.likes}</span>
+                        <span className="text-xs">{project.likes_count || 0}</span>
                       </button>
                       <button
                         onClick={(event) => {
@@ -723,7 +667,7 @@ export default function FunPun() {
                         className="flex items-center gap-1 text-muted-foreground hover:text-cyan-500 transition"
                       >
                         <MessageCircle className="w-4 h-4" />
-                        <span className="text-xs">{engagement.comments}</span>
+                        <span className="text-xs">{commentedProjectIds.has(project.id) ? 'Commented' : 'Comment'}</span>
                       </button>
                       <button
                         onClick={(event) => {
@@ -734,7 +678,7 @@ export default function FunPun() {
                         disabled={project.id === DEFAULT_PROJECT_ID}
                       >
                         <Share2 className={`w-4 h-4 ${sharedProjectIds.has(project.id) ? 'fill-cyan-300' : ''}`} />
-                        <span className="text-xs">{engagement.shares}</span>
+                        <span className="text-xs">Share</span>
                       </button>
                       <button
                         onClick={(event) => {
@@ -745,7 +689,7 @@ export default function FunPun() {
                         disabled={project.id === DEFAULT_PROJECT_ID}
                       >
                         <Bookmark className={`w-4 h-4 ${savedProjectIds.has(project.id) ? 'fill-yellow-500' : ''}`} />
-                        <span className="text-xs">{engagement.saves}</span>
+                        <span className="text-xs">{project.saves_count || 0}</span>
                       </button>
                     </div>
                     <Button
@@ -946,18 +890,10 @@ export default function FunPun() {
       )}
 
       <ABDevCommentsDialog
-        postId={selectedProjectForComments?.id || null}
-        postTitle={selectedProjectForComments?.title}
+        postId={selectedProjectForComments?.id || ''}
+        postTitle={selectedProjectForComments?.title || ''}
         open={showCommentsDialog}
         onOpenChange={setShowCommentsDialog}
-        onCommentAdded={() => {
-          if (selectedProjectForComments?.id) {
-            updateEngagement(selectedProjectForComments.id, (current) => ({
-              ...current,
-              comments: current.comments + 1,
-            }));
-          }
-        }}
       />
     </div>
   );
