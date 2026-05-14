@@ -31,7 +31,7 @@ interface Props {
 }
 
 export function ABDevCommentsDialog({ open, onOpenChange, postId, postTitle }: Props) {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [comments, setComments] = useState<CommentRow[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,12 +43,30 @@ export function ABDevCommentsDialog({ open, onOpenChange, postId, postTitle }: P
     try {
       const { data, error } = await supabase
         .from('comments')
-        .select('id, post_id, user_id, content, created_at, profiles(id, name, username, avatar_url)')
+        .select('id, post_id, user_id, content, created_at')
         .eq('post_id', postId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setComments((data || []) as CommentRow[]);
+
+      const rows = (data || []) as CommentRow[];
+      const userIds = [...new Set(rows.map((comment) => comment.user_id).filter(Boolean))];
+
+      let profileMap = new Map<string, CommentRow['profiles']>();
+      if (userIds.length > 0) {
+        const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, name, username, avatar_url')
+          .in('id', userIds);
+
+        if (profileError) throw profileError;
+        profileMap = new Map((profiles || []).map((profile) => [profile.id, profile]));
+      }
+
+      setComments(rows.map((comment) => ({
+        ...comment,
+        profiles: profileMap.get(comment.user_id) || undefined,
+      })));
     } catch (err) {
       console.error('Error fetching AB Dev comments:', err);
       toast.error('Failed to load comments');

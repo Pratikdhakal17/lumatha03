@@ -9,7 +9,6 @@ import { Database } from '@/integrations/supabase/types';
 import { getPublicUrlSafe } from '@/lib/storageHelpers';
 import { toast } from 'sonner';
 import { ABDevCommentsDialog } from '@/components/ABDevCommentsDialog';
-import { CommentsDialog } from '@/components/CommentsDialog';
 
 type FilterKey = 'all' | 'liked' | 'shared' | 'commented' | 'saved' | 'yours';
 type PostRow = Database['public']['Tables']['posts']['Row'];
@@ -98,6 +97,8 @@ export default function FunPun() {
   const [editProject, setEditProject] = useState<ProjectPost | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDesc, setEditDesc] = useState('');
+  const [projectVisibility, setProjectVisibility] = useState<'public' | 'private'>('public');
+  const [editVisibility, setEditVisibility] = useState<'public' | 'private'>('public');
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [likedProjectIds, setLikedProjectIds] = useState<Set<string>>(new Set());
   const [savedProjectIds, setSavedProjectIds] = useState<Set<string>>(new Set());
@@ -149,7 +150,7 @@ export default function FunPun() {
     } as ProfileRow,
   } as ProjectPost), [avatar, profile?.country, profile?.id, user?.id]);
 
-  const feedProjects = useMemo(() => [defaultProject, ...projects], [defaultProject, projects]);
+  const feedProjects = useMemo(() => projects, [projects]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -168,27 +169,27 @@ export default function FunPun() {
     if (editProject) {
       setEditTitle(editProject.title || '');
       setEditDesc(editProject.content || '');
+      setEditVisibility(editProject.visibility === 'private' ? 'private' : 'public');
     } else {
       setEditTitle('');
       setEditDesc('');
+      setEditVisibility('public');
     }
   }, [editProject]);
 
   const loadProjects = useCallback(async () => {
     setLoadingProjects(true);
     try {
-      if (!user?.id) {
-        setProjects([]);
-        setLoadingProjects(false);
-        return;
-      }
-      const { data: postsData, error: postsError } = await supabase
+      const query = supabase
         .from('posts')
         .select('*, profiles(*)')
-        .eq('user_id', user.id)
         .eq('category', 'abdev')
         .order('created_at', { ascending: false })
         .limit(60);
+
+      const { data: postsData, error: postsError } = user?.id
+        ? await query.or(`visibility.eq.public,user_id.eq.${user.id}`)
+        : await query.eq('visibility', 'public');
 
       if (postsError) throw postsError;
 
@@ -267,7 +268,9 @@ export default function FunPun() {
     const nextLiked = !likedProjectIds.has(projectId);
     try {
       if (nextLiked) {
-        const { error } = await supabase.from('likes').insert({ post_id: projectId, user_id: user.id });
+        const { error } = await supabase
+          .from('likes')
+          .upsert({ post_id: projectId, user_id: user.id }, { onConflict: 'post_id,user_id' });
         if (error) throw error;
       } else {
         const { error } = await supabase.from('likes').delete().eq('post_id', projectId).eq('user_id', user.id);
@@ -298,7 +301,9 @@ export default function FunPun() {
     const nextSaved = !savedProjectIds.has(projectId);
     try {
       if (nextSaved) {
-        const { error } = await supabase.from('saved').insert({ post_id: projectId, user_id: user.id });
+        const { error } = await supabase
+          .from('saved')
+          .upsert({ post_id: projectId, user_id: user.id }, { onConflict: 'post_id,user_id' });
         if (error) throw error;
       } else {
         const { error } = await supabase.from('saved').delete().eq('post_id', projectId).eq('user_id', user.id);
@@ -416,12 +421,12 @@ export default function FunPun() {
         file_type: fileType,
         media_types: fileType ? [fileType] : [],
         media_type: fileType?.startsWith('video') ? 'video' : fileType?.startsWith('image') ? 'image' : fileUrl ? 'file' : 'text',
-        visibility: 'public',
+        visibility: projectVisibility,
         category: 'abdev',
         post_type: 'post',
-        audience: 'public',
+        audience: projectVisibility,
         is_anonymous: false,
-        is_private: false,
+        is_private: projectVisibility === 'private',
         allow_comments: true,
         allow_sharing: true,
         shield_enabled: false,
@@ -451,7 +456,7 @@ export default function FunPun() {
       console.error('Failed to publish project:', error);
       toast.error('Failed to publish project');
     }
-  }, [profile?.country, projectDesc, projectFile, projectName, user?.id]);
+  }, [projectDesc, projectFile, projectName, projectVisibility, profile?.country, user?.id]);
 
   const handleSaveEdit = async () => {
     if (!editProject) return;
@@ -460,7 +465,18 @@ export default function FunPun() {
       return;
     }
     try {
-      const { data, error } = await supabase.from('posts').update({ title: editTitle.trim(), content: editDesc.trim() || null }).eq('id', editProject.id).select('*, profiles(*)').maybeSingle();
+      const { data, error } = await supabase
+        .from('posts')
+        .update({
+          title: editTitle.trim(),
+          content: editDesc.trim() || null,
+          visibility: editVisibility,
+          audience: editVisibility,
+          is_private: editVisibility === 'private',
+        })
+        .eq('id', editProject.id)
+        .select('*, profiles(*)')
+        .maybeSingle();
       if (error) throw error;
       const updated = data as ProjectPost | null;
       if (updated) {
@@ -496,22 +512,21 @@ export default function FunPun() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-[#0a0f1e] to-[#0f1424] text-white p-6 flex flex-col items-center">
-      <header className="w-full max-w-4xl mb-6">
+    <div className="w-full min-h-screen bg-gradient-to-br from-[#0a0f1e] to-[#0f1424] text-white px-2 py-4 sm:p-6 flex flex-col items-center">
+      <header className="w-full max-w-5xl mb-5 sm:mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-md bg-gradient-to-br from-slate-800 to-slate-700 shrink-0">
             <Code className="w-6 h-6 text-cyan-300" />
           </div>
           <div className="min-w-0">
             <h1 className="text-2xl font-bold hidden sm:block">AB Dev</h1>
-            <h1 className="text-lg font-bold sm:hidden">&lt;&gt;</h1>
+            <h1 className="text-base font-bold sm:hidden">Ambitious Beginner Developer...</h1>
             <p className="text-sm text-muted-foreground mt-1 hidden sm:block">Ambitious Beginner Developer is a place where you can see developer projects and upload yours too with sharing your idea for some suggestion.</p>
-            <p className="text-xs text-muted-foreground mt-1 sm:hidden">Upload & manage your dev projects</p>
           </div>
         </div>
       </header>
 
-      <div className="w-full max-w-4xl flex items-center gap-2 sm:gap-4 mb-6 relative">
+      <div className="w-full max-w-5xl flex items-center gap-2 sm:gap-4 mb-5 sm:mb-6 relative">
         <div className="flex-shrink-0 relative">
           <button onClick={() => setShowOptionsMenu((value) => !value)} className="hover:opacity-80 transition">
             <Avatar className="cursor-pointer w-10 h-10 sm:w-12 sm:h-12">
@@ -552,7 +567,7 @@ export default function FunPun() {
         </Button>
       </div>
 
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-5xl">
         {loadingProjects ? (
           <div className="space-y-3">
             <div className="h-40 rounded-xl bg-white/5 border border-white/10 animate-pulse" />
@@ -612,10 +627,10 @@ export default function FunPun() {
               return (
                 <div
                   key={project.id}
-                  className={`bg-white/5 border rounded-xl overflow-hidden backdrop-blur-sm transition cursor-pointer ${selectedProject === project.id ? 'border-cyan-500 bg-white/10' : 'border-white/10 hover:border-white/20'}`}
+                  className={`bg-white/5 border rounded-xl overflow-hidden backdrop-blur-sm transition cursor-pointer w-full ${selectedProject === project.id ? 'border-cyan-500 bg-white/10' : 'border-white/10 hover:border-white/20'}`}
                   onClick={() => setSelectedProject(project.id)}
                 >
-                  <div className="p-4 border-b border-white/5 flex items-center justify-between gap-3">
+                  <div className="p-3 sm:p-4 border-b border-white/5 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <Avatar className="h-10 w-10">
                         <AvatarImage src={authorAvatar} alt={authorName} />
@@ -626,9 +641,7 @@ export default function FunPun() {
                         <p className="text-xs text-muted-foreground truncate">{authorName} • {publishedLabel}</p>
                       </div>
                     </div>
-                    {project.id === DEFAULT_PROJECT_ID ? (
-                      <span className="text-[11px] rounded-full px-2 py-1 bg-cyan-500/15 text-cyan-300 border border-cyan-500/20">Default</span>
-                    ) : project.user_id === user?.id ? (
+                    {project.user_id === user?.id ? (
                       <div className="flex items-center gap-2">
                         <span className="text-[11px] rounded-full px-2 py-1 bg-cyan-500/15 text-cyan-300 border border-cyan-500/20">Yours</span>
                         <div className="relative">
@@ -643,7 +656,7 @@ export default function FunPun() {
                       </div>
                     ) : null}
                   </div>
-                  <div className="p-4 space-y-3">
+                  <div className="p-3 sm:p-4 space-y-3">
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">{project.content || 'No description provided.'}</p>
                     {project.file_url ? (
                       <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs text-cyan-200">
@@ -652,7 +665,7 @@ export default function FunPun() {
                       </div>
                     ) : null}
                   </div>
-                  <div className="px-4 py-3 border-t border-white/5 flex items-center justify-between gap-2 overflow-x-auto">
+                  <div className="px-3 sm:px-4 py-3 border-t border-white/5 flex items-center justify-between gap-2 overflow-x-auto">
                     <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
                       <button
                         onClick={(event) => {
@@ -686,7 +699,7 @@ export default function FunPun() {
                         disabled={project.id === DEFAULT_PROJECT_ID}
                       >
                         <Share2 className={`w-4 h-4 shrink-0 ${sharedProjectIds.has(project.id) ? 'fill-cyan-300' : ''}`} />
-                          <span className="hidden sm:inline">Share</span>
+                        <span className="hidden sm:inline">Share</span>
                       </button>
                       <button
                         onClick={(event) => {
@@ -719,7 +732,7 @@ export default function FunPun() {
       </div>
 
       <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
-        <DialogContent className="max-w-4xl bg-[#0a0f1e] border-white/10 max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl bg-[#0a0f1e] border-white/10 max-h-[90vh] overflow-y-auto w-[96vw]">
           <DialogHeader>
             <DialogTitle>Upload New Project to AB Dev</DialogTitle>
           </DialogHeader>
@@ -755,6 +768,18 @@ export default function FunPun() {
                 placeholder="Describe your project"
                 className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 mt-1 placeholder:text-muted-foreground focus:outline-none h-24 resize-none"
               />
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold">Visibility</label>
+              <select
+                value={projectVisibility}
+                onChange={(event) => setProjectVisibility(event.target.value as 'public' | 'private')}
+                className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 mt-1 text-white focus:outline-none"
+              >
+                <option value="public">Public - everyone can see it</option>
+                <option value="private">Private - only you can see it</option>
+              </select>
             </div>
 
             {/* Project File */}
@@ -816,7 +841,7 @@ export default function FunPun() {
       </Dialog>
 
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent className="bg-[#0a0f1e] border-white/10">
+        <DialogContent className="bg-[#0a0f1e] border-white/10 w-[96vw] max-w-lg">
           <DialogHeader>
             <DialogTitle>Edit Project</DialogTitle>
           </DialogHeader>
@@ -838,6 +863,17 @@ export default function FunPun() {
                 placeholder="Describe your project"
                 className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 mt-1 placeholder:text-muted-foreground focus:outline-none h-20 resize-none"
               />
+            </div>
+            <div>
+              <label className="text-sm font-semibold">Visibility</label>
+              <select
+                value={editVisibility}
+                onChange={(e) => setEditVisibility(e.target.value as 'public' | 'private')}
+                className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 mt-1 text-white focus:outline-none"
+              >
+                <option value="public">Public - everyone can see it</option>
+                <option value="private">Private - only you can see it</option>
+              </select>
             </div>
             <div className="flex items-center justify-between">
               <div>
