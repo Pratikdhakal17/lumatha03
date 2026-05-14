@@ -627,7 +627,7 @@ function LayoutContent({ children }: LayoutProps) {
 
   const APP_HEADER_PX = 88;
   return (
-    <div className="app-layout w-full relative min-h-screen bg-[#0B0D1F] flex justify-center" style={{ ['--lumatha-app-header-height' as any]: headerVisible ? '88px' : '0px' }}>
+  <div className="app-layout w-full relative min-h-screen bg-[#0B0D1F]" style={{ ['--lumatha-app-header-height' as any]: headerVisible ? '88px' : '0px' }}>
       <BackgroundOrnaments />
       {isMobile && <MobileSidebarDrawer open={mobileSidebarOpen} onClose={() => setMobileSidebarOpen(false)} onNavigate={(url) => { 
         // Set active zone based on navigation for Layout 2 & 3
@@ -648,190 +648,171 @@ function LayoutContent({ children }: LayoutProps) {
         navigate(url); 
         setMobileSidebarOpen(false); 
       }} isActive={(p) => location.pathname === p} unreadMessages={unreadMessages} items={currentMenuItems} />}
-      
-      <div className={cn(
-        "flex w-full",
-        !isMobile && "max-w-[1440px] px-0 md:px-4"
+      {!isMobile && <DesktopSidebar isActive={(p) => location.pathname === p} onNavigate={(url) => {
+        // Set active zone based on navigation for Layout 2 & 3
+        let zone = '';
+        if (layoutMode === 2) {
+          if (url === '/private') zone = 'private';
+          else if (url === '/search') zone = 'neutral';
+          else if (url === '/') zone = 'public';
+        } else if (layoutMode === 3) {
+          if (url === '/education') zone = 'education';
+          else if (url === '/') zone = 'social';
+          else if (url === '/search') zone = 'neutral';
+        }
+        if (zone) {
+          localStorage.setItem('lumatha_active_zone', zone);
+          window.dispatchEvent(new CustomEvent('lumatha_zone_change', { detail: zone }));
+        }
+        navigate(url);
+      }} unreadMessages={unreadMessages} items={currentMenuItems} hidden={false} />}
+      <main ref={feedCenterRef} className={cn(
+        "feed-center relative flex flex-col min-w-0 flex-1 h-screen scrollbar-hide",
+        // Active chat handles its own scrolling - disable main scroll
+        isInActiveChat ? "overflow-hidden" : "overflow-y-auto"
       )}>
-        {!isMobile && (
-          <div className="sticky top-0 h-screen hidden lg:block">
-            <DesktopSidebar isActive={(p) => location.pathname === p} onNavigate={(url) => {
-              // Set active zone based on navigation for Layout 2 & 3
-              let zone = '';
-              if (layoutMode === 2) {
-                if (url === '/private') zone = 'private';
-                else if (url === '/search') zone = 'neutral';
-                else if (url === '/') zone = 'public';
-              } else if (layoutMode === 3) {
-                if (url === '/education') zone = 'education';
-                else if (url === '/') zone = 'social';
-                else if (url === '/search') zone = 'neutral';
-              }
-              if (zone) {
-                localStorage.setItem('lumatha_active_zone', zone);
-                window.dispatchEvent(new CustomEvent('lumatha_zone_change', { detail: zone }));
-              }
-              navigate(url);
-            }} unreadMessages={unreadMessages} items={currentMenuItems} hidden={false} />
-          </div>
-        )}
-
-        <main ref={feedCenterRef} className={cn(
-          "feed-center relative flex flex-col min-w-0 flex-1 h-screen scrollbar-hide",
-          !isMobile && "max-w-[600px] border-x border-white/5 mx-auto bg-card/20",
-          // Active chat handles its own scrolling - disable main scroll
-          isInActiveChat ? "overflow-hidden" : "overflow-y-auto"
+        {/* App Header - Hidden in active chat (chat has its own header) */}
+        <header className={cn(
+          "sticky top-0 z-50 w-full h-[88px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 translate-y-0",
+          // No transition anywhere to prevent any animation shifts
+          "transition-none",
+          // Only active chat hides the header completely
+          isInActiveChat && "hidden"
         )}>
-          {/* App Header - Hidden in active chat (chat has its own header) */}
-          <header className={cn(
-            "sticky top-0 z-50 w-full h-[88px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 translate-y-0",
-            // No transition anywhere to prevent any animation shifts
-            "transition-none",
-            // Only active chat hides the header completely
-            isInActiveChat && "hidden"
-          )}>
-            <div className="grid h-full grid-cols-[auto_1fr_auto] items-center gap-3 px-3 md:px-5">
-              {/* Left side - menu/back button and branding */}
-              <div className="flex items-center gap-2 min-w-0 justify-self-start">
-                {isChatListView ? (
-                  // Chat list: Show hamburger + LUMATHA like other sections for consistency
-                  <>
-                    {isMobile && (
+          <div className="grid h-full grid-cols-[auto_1fr_auto] items-center gap-3 px-3 md:px-5">
+            {/* Left side - menu/back button and branding */}
+            <div className="flex items-center gap-2 min-w-0 justify-self-start">
+              {isChatListView ? (
+                // Chat list: Show hamburger + LUMATHA like other sections for consistency
+                <>
+                  {isMobile && (
+                    <button 
+                      onClick={handleMobileLeadingAction} 
+                      className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5 shrink-0"
+                    >
+                      <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
+                    </button>
+                  )}
+                  <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
+                </>
+              ) : isFeedPage ? (
+                <>
+                  {isMobile && (
+                    <button
+                      onClick={handleMobileLeadingAction}
+                      className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5 shrink-0"
+                      aria-label="Menu"
+                    >
+                      <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
+                    </button>
+                  )}
+                  <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
+                </>
+              ) : (
+                // Other sections: Show back or sidebar icon + section name
+                <>
+                  {['/', '/search', '/private', '/notifications'].includes(location.pathname) || location.pathname.startsWith('/profile/') ? (
+                    // Home subsections: Back icon
+                    <button 
+                      onClick={handleBack} 
+                      className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5 shrink-0"
+                      aria-label="Go back"
+                    >
+                      <ArrowLeft className="w-5 h-5 text-blue-500" strokeWidth={2} />
+                    </button>
+                  ) : (
+                    // Other sections: Sidebar icon (mobile only, desktop has visible sidebar)
+                    isMobile && (
                       <button 
                         onClick={handleMobileLeadingAction} 
-                        className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5 shrink-0"
-                      >
-                        <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
-                      </button>
-                    )}
-                    <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
-                  </>
-                ) : isFeedPage ? (
-                  <>
-                    {isMobile && (
-                      <button
-                        onClick={handleMobileLeadingAction}
                         className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5 shrink-0"
                         aria-label="Menu"
                       >
                         <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
                       </button>
-                    )}
-                    <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
-                  </>
-                ) : (
-                  // Other sections: Show back or sidebar icon + section name
-                  <>
-                    {['/', '/search', '/private', '/notifications'].includes(location.pathname) || location.pathname.startsWith('/profile/') ? (
-                      // Home subsections: Back icon
-                      <button 
-                        onClick={handleBack} 
-                        className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5 shrink-0"
-                        aria-label="Go back"
-                      >
-                        <ArrowLeft className="w-5 h-5 text-blue-500" strokeWidth={2} />
-                      </button>
-                    ) : (
-                      // Other sections: Sidebar icon (mobile only, desktop has visible sidebar)
-                      isMobile && (
-                        <button 
-                          onClick={handleMobileLeadingAction} 
-                          className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5 shrink-0"
-                          aria-label="Menu"
-                        >
-                          <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
-                        </button>
-                      )
-                    )}
-                    <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
-                  </>
-                )}
-              </div>
-              
-              {/* Center - kept empty for feed */}
-              <div className="flex items-center justify-center min-w-0 px-2" />
-              
-              {/* Right side - section actions */}
-              <div className="flex items-center gap-1 justify-end min-w-0 justify-self-end">
-                {isChatListView ? (
-                  // Chat list: Show Messages label on right
-                  <span className="text-sm font-bold text-white/70 truncate ml-2">Messages</span>
-                ) : isFeedPage ? (
-                  <>
-                    <button
-                      onClick={() => setCreateSheetOpen(true)}
-                      className="h-10 w-10 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-all active:scale-90 border-0"
-                      aria-label="Create"
-                    >
-                      <Plus className="w-5 h-5" strokeWidth={2.5} />
-                    </button>
-                    <button
-                      onClick={() => setAssistantOpen(true)}
-                      className="h-10 w-10 flex items-center justify-center rounded-lg transition-all active:scale-90 hover:bg-white/5"
-                      aria-label="Open Lumatha AI"
-                      title="Lumatha AI"
-                    >
-                      <Sparkles className="w-5 h-5 text-cyan-300" />
-                    </button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          className="h-10 w-10 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-all active:scale-90 border-0"
-                          aria-label="Feed categories"
-                          title="Feed categories"
-                        >
-                          {(() => {
-                            const activeScope = feedScopes.find(s => s.id === activeFeedScope);
-                            const Icon = activeScope?.icon || Globe;
-                            return <Icon className="w-5 h-5" strokeWidth={2.5} />;
-                          })()}
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-[#0d1117] border-[#23324a] rounded-xl p-2 w-56 shadow-none">
-                        {feedScopes.map((scope) => {
-                          const Icon = scope.icon;
-                          const active = activeFeedScope === scope.id;
-                          return (
-                            <DropdownMenuItem key={scope.id} onClick={() => setFeedScope(scope.id)} className="rounded-lg py-2 gap-2">
-                              <Icon className={cn("w-4 h-4", active ? "text-primary" : "text-muted-foreground")} />
-                              <div className="min-w-0">
-                                <p className={cn("font-bold text-[11px] uppercase tracking-wider", active ? "text-white" : "text-slate-300")}>{scope.label}</p>
-                                <p className="text-[9px] text-slate-600 truncate">{scope.desc}</p>
-                              </div>
-                            </DropdownMenuItem>
-                          );
-                        })}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </>
-                ) : (
-                  <span className="text-sm font-bold text-white/70 truncate ml-2">{sectionLabel}</span>
-                )}
-              </div>
+                    )
+                  )}
+                  <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
+                </>
+              )}
             </div>
-          </header>
-          
-          {/* Content area */}
-          <div className={cn(
-            "flex-1 transition-all duration-500",
-            isMobile ? "px-0 py-0" : "p-0", // Removed padding for mobile-like feel
-            isMobile && isHomeSection && "pb-24",
-            !isMobile && isAdventureGrid && "max-w-7xl mx-auto w-full"
-          )}>
-            {children}
+            
+            {/* Center - kept empty for feed */}
+            <div className="flex items-center justify-center min-w-0 px-2" />
+            
+            {/* Right side - section actions */}
+            <div className="flex items-center gap-1 justify-end min-w-0 justify-self-end">
+              {isChatListView ? (
+                // Chat list: Show Messages label on right
+                <span className="text-sm font-bold text-white/70 truncate ml-2">Messages</span>
+              ) : isFeedPage ? (
+                <>
+                  <button
+                    onClick={() => setCreateSheetOpen(true)}
+                    className="h-10 w-10 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-all active:scale-90 border-0"
+                    aria-label="Create"
+                  >
+                    <Plus className="w-5 h-5" strokeWidth={2.5} />
+                  </button>
+                  <button
+                    onClick={() => setAssistantOpen(true)}
+                    className="h-10 w-10 flex items-center justify-center rounded-lg transition-all active:scale-90 hover:bg-white/5"
+                    aria-label="Open Lumatha AI"
+                    title="Lumatha AI"
+                  >
+                    <Sparkles className="w-5 h-5 text-cyan-300" />
+                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="h-10 w-10 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-all active:scale-90 border-0"
+                        aria-label="Feed categories"
+                        title="Feed categories"
+                      >
+                        {(() => {
+                          const activeScope = feedScopes.find(s => s.id === activeFeedScope);
+                          const Icon = activeScope?.icon || Globe;
+                          return <Icon className="w-5 h-5" strokeWidth={2.5} />;
+                        })()}
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-[#0d1117] border-[#23324a] rounded-xl p-2 w-56 shadow-none">
+                      {feedScopes.map((scope) => {
+                        const Icon = scope.icon;
+                        const active = activeFeedScope === scope.id;
+                        return (
+                          <DropdownMenuItem key={scope.id} onClick={() => setFeedScope(scope.id)} className="rounded-lg py-2 gap-2">
+                            <Icon className={cn("w-4 h-4", active ? "text-primary" : "text-muted-foreground")} />
+                            <div className="min-w-0">
+                              <p className={cn("font-bold text-[11px] uppercase tracking-wider", active ? "text-white" : "text-slate-300")}>{scope.label}</p>
+                              <p className="text-[9px] text-slate-600 truncate">{scope.desc}</p>
+                            </div>
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              ) : (
+                <span className="text-sm font-bold text-white/70 truncate ml-2">{sectionLabel}</span>
+              )}
+            </div>
           </div>
-          
-          {/* Bottom navigation - Home only; visibility follows header (hide on scroll down) */}
-          {isMobile && location.pathname === '/' && headerVisible && <SubNavigation visible={true} />}
-        </main>
-
-        {!isMobile && (
-          <div className="sticky top-0 h-screen hidden xl:block w-[320px]">
-            <DesktopRightRail />
-          </div>
-        )}
-      </div>
-
+        </header>
+        
+        {/* Content area */}
+        <div className={cn(
+          "flex-1 transition-all duration-500",
+          isMobile ? "px-0 py-0" : "p-4",
+          isMobile && isHomeSection && "pb-24",
+          !isMobile && isAdventureGrid && "max-w-7xl mx-auto w-full"
+        )}>
+          {children}
+        </div>
+        
+        {/* Bottom navigation - Home only; visibility follows header (hide on scroll down) */}
+        {isMobile && location.pathname === '/' && headerVisible && <SubNavigation visible={true} />}
+      </main>
       <CreatePostSheet open={createSheetOpen} onOpenChange={setCreateSheetOpen} />
       <LumathaAssistant open={assistantOpen} onClose={() => setAssistantOpen(false)} />
     </div>

@@ -1,20 +1,16 @@
-import { useState, memo } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Database } from '@/integrations/supabase/types';
+import { memo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LazyBlurImage } from '@/components/LazyBlurImage';
-import { 
-  Star, MoreVertical, Copy, Edit, Trash2, Heart, 
-  ChevronLeft, ChevronRight, Play, MessageCircle, 
-  Share2, Code, Eye, Upload 
-} from 'lucide-react';
+import { Star, MoreVertical, Copy, Edit, Trash2, Heart, ChevronLeft, ChevronRight, Play, MessageCircle, Share2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { FullScreenMediaViewer } from '@/components/FullScreenMediaViewer';
-import { cn } from '@/lib/utils';
 
 type Post = Database['public']['Tables']['posts']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -167,7 +163,7 @@ function PostCardContent({ post, isSaved, isLiked, likesCount, currentUserId, on
         </div>
       )}
 
-      {/* Full Screen Media Viewer */}
+      {/* Full Screen Media Viewer - Reference style with bottom actions */}
       <FullScreenMediaViewer
         open={imageOpen}
         onOpenChange={setImageOpen}
@@ -283,76 +279,46 @@ function PostCardContent({ post, isSaved, isLiked, likesCount, currentUserId, on
           </div>
         )}
 
-        {/* Action buttons - Five Subsections */}
-        <div className="flex items-center justify-between pt-4 border-t border-border/50">
-          {/* AB Dev */}
-          <button 
-            onClick={() => navigate('/funpun')}
-            className="flex flex-col items-center gap-1 group transition-all active:scale-95"
-            aria-label="AB Dev"
-          >
-            <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
-              <Code className="w-4 h-4 text-blue-500" />
-            </div>
-            <span className="text-[8px] font-bold text-blue-500/80 uppercase tracking-tighter">AB Dev</span>
-          </button>
-
-          {/* Like */}
-          <button 
+        {/* Action buttons - Facebook style */}
+        <div className="flex items-center justify-between pt-3 border-t border-border/50">
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => onToggleLike(post.id)}
-            className="flex flex-col items-center gap-1 group transition-all active:scale-95"
-            aria-label="Like"
+            className={`flex-1 gap-2 ${isLiked ? 'text-red-500' : 'text-muted-foreground'}`}
           >
-            <div className={cn(
-              "w-8 h-8 flex items-center justify-center rounded-lg transition-colors",
-              isLiked ? "bg-red-500/20" : "bg-red-500/10 group-hover:bg-red-500/20"
-            )}>
-              <Heart 
-                className={cn("w-4 h-4", isLiked ? "text-red-500 fill-red-500" : "text-red-500/70")} 
-              />
-            </div>
-            <span className={cn(
-              "text-[8px] font-bold uppercase tracking-tighter",
-              isLiked ? "text-red-500" : "text-red-500/80"
-            )}>
-              {likesCount > 0 ? likesCount : 'Like'}
-            </span>
-          </button>
-
-          {/* Comment */}
-          <button 
+            <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+            <span>{likesCount > 0 ? likesCount : 'Like'}</span>
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => onOpenComments?.(post.id, post.title)}
-            className="flex flex-col items-center gap-1 group transition-all active:scale-95"
-            aria-label="Comment"
+            className="flex-1 gap-2 text-muted-foreground"
           >
-            <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-500/10 group-hover:bg-emerald-500/20 transition-colors">
-              <MessageCircle className="w-4 h-4 text-emerald-500" />
-            </div>
-            <span className="text-[8px] font-bold text-emerald-500/80 uppercase tracking-tighter">Comment</span>
-          </button>
-
-          {/* Upload/Share */}
-          <button 
+            <MessageCircle className="w-5 h-5" />
+            <span>Comment</span>
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleShare}
-            className="flex flex-col items-center gap-1 group transition-all active:scale-95"
-            aria-label="Upload"
+            className="flex-1 gap-2 text-muted-foreground"
           >
-            <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
-              <Upload className="w-4 h-4 text-amber-500" />
-            </div>
-            <span className="text-[8px] font-bold text-amber-500/80 uppercase tracking-tighter">Upload</span>
-          </button>
-
-          {/* Seen/Views */}
-          <button 
-            className="flex flex-col items-center gap-1 group transition-all active:scale-95"
-            aria-label="Seen"
+            <Share2 className="w-5 h-5" />
+            <span>Share</span>
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onToggleSave(post.id)}
+            className={isSaved ? 'text-primary' : 'text-muted-foreground'}
           >
-            <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
-              <Eye className="w-4 h-4 text-purple-500" />
-            </div>
-            <span className="text-[8px] font-bold text-purple-500/80 uppercase tracking-tighter">Seen</span>
-          </button>
+            <Star className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+          </Button>
         </div>
       </CardContent>
     </Card>
