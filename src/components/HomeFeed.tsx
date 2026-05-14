@@ -72,10 +72,10 @@ export function HomeFeed({ activeTab }: HomeFeedProps) {
       // Filter based on active tab
       switch (activeTab) {
         case 'regional':
-          query = query.eq('visibility', 'public').eq('category', 'explore');
+          query = query.eq('visibility', 'public').in('category', ['explore', 'abdev']);
           break;
         case 'global':
-          query = query.eq('visibility', 'public').in('category', ['inspire', 'knowledge', 'creative', 'fun', 'explore']);
+          query = query.eq('visibility', 'public').in('category', ['inspire', 'knowledge', 'creative', 'fun', 'explore', 'abdev']);
           break;
         case 'friends':
           const { data: following } = await supabase
