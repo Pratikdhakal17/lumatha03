@@ -180,16 +180,14 @@ export default function FunPun() {
   const loadProjects = useCallback(async () => {
     setLoadingProjects(true);
     try {
-      const query = supabase
-        .from('posts')
-        .select('*, profiles(*)')
-        .eq('category', 'abdev')
-        .order('created_at', { ascending: false })
-        .limit(60);
+      let postsQuery = supabase.from('posts').select('*, profiles(*)').order('created_at', { ascending: false }).limit(60);
+      if (user?.id) {
+        postsQuery = postsQuery.eq('category', 'abdev').or(`visibility.eq.public,user_id.eq.${user.id}`);
+      } else {
+        postsQuery = postsQuery.eq('category', 'abdev').eq('visibility', 'public');
+      }
 
-      const { data: postsData, error: postsError } = user?.id
-        ? await query.or(`visibility.eq.public,user_id.eq.${user.id}`)
-        : await query.eq('visibility', 'public');
+      const { data: postsData, error: postsError } = await postsQuery;
 
       if (postsError) throw postsError;
 
@@ -267,14 +265,17 @@ export default function FunPun() {
 
     const nextLiked = !likedProjectIds.has(projectId);
     try {
+      // Avoid using REST upsert/on_conflict which can be blocked by RLS; perform explicit lookup then insert/delete
       if (nextLiked) {
-        const { error } = await supabase
-          .from('likes')
-          .upsert({ post_id: projectId, user_id: user.id }, { onConflict: 'post_id,user_id' });
-        if (error) throw error;
+        const { data: existing, error: checkErr } = await supabase.from('likes').select('id').eq('post_id', projectId).eq('user_id', user.id).maybeSingle();
+        if (checkErr) throw checkErr;
+        if (!existing) {
+          const { error: insertErr } = await supabase.from('likes').insert({ post_id: projectId, user_id: user.id });
+          if (insertErr) throw insertErr;
+        }
       } else {
-        const { error } = await supabase.from('likes').delete().eq('post_id', projectId).eq('user_id', user.id);
-        if (error) throw error;
+        const { error: deleteErr } = await supabase.from('likes').delete().eq('post_id', projectId).eq('user_id', user.id);
+        if (deleteErr) throw deleteErr;
       }
 
       setLikedProjectIds((prev) => {
@@ -300,14 +301,17 @@ export default function FunPun() {
 
     const nextSaved = !savedProjectIds.has(projectId);
     try {
+      // Use lookup/insert instead of upsert to avoid on_conflict REST param issues
       if (nextSaved) {
-        const { error } = await supabase
-          .from('saved')
-          .upsert({ post_id: projectId, user_id: user.id }, { onConflict: 'post_id,user_id' });
-        if (error) throw error;
+        const { data: existing, error: checkErr } = await supabase.from('saved').select('id').eq('post_id', projectId).eq('user_id', user.id).maybeSingle();
+        if (checkErr) throw checkErr;
+        if (!existing) {
+          const { error: insertErr } = await supabase.from('saved').insert({ post_id: projectId, user_id: user.id });
+          if (insertErr) throw insertErr;
+        }
       } else {
-        const { error } = await supabase.from('saved').delete().eq('post_id', projectId).eq('user_id', user.id);
-        if (error) throw error;
+        const { error: deleteErr } = await supabase.from('saved').delete().eq('post_id', projectId).eq('user_id', user.id);
+        if (deleteErr) throw deleteErr;
       }
 
       setSavedProjectIds((prev) => {
@@ -666,16 +670,16 @@ export default function FunPun() {
                     ) : null}
                   </div>
                   <div className="px-3 sm:px-4 py-3 border-t border-white/5 flex items-center justify-between gap-2 overflow-x-auto">
-                    <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+                    <div className="flex items-center gap-3 sm:gap-5 flex-shrink-0">
                       <button
                         onClick={(event) => {
                           event.stopPropagation();
                           void toggleLike(project.id);
                         }}
-                        className={`flex items-center gap-1 transition whitespace-nowrap text-[12px] sm:text-xs ${likedProjectIds.has(project.id) ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'}`}
+                        className={`flex items-center gap-2 transition whitespace-nowrap text-[13px] sm:text-sm ${likedProjectIds.has(project.id) ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'}`}
                         disabled={project.id === DEFAULT_PROJECT_ID}
                       >
-                        <Heart className={`w-4 h-4 shrink-0 ${likedProjectIds.has(project.id) ? 'fill-red-500' : ''}`} />
+                        <Heart className={`w-5 h-5 shrink-0 ${likedProjectIds.has(project.id) ? 'fill-red-500' : ''}`} />
                         <span>{project.likes_count || 0}</span>
                       </button>
                       <button
@@ -684,9 +688,9 @@ export default function FunPun() {
                           setSelectedProjectForComments({ id: project.id, title: project.title || 'Untitled' });
                           setShowCommentsDialog(true);
                         }}
-                        className="flex items-center gap-1 text-muted-foreground hover:text-cyan-500 transition whitespace-nowrap text-[12px] sm:text-xs"
+                        className="flex items-center gap-2 text-muted-foreground hover:text-cyan-500 transition whitespace-nowrap text-[13px] sm:text-sm"
                       >
-                        <MessageCircle className="w-4 h-4 shrink-0" />
+                        <MessageCircle className="w-5 h-5 shrink-0" />
                         <span className="hidden sm:inline">{commentedProjectIds.has(project.id) ? 'Commented' : 'Comment'}</span>
                         <span className="sm:hidden">{commentedProjectIds.has(project.id) ? '✓' : 'C'}</span>
                       </button>
@@ -695,10 +699,10 @@ export default function FunPun() {
                           event.stopPropagation();
                           void toggleShare(project.id);
                         }}
-                        className={`flex items-center gap-1 transition whitespace-nowrap text-[12px] sm:text-xs ${sharedProjectIds.has(project.id) ? 'text-cyan-300' : 'text-muted-foreground hover:text-cyan-500'}`}
+                        className={`flex items-center gap-2 transition whitespace-nowrap text-[13px] sm:text-sm ${sharedProjectIds.has(project.id) ? 'text-cyan-300' : 'text-muted-foreground hover:text-cyan-500'}`}
                         disabled={project.id === DEFAULT_PROJECT_ID}
                       >
-                        <Share2 className={`w-4 h-4 shrink-0 ${sharedProjectIds.has(project.id) ? 'fill-cyan-300' : ''}`} />
+                        <Share2 className={`w-5 h-5 shrink-0 ${sharedProjectIds.has(project.id) ? 'fill-cyan-300' : ''}`} />
                         <span className="hidden sm:inline">Share</span>
                       </button>
                       <button
@@ -706,10 +710,10 @@ export default function FunPun() {
                           event.stopPropagation();
                           void toggleSave(project.id);
                         }}
-                        className={`flex items-center gap-1 transition whitespace-nowrap text-[12px] sm:text-xs ${savedProjectIds.has(project.id) ? 'text-yellow-500' : 'text-muted-foreground hover:text-yellow-500'}`}
+                        className={`flex items-center gap-2 transition whitespace-nowrap text-[13px] sm:text-sm ${savedProjectIds.has(project.id) ? 'text-yellow-500' : 'text-muted-foreground hover:text-yellow-500'}`}
                         disabled={project.id === DEFAULT_PROJECT_ID}
                       >
-                        <Bookmark className={`w-4 h-4 shrink-0 ${savedProjectIds.has(project.id) ? 'fill-yellow-500' : ''}`} />
+                        <Bookmark className={`w-5 h-5 shrink-0 ${savedProjectIds.has(project.id) ? 'fill-yellow-500' : ''}`} />
                         <span>{project.saves_count || 0}</span>
                       </button>
                     </div>
