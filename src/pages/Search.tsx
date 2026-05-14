@@ -154,7 +154,7 @@ export default function Search() {
       supabase.from('posts').select('*, profiles(*)').eq('visibility', 'public').neq('category', 'ghost').or('file_url.is.not.null,media_urls.is.not.null').order('created_at', { ascending: false }).limit(60),
       supabase.from('follows').select('following_id').eq('follower_id', user.id),
       supabase.from('likes').select('post_id').eq('user_id', user.id),
-      supabase.from('marketplace_listings').select('*').eq('status', 'active').order('created_at', { ascending: false }).limit(30),
+      supabase.from('marketplace_listings').select('*').eq('status', 'active').order('created_at', { ascending: false }).limit(15),
       supabase.from('custom_quests').select('*').eq('type', 'public').order('created_at', { ascending: false }).limit(30),
     ]);
     // Filter out people already followed

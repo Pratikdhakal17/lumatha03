@@ -229,7 +229,7 @@ export default function Home() {
 
       if (contentFilter === 'videos') query = query.or('file_type.ilike.%video%,media_types.cs.{video}');
 
-      query = query.order('created_at', { ascending: false }).limit(80);
+      query = query.order('created_at', { ascending: false }).limit(25);
       let { data: postsData } = await query;
       let processedPosts = postsData || [];
 

@@ -97,7 +97,8 @@ export default function Marketplace() {
       let query = supabase
         .from('marketplace_listings')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(20);
 
       if (activeCategory !== 'all') {
         query = query.eq('type', activeCategory);
