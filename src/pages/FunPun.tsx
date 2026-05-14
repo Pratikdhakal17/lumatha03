@@ -177,10 +177,15 @@ export default function FunPun() {
   const loadProjects = useCallback(async () => {
     setLoadingProjects(true);
     try {
+      if (!user?.id) {
+        setProjects([]);
+        setLoadingProjects(false);
+        return;
+      }
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select('*, profiles(*)')
-        .eq('visibility', 'public')
+        .eq('user_id', user.id)
         .eq('category', 'abdev')
         .order('created_at', { ascending: false })
         .limit(60);
@@ -494,20 +499,22 @@ export default function FunPun() {
     <div className="w-full min-h-screen bg-gradient-to-br from-[#0a0f1e] to-[#0f1424] text-white p-6 flex flex-col items-center">
       <header className="w-full max-w-4xl mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-md bg-gradient-to-br from-slate-800 to-slate-700">
+          <div className="p-2 rounded-md bg-gradient-to-br from-slate-800 to-slate-700 shrink-0">
             <Code className="w-6 h-6 text-cyan-300" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold">AB Dev</h1>
-            <p className="text-sm text-muted-foreground mt-1">Ambitious Beginner Developer is a place where you can see developer projects and upload yours too with sharing your idea for some suggestion.</p>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold hidden sm:block">AB Dev</h1>
+            <h1 className="text-lg font-bold sm:hidden">&lt;&gt;</h1>
+            <p className="text-sm text-muted-foreground mt-1 hidden sm:block">Ambitious Beginner Developer is a place where you can see developer projects and upload yours too with sharing your idea for some suggestion.</p>
+            <p className="text-xs text-muted-foreground mt-1 sm:hidden">Upload & manage your dev projects</p>
           </div>
         </div>
       </header>
 
-      <div className="w-full max-w-4xl flex items-start gap-4 mb-6 relative">
+      <div className="w-full max-w-4xl flex items-center gap-2 sm:gap-4 mb-6 relative">
         <div className="flex-shrink-0 relative">
           <button onClick={() => setShowOptionsMenu((value) => !value)} className="hover:opacity-80 transition">
-            <Avatar className="cursor-pointer">
+            <Avatar className="cursor-pointer w-10 h-10 sm:w-12 sm:h-12">
               <AvatarImage src={avatar} alt="profile" />
               <AvatarFallback>AB</AvatarFallback>
             </Avatar>
@@ -530,18 +537,18 @@ export default function FunPun() {
           )}
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <input
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search projects..."
-            className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 placeholder:text-muted-foreground focus:outline-none focus:border-cyan-500"
+            placeholder="Search..."
+            className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:border-cyan-500"
             aria-label="search-abdev"
           />
         </div>
-        <Button onClick={() => setShowUploadModal(true)} className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold gap-2">
+        <Button onClick={() => setShowUploadModal(true)} className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold gap-2 shrink-0">
           <Upload className="w-4 h-4" />
-          Upload
+          <span className="hidden sm:inline">Upload</span>
         </Button>
       </div>
 
@@ -645,18 +652,18 @@ export default function FunPun() {
                       </div>
                     ) : null}
                   </div>
-                  <div className="px-4 py-3 border-t border-white/5 flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-4">
+                  <div className="px-4 py-3 border-t border-white/5 flex items-center justify-between gap-2 overflow-x-auto">
+                    <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
                       <button
                         onClick={(event) => {
                           event.stopPropagation();
                           void toggleLike(project.id);
                         }}
-                        className={`flex items-center gap-1 transition ${likedProjectIds.has(project.id) ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'}`}
+                        className={`flex items-center gap-1 transition whitespace-nowrap text-[12px] sm:text-xs ${likedProjectIds.has(project.id) ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'}`}
                         disabled={project.id === DEFAULT_PROJECT_ID}
                       >
-                        <Heart className={`w-4 h-4 ${likedProjectIds.has(project.id) ? 'fill-red-500' : ''}`} />
-                        <span className="text-xs">{project.likes_count || 0}</span>
+                        <Heart className={`w-4 h-4 shrink-0 ${likedProjectIds.has(project.id) ? 'fill-red-500' : ''}`} />
+                        <span>{project.likes_count || 0}</span>
                       </button>
                       <button
                         onClick={(event) => {
@@ -664,32 +671,33 @@ export default function FunPun() {
                           setSelectedProjectForComments({ id: project.id, title: project.title || 'Untitled' });
                           setShowCommentsDialog(true);
                         }}
-                        className="flex items-center gap-1 text-muted-foreground hover:text-cyan-500 transition"
+                        className="flex items-center gap-1 text-muted-foreground hover:text-cyan-500 transition whitespace-nowrap text-[12px] sm:text-xs"
                       >
-                        <MessageCircle className="w-4 h-4" />
-                        <span className="text-xs">{commentedProjectIds.has(project.id) ? 'Commented' : 'Comment'}</span>
+                        <MessageCircle className="w-4 h-4 shrink-0" />
+                        <span className="hidden sm:inline">{commentedProjectIds.has(project.id) ? 'Commented' : 'Comment'}</span>
+                        <span className="sm:hidden">{commentedProjectIds.has(project.id) ? '✓' : 'C'}</span>
                       </button>
                       <button
                         onClick={(event) => {
                           event.stopPropagation();
                           void toggleShare(project.id);
                         }}
-                        className={`flex items-center gap-1 transition ${sharedProjectIds.has(project.id) ? 'text-cyan-300' : 'text-muted-foreground hover:text-cyan-500'}`}
+                        className={`flex items-center gap-1 transition whitespace-nowrap text-[12px] sm:text-xs ${sharedProjectIds.has(project.id) ? 'text-cyan-300' : 'text-muted-foreground hover:text-cyan-500'}`}
                         disabled={project.id === DEFAULT_PROJECT_ID}
                       >
-                        <Share2 className={`w-4 h-4 ${sharedProjectIds.has(project.id) ? 'fill-cyan-300' : ''}`} />
-                        <span className="text-xs">Share</span>
+                        <Share2 className={`w-4 h-4 shrink-0 ${sharedProjectIds.has(project.id) ? 'fill-cyan-300' : ''}`} />
+                          <span className="hidden sm:inline">Share</span>
                       </button>
                       <button
                         onClick={(event) => {
                           event.stopPropagation();
                           void toggleSave(project.id);
                         }}
-                        className={`flex items-center gap-1 transition ${savedProjectIds.has(project.id) ? 'text-yellow-500' : 'text-muted-foreground hover:text-yellow-500'}`}
+                        className={`flex items-center gap-1 transition whitespace-nowrap text-[12px] sm:text-xs ${savedProjectIds.has(project.id) ? 'text-yellow-500' : 'text-muted-foreground hover:text-yellow-500'}`}
                         disabled={project.id === DEFAULT_PROJECT_ID}
                       >
-                        <Bookmark className={`w-4 h-4 ${savedProjectIds.has(project.id) ? 'fill-yellow-500' : ''}`} />
-                        <span className="text-xs">{project.saves_count || 0}</span>
+                        <Bookmark className={`w-4 h-4 shrink-0 ${savedProjectIds.has(project.id) ? 'fill-yellow-500' : ''}`} />
+                        <span>{project.saves_count || 0}</span>
                       </button>
                     </div>
                     <Button

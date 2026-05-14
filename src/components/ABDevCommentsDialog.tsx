@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -117,12 +117,19 @@ export function ABDevCommentsDialog({ open, onOpenChange, postId, postTitle }: P
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg w-[95vw] bg-[#0a0f1e] border-white/10 max-h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="text-white text-lg">{postTitle}</DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-lg w-[95vw] h-[95vh] bg-[#0a0f1e] border-white/10 flex flex-col p-0">
+        <div className="flex items-center justify-between p-4 border-b border-white/5 relative">
+          <button
+            onClick={() => onOpenChange(false)}
+            className="p-1 hover:bg-white/5 rounded transition absolute left-4 top-4"
+            aria-label="close"
+          >
+            <X className="w-5 h-5 text-muted-foreground" />
+          </button>
+          <DialogTitle className="text-white text-lg flex-1 text-center mr-6">{postTitle}</DialogTitle>
+        </div>
 
-        <div className="flex-1 overflow-y-auto space-y-3 py-4 px-4 border-b border-white/5">
+        <div className="flex-1 overflow-y-auto space-y-3 py-4 px-4 border-b border-white/5 pr-4">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-8 h-8 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin" />
