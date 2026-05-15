@@ -92,6 +92,8 @@ export function TodoModule() {
   });
   const [history, setHistory] = useState<TodoHistoryItem[]>([]);
   const [showStats, setShowStats] = useState(false);
+  const [annTitle, setAnnTitle] = useState('');
+  const [annBody, setAnnBody] = useState('');
 
   const reminders = getReminders();
 
@@ -103,6 +105,20 @@ export function TodoModule() {
     loadStats(); 
     loadHistory();
   }, [user?.id]);
+
+  const ANN_KEY = user?.id ? `lumatha_announcements:${user.id}` : 'lumatha_announcements';
+
+  const saveAnnouncement = () => {
+    if (!annTitle.trim()) { toast.error('Title required'); return; }
+    const existing = parseJsonSafe<{ id: string; title: string; body?: string; date?: string; pinned?: boolean }[]>(localStorage.getItem(ANN_KEY), []);
+    const newAnn = { id: `ann-${Date.now()}`, title: annTitle.trim(), body: annBody.trim(), date: new Date().toLocaleString(), pinned: false };
+    const next = [newAnn, ...existing].slice(0, 200);
+    localStorage.setItem(ANN_KEY, JSON.stringify(next));
+    // Notify other components
+    window.dispatchEvent(new CustomEvent('lumatha_announcements_updated', { detail: { source: 'todo-module' } }));
+    setAnnTitle(''); setAnnBody('');
+    toast.success('Announcement saved');
+  };
 
   // Auto-save stats whenever todos change
   useEffect(() => { saveStats(); }, [todos]);
@@ -447,6 +463,21 @@ export function TodoModule() {
           </div>
           <div className="h-1 rounded-full overflow-hidden" style={{ background: '#1e293b' }}>
             <div className="h-full rounded-full" style={{ width: `${overallProgress}%`, background: 'linear-gradient(90deg, #7C3AED, #3B82F6)', transition: 'width 1s' }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Announcements quick editor */}
+      <div className="mb-3 p-3 rounded-xl" style={{ background: '#0b1220', border: '1px solid #1f2937' }}>
+        <div className="flex items-start gap-2">
+          <div className="flex-shrink-0 mt-1"><Bell className="w-5 h-5 text-amber-400" /></div>
+          <div className="flex-1">
+            <input value={annTitle} onChange={(e) => setAnnTitle(e.target.value)} placeholder="Announcement title" className="w-full mb-2 px-3 py-2 rounded border bg-transparent text-sm" />
+            <textarea value={annBody} onChange={(e) => setAnnBody(e.target.value)} placeholder="Details (optional)" className="w-full px-3 py-2 rounded border bg-transparent text-sm" rows={2} />
+            <div className="flex items-center justify-end gap-2 mt-2">
+              <Button variant="ghost" size="sm" onClick={() => { setAnnTitle(''); setAnnBody(''); }}>Cancel</Button>
+              <Button size="sm" onClick={saveAnnouncement} className="bg-amber-400 text-black">Save</Button>
+            </div>
           </div>
         </div>
       </div>

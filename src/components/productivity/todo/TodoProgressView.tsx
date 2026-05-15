@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TODO_CATEGORIES, TodoCategory } from '@/data/defaultTodos';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface TodoProgressViewProps {
   onBack: () => void;
@@ -355,19 +356,31 @@ export function TodoProgressView({ onBack }: TodoProgressViewProps) {
     { id: 'anns', label: 'Anns', icon: <Bell className="w-3.5 h-3.5" /> },
   ];
 
-  // Announcements storage
-  function getAnnouncements(): { id: string; title: string; body?: string; date?: string; pinned?: boolean }[] {
+  const { user } = useAuth();
+  const ANN_KEY = user?.id ? `lumatha_announcements:${user.id}` : 'lumatha_announcements';
+  const [announcements, setAnnouncements] = useState<{ id: string; title: string; body?: string; date?: string; pinned?: boolean }[]>(() => {
     try {
-      const raw = localStorage.getItem('lumatha_announcements');
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
-      return parsed;
+      const raw = localStorage.getItem(ANN_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
     }
-  }
-  const announcements = useMemo(() => getAnnouncements(), []);
+  });
+
+  useEffect(() => {
+    const onUpdate = () => {
+      try {
+        const raw = localStorage.getItem(ANN_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        setAnnouncements(Array.isArray(parsed) ? parsed : []);
+      } catch {
+        setAnnouncements([]);
+      }
+    };
+    window.addEventListener('lumatha_announcements_updated', onUpdate as EventListener);
+    return () => window.removeEventListener('lumatha_announcements_updated', onUpdate as EventListener);
+  }, [ANN_KEY]);
 
   return (
     <div className="space-y-3 page-enter">
