@@ -117,7 +117,7 @@ export default function FunPun() {
   const [selectedProjectForComments, setSelectedProjectForComments] = useState<{ id: string; title: string } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const avatar = profile?.avatar || profile?.photo_url || '/lumatha-logo-new.png';
+  const avatar = profile?.avatar_url || profile?.avatar || profile?.photo_url || '/lumatha-logo-new.png';
 
   const defaultProject = useMemo<ProjectPost>(() => ({
     id: DEFAULT_PROJECT_ID,

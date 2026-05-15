@@ -10,7 +10,7 @@ import { EnhancedPostCard } from '@/components/EnhancedPostCard';
 import { FullScreenMediaViewer } from '@/components/FullScreenMediaViewer';
 import { FriendTick } from '@/components/lumatha/FriendTick';
 import { 
-  ArrowLeft, UserPlus, UserMinus, Settings, User, Image, FileText, 
+  ArrowLeft, UserPlus, UserMinus, Settings, User, Image, FileText, Code,
   MapPin, Calendar, Globe, Star, Trophy, Eye, MessageCircle, UserCheck, 
   Clock, Users, UserCircle2, X, Shield, Ban, Flag, Lock, Play, Share2, Camera, Pencil, Trash2, BookOpen, Download, ExternalLink, MoreVertical
 } from 'lucide-react';
@@ -454,6 +454,7 @@ export default function Profile() {
   const profileTabs = [
     { id: 'posts', label: 'Posts' },
     { id: 'info', label: 'Info' },
+    { id: 'projects', label: 'Projects' },
     { id: 'marketplace', label: 'Marketplace' },
   ];
   const visibleTabs = useVisibleTabContent(activeTab, profileTabs.map((tab) => tab.id));
@@ -623,6 +624,8 @@ export default function Profile() {
     const urls = post.media_urls?.length ? post.media_urls : (post.file_url ? [post.file_url] : []);
     return urls.some((url) => typeof url === 'string' && url.trim().length > 0);
   });
+
+  const abDevProjects = profileVisiblePosts.filter((post) => post.category === 'abdev');
 
   return (
     <div className="min-h-screen pb-24" style={{ background: '#0a0f1e' }}>
@@ -1029,6 +1032,32 @@ export default function Profile() {
           </div>
         )}
 
+        {visibleTabs.has('projects') && activeTab === 'projects' && (
+          <div className="px-4 py-4 space-y-4">
+            {abDevProjects.length === 0 ? (
+              <div className="text-center py-20 text-slate-500">
+                <Code className="w-8 h-8 mx-auto mb-2 text-slate-700" />
+                <p>No AB Dev projects yet</p>
+              </div>
+            ) : (
+              abDevProjects.map((post) => (
+                <EnhancedPostCard
+                  key={post.id}
+                  post={post}
+                  isSaved={saved.includes(post.id)}
+                  isLiked={likes.some((l) => l.post_id === post.id)}
+                  likesCount={likesCount[post.id] || 0}
+                  currentUserId={currentUser?.id || ''}
+                  onToggleSave={() => toggleSave(post.id)}
+                  onToggleLike={() => toggleLike(post.id)}
+                  onDelete={fetchProfileData}
+                  onUpdate={fetchProfileData}
+                />
+              ))
+            )}
+          </div>
+        )}
+
         {visibleTabs.has('info') && activeTab === 'info' && (
           <div className="space-y-3">
             <div className="flex gap-2 overflow-x-auto no-scrollbar">
@@ -1037,7 +1066,7 @@ export default function Profile() {
                 { label: 'Stories', value: profileStories.length },
                 { label: 'Followers', value: followersCount },
                 { label: 'Marketplace', value: marketplaceListingsCount },
-                { label: 'Travel Stories', value: profileStories.length },
+                { label: 'Projects', value: abDevProjects.length },
                 { label: 'Docs', value: documents.length },
               ].map((item) => (
                 <div key={item.label} className="rounded-xl p-3 min-w-[130px]" style={{ background: '#111827', border: '1px solid #1f2937' }}>
