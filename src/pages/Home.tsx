@@ -358,7 +358,7 @@ export default function Home() {
       )}
 
       <div className="w-full space-y-0 px-0 md:px-4 lg:px-6">
-        <div className="w-full md:max-w-2xl md:mx-auto lg:max-w-2xl">
+        <div className="w-full md:max-w-2xl md:mx-auto lg:max-w-2xl md:pt-3">
           <FeedFilterTabs contentFilter={contentFilter} onContentFilterChange={setContentFilter} subFilter={subFilter} onSubFilterChange={(filter) => setSubFilter(filter as MobileFeedChipId)} />
           {subFilter === 'travel' ? (
             <div className="mt-4">

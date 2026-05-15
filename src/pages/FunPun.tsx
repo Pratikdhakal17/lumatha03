@@ -79,6 +79,15 @@ function guessMime(project: ProjectPost): string | null {
   return null;
 }
 
+function getInitials(name?: string | null, username?: string | null): string {
+  const source = (name || username || 'Developer').trim();
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0] || 'D'}${parts[1][0] || 'V'}`.toUpperCase();
+  }
+  return source.slice(0, 2).toUpperCase();
+}
+
 export default function FunPun() {
   const { user, profile } = useAuth();
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -605,7 +614,7 @@ export default function FunPun() {
           <button onClick={() => setShowOptionsMenu((value) => !value)} className="hover:opacity-80 transition">
             <Avatar className="cursor-pointer w-10 h-10 sm:w-12 sm:h-12">
               <AvatarImage src={avatar} alt="profile" />
-              <AvatarFallback>AB</AvatarFallback>
+              <AvatarFallback>{getInitials(profile?.name, profile?.username || user?.email?.split('@')[0])}</AvatarFallback>
             </Avatar>
           </button>
           {showOptionsMenu && (
@@ -708,7 +717,7 @@ export default function FunPun() {
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <Avatar className="h-10 w-10">
                         <AvatarImage src={authorAvatar} alt={authorName} />
-                        <AvatarFallback>{(project.title || 'A').slice(0, 1).toUpperCase()}</AvatarFallback>
+                        <AvatarFallback>{getInitials(project.profiles?.name, project.profiles?.username || project.title)}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold truncate">{project.title}</h3>
@@ -740,13 +749,13 @@ export default function FunPun() {
                     ) : null}
                   </div>
                   <div className="px-3 sm:px-4 py-3 border-t border-white/5 flex items-center justify-between gap-2 overflow-x-auto">
-                    <div className="flex items-center gap-3 sm:gap-5 flex-shrink-0">
+                    <div className="flex items-center gap-4 sm:gap-5 flex-shrink-0 flex-wrap sm:flex-nowrap">
                       <button
                         onClick={(event) => {
                           event.stopPropagation();
                           void toggleLike(project.id);
                         }}
-                        className={`flex items-center gap-2 transition whitespace-nowrap text-[13px] sm:text-sm ${likedProjectIds.has(project.id) ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'}`}
+                        className={`flex min-w-[64px] items-center justify-center gap-2 transition whitespace-nowrap text-[13px] sm:text-sm ${likedProjectIds.has(project.id) ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'}`}
                         disabled={project.id === DEFAULT_PROJECT_ID}
                       >
                         <Heart className={`w-5 h-5 shrink-0 ${likedProjectIds.has(project.id) ? 'fill-red-500' : ''}`} />
@@ -758,7 +767,7 @@ export default function FunPun() {
                           setSelectedProjectForComments({ id: project.id, title: project.title || 'Untitled' });
                           setShowCommentsDialog(true);
                         }}
-                        className="flex items-center gap-2 text-muted-foreground hover:text-cyan-500 transition whitespace-nowrap text-[13px] sm:text-sm"
+                        className="flex min-w-[64px] items-center justify-center gap-2 text-muted-foreground hover:text-cyan-500 transition whitespace-nowrap text-[13px] sm:text-sm"
                       >
                         <MessageCircle className="w-5 h-5 shrink-0" />
                         <span className="hidden sm:inline">{commentedProjectIds.has(project.id) ? 'Commented' : 'Comment'}</span>
@@ -769,7 +778,7 @@ export default function FunPun() {
                           event.stopPropagation();
                           void toggleShare(project.id);
                         }}
-                        className={`flex items-center gap-2 transition whitespace-nowrap text-[13px] sm:text-sm ${sharedProjectIds.has(project.id) ? 'text-cyan-300' : 'text-muted-foreground hover:text-cyan-500'}`}
+                        className={`flex min-w-[64px] items-center justify-center gap-2 transition whitespace-nowrap text-[13px] sm:text-sm ${sharedProjectIds.has(project.id) ? 'text-cyan-300' : 'text-muted-foreground hover:text-cyan-500'}`}
                         disabled={project.id === DEFAULT_PROJECT_ID}
                       >
                         <Share2 className={`w-5 h-5 shrink-0 ${sharedProjectIds.has(project.id) ? 'fill-cyan-300' : ''}`} />
@@ -780,7 +789,7 @@ export default function FunPun() {
                           event.stopPropagation();
                           void toggleSave(project.id);
                         }}
-                        className={`flex items-center gap-2 transition whitespace-nowrap text-[13px] sm:text-sm ${savedProjectIds.has(project.id) ? 'text-yellow-500' : 'text-muted-foreground hover:text-yellow-500'}`}
+                        className={`flex min-w-[64px] items-center justify-center gap-2 transition whitespace-nowrap text-[13px] sm:text-sm ${savedProjectIds.has(project.id) ? 'text-yellow-500' : 'text-muted-foreground hover:text-yellow-500'}`}
                         disabled={project.id === DEFAULT_PROJECT_ID}
                       >
                         <Bookmark className={`w-5 h-5 shrink-0 ${savedProjectIds.has(project.id) ? 'fill-yellow-500' : ''}`} />

@@ -963,6 +963,7 @@ export function EnhancedPostCard({
 
   const rawUsername = post.profiles?.username || post.profiles?.name || 'Lumatha Member';
   const username = String(rawUsername).startsWith('@') ? String(rawUsername).slice(1) : String(rawUsername);
+  const avatarFallback = ((post.profiles?.name || post.profiles?.username || 'U').trim().match(/[A-Za-z0-9]/g) || ['U']).slice(0, 2).join('').toUpperCase();
 
   return (
     <>
@@ -984,7 +985,7 @@ export function EnhancedPostCard({
                   className="text-sm font-bold"
                   style={{ background: 'linear-gradient(135deg, #7C3AED, #3B82F6)', color: 'white' }}
                 >
-                  {post.profiles?.name?.[0] || 'U'}
+                  {avatarFallback}
                 </AvatarFallback>
               </Avatar>
               {/* Online dot */}

@@ -704,7 +704,7 @@ export default function Search() {
                 )}
               </div>
               <div className="grid grid-cols-3 gap-1.5">
-                {(showAllExploreImages ? exploreImagePosts : exploreImagePosts.slice(0, 6)).map((post) => {
+                {(showAllExploreImages ? exploreImagePosts : exploreImagePosts.slice(0, 6)).map((post, index) => {
                   const mediaUrl = getPrimaryRenderableMediaUrl(post, 'image');
                   if (!mediaUrl) return null;
                   return (
@@ -717,7 +717,7 @@ export default function Search() {
                       <img
                         src={mediaUrl}
                         alt=""
-                        loading="lazy"
+                        loading={index < 4 ? 'eager' : 'lazy'}
                         decoding="async"
                         className="w-full h-full object-cover transition-transform group-hover:scale-105"
                       />
