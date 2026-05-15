@@ -75,7 +75,7 @@ const LazySharedMusicPlayer = lazy(() =>
 
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const QUICK_REACTIONS = ['👍', '❤️', '😂', '🔥'];
+const QUICK_REACTIONS = ['🙏', '👍', '❤️', '😂', '😢', '😡'];
 const CHAT_FX_SETTINGS_KEY = 'lumatha_chat_fx_settings_v1';
 const PRIMARY_STICKER_ID_KEY = 'lumatha_primary_sticker_id';
 const REACTION_USAGE_KEY = 'lumatha_reaction_usage_v1';
@@ -1435,8 +1435,8 @@ export default function Chat() {
       }
     }
 
-    await sendMessage(currentChatUser, quickStickers[0] || '❤️');
-    rememberReactionUsage(quickStickers[0] || '❤️');
+    await sendMessage(currentChatUser, quickStickers[0] || '🙏');
+    rememberReactionUsage(quickStickers[0] || '🙏');
     triggerInteractionFx('send');
   }, [currentChatUser, uploading, rateLimit, primaryStickerId, sendMessage, quickStickers, triggerInteractionFx, rememberReactionUsage]);
 
@@ -2401,7 +2401,7 @@ export default function Chat() {
             isNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
           }}
         >
-          <div className="flex flex-col justify-end flex-1 min-h-full p-3 md:p-5 pb-4">
+          <div className="flex flex-col justify-end flex-1 min-h-full p-3 md:p-5 pb-2">
             {messages.length === 0 ? (
               loading ? (
                 <div className="flex flex-1 items-center justify-center py-14">
@@ -2591,6 +2591,12 @@ export default function Chat() {
                   if (navigator.vibrate) navigator.vibrate(30);
                   setShowEmojiStickerPanel(true);
                 }}
+                onOpenReactionTray={() => setShowQuickStickersSettings(true)}
+                onQuickReaction={(emoji) => {
+                  void sendQuickReaction(emoji);
+                }}
+                quickReactions={quickStickers}
+                primaryReaction={quickStickers[0] || '🙏'}
                 rateLimit={rateLimit}
                 uploading={uploading}
                 editingMsg={editingMsg}

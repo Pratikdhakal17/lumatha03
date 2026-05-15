@@ -204,23 +204,38 @@ export default function Profile() {
     
     try {
       // CRITICAL PATH: Load only essential data first for fast initial render
+      const shouldIncludePrivatePosts = Boolean(currentUser?.id && userId && currentUser.id === userId);
       const [profileResult, postsResult, friendsCountResult, followersResult, followingResult] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).single(),
-        supabase.from('posts').select('*, profiles(*)').eq('user_id', userId).eq('visibility', 'public').neq('category', 'ghost').order('created_at', { ascending: false }).limit(20),
+        supabase.from('posts').select('*, profiles(*)').eq('user_id', userId).or('visibility.eq.public,visibility.is.null').neq('category', 'ghost').order('created_at', { ascending: false }).limit(20),
         supabase.from('friend_requests').select('id', { count: 'exact' }).or(`sender_id.eq.${userId},receiver_id.eq.${userId}`).eq('status', 'accepted'),
         supabase.from('follows').select('id', { count: 'exact' }).eq('following_id', userId),
         supabase.from('follows').select('id', { count: 'exact' }).eq('follower_id', userId),
       ]);
+
+      let mergedPosts = postsResult.data || [];
+      if (shouldIncludePrivatePosts) {
+        const { data: privatePosts } = await supabase
+          .from('posts')
+          .select('*, profiles(*)')
+          .eq('user_id', userId)
+          .eq('visibility', 'private')
+          .neq('category', 'ghost')
+          .order('created_at', { ascending: false })
+          .limit(20);
+        const visibleIds = new Set(mergedPosts.map((post) => post.id));
+        mergedPosts = [...mergedPosts, ...(privatePosts || []).filter((post) => !visibleIds.has(post.id))];
+      }
       
       setProfile(profileResult.data);
-      setPosts(postsResult.data || []);
+      setPosts(mergedPosts);
       setFriendsCount(friendsCountResult.count || 0);
       setFollowersCount(followersResult.count || 0);
       setFollowingCount(followingResult.count || 0);
 
       // Calculate likes for displayed posts
-      if ((postsResult.data || []).length > 0) {
-        const postIds = (postsResult.data || []).map(p => p.id);
+      if (mergedPosts.length > 0) {
+        const postIds = mergedPosts.map(p => p.id);
         const { data: allLikes } = await supabase.from('likes').select('post_id').in('post_id', postIds);
         const counts: Record<string, number> = {};
         postIds.forEach(id => { counts[id] = 0; });
@@ -261,17 +276,28 @@ export default function Profile() {
           .from('posts')
           .select('id,title,content,location,media_urls,created_at')
           .eq('user_id', userId)
-          .eq('visibility', 'public')
+          .or('visibility.eq.public,visibility.is.null')
           .eq('post_type', 'travel_story')
           .order('created_at', { ascending: false });
 
         let storyRows = modernStoriesData || [];
+        if (shouldIncludePrivatePosts) {
+          const { data: privateStoryRows } = await supabase
+            .from('posts')
+            .select('id,title,content,location,media_urls,created_at')
+            .eq('user_id', userId)
+            .eq('visibility', 'private')
+            .eq('post_type', 'travel_story')
+            .order('created_at', { ascending: false });
+          const storyIds = new Set(storyRows.map((story) => story.id));
+          storyRows = [...storyRows, ...(privateStoryRows || []).filter((story) => !storyIds.has(story.id))];
+        }
         if ((!storyRows || storyRows.length === 0)) {
           const { data: legacyData } = await supabase
             .from('posts')
             .select('id,title,content,location,media_urls,created_at')
             .eq('user_id', userId)
-            .eq('visibility', 'public')
+            .or('visibility.eq.public,visibility.is.null')
             .in('category', ['travel_story', 'travel'])
             .order('created_at', { ascending: false });
           storyRows = legacyData || [];
