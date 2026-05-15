@@ -7,9 +7,6 @@ interface ChatInputProps {
   onFileClick: () => void;
   onPrimaryReaction: () => void;
   onPrimaryReactionLongPress: (event: React.MouseEvent | React.TouchEvent) => void;
-  onOpenReactionTray?: () => void;
-  onQuickReaction?: (emoji: string) => void;
-  quickReactions?: string[];
   primaryReaction?: string;
   rateLimit: {
     isRateLimited: boolean;
@@ -25,9 +22,6 @@ export const ChatInput = memo(function ChatInput({
   onFileClick,
   onPrimaryReaction,
   onPrimaryReactionLongPress,
-  onOpenReactionTray,
-  onQuickReaction,
-  quickReactions = ['🙏', '👍', '❤️', '😂', '😢', '😡'],
   primaryReaction = '🙏',
   rateLimit,
   uploading,
@@ -52,43 +46,6 @@ export const ChatInput = memo(function ChatInput({
 
   return (
     <div className="flex flex-col gap-2 w-full max-w-[1200px] mx-auto">
-      {!value.trim() && (
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
-          <button
-            className="h-8 shrink-0 rounded-full px-3 text-[12px] font-semibold flex items-center gap-2 border border-white/10 bg-white/5 text-white/90"
-            onClick={onPrimaryReaction}
-            onContextMenu={onPrimaryReactionLongPress}
-            onTouchStart={(e) => {
-              const timer = setTimeout(() => onPrimaryReactionLongPress(e), 500);
-              const clear = () => clearTimeout(timer);
-              e.currentTarget.addEventListener('touchend', clear, { once: true });
-            }}
-          >
-            <span className="text-base leading-none">{primaryReaction}</span>
-            <span>Primary</span>
-          </button>
-          {quickReactions.slice(0, 5).map((emoji) => (
-            <button
-              key={emoji}
-              className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center border border-white/10 bg-white/5 text-[18px] active:scale-95 transition-transform"
-              onClick={() => onQuickReaction?.(emoji)}
-              aria-label={`Send ${emoji}`}
-              title={emoji}
-            >
-              {emoji}
-            </button>
-          ))}
-          <button
-            className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center border border-white/10 bg-white/5 text-white/90 active:scale-95 transition-transform"
-            onClick={onOpenReactionTray}
-            aria-label="Open reaction tray"
-            title="More reactions"
-          >
-            +
-          </button>
-        </div>
-      )}
-
       <div className="flex items-center gap-2 w-full">
       <motion.button
         className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 hover:bg-white/10 active:bg-white/20 transition-all"

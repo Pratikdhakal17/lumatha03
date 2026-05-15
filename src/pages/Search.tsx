@@ -41,6 +41,15 @@ const FILTER_TABS = [
   { id: 'travel-stories', label: '✈️ Travel Stories' },
 ];
 
+const PRIORITY_COUNTRIES = ['nepal', 'china', 'india', 'australia'];
+
+const getCountryKey = (post: any): string => {
+  const raw = post?.country || post?.location || post?.profiles?.country || post?.profiles?.location || '';
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (typeof value !== 'string') return '';
+  return value.trim().toLowerCase();
+};
+
 function DeferredVideoTile({ src, className }: { src: string; className?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [shouldLoad, setShouldLoad] = useState(false);
@@ -162,7 +171,7 @@ export default function Search() {
     const followingIds = new Set(followRes.data?.map(f => f.following_id) || []);
     setFollowing(followingIds);
     setSuggestedPeople((peopleRes.data || []).filter(p => !followingIds.has(p.id)).slice(0, 10));
-    // Filter to public-like rows and shuffle so places don't repeat by country or alphabetical order.
+    // Filter to public-like rows, shuffle them, and then collapse to one image per country.
     const rawExplore = (postsRes.data || []).filter((post) => {
       const visibility = post.visibility ?? 'public';
       const audience = post.audience ?? 'global';
@@ -174,7 +183,41 @@ export default function Search() {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffledExplore[i], shuffledExplore[j]] = [shuffledExplore[j], shuffledExplore[i]];
     }
-    setExplorePosts(shuffledExplore);
+    const bucketedByCountry = new Map<string, any[]>();
+    const uncategorized: any[] = [];
+    shuffledExplore.forEach((post) => {
+      const country = getCountryKey(post);
+      if (!country) {
+        uncategorized.push(post);
+        return;
+      }
+      if (!bucketedByCountry.has(country)) {
+        bucketedByCountry.set(country, []);
+      }
+      bucketedByCountry.get(country)!.push(post);
+    });
+
+    const orderedExplore: any[] = [];
+    const priorityQueue = PRIORITY_COUNTRIES.filter((country) => bucketedByCountry.has(country));
+    const otherCountries = Array.from(bucketedByCountry.keys()).filter((country) => !PRIORITY_COUNTRIES.includes(country));
+
+    while (priorityQueue.some((country) => (bucketedByCountry.get(country)?.length || 0) > 0) || otherCountries.some((country) => (bucketedByCountry.get(country)?.length || 0) > 0)) {
+      priorityQueue.forEach((country) => {
+        const bucket = bucketedByCountry.get(country);
+        const next = bucket?.shift();
+        if (next) orderedExplore.push(next);
+      });
+
+      otherCountries.forEach((country) => {
+        const bucket = bucketedByCountry.get(country);
+        const next = bucket?.shift();
+        if (next) orderedExplore.push(next);
+      });
+    }
+
+    orderedExplore.push(...uncategorized);
+
+    setExplorePosts(orderedExplore);
     setMarketplaceListings(marketplaceRes.data || []);
     setAdventureQuests(questsRes.data || []);
     setLikedPosts(new Set(likesRes.data?.map(l => l.post_id) || []));

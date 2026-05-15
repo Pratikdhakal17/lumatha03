@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Heart, Plus, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-const PRESET_STICKERS = ['👍', '❤️', '😂', '🔥', '😍', '🎉', '🚀', '✨', '💯', '🙌', '😢', '😡', '👏', '🔔', '⭐', '💬'];
+const PRESET_STICKERS = ['🙏', '👍', '❤️', '😂', '😢', '😡', '🔥', '😍', '🎉', '🚀', '✨', '💯', '🙌', '👏', '🔔', '⭐', '💬'];
 
 interface QuickStickersSettingsProps {
   open: boolean;

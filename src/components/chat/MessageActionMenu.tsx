@@ -20,7 +20,7 @@ interface MessageActionMenuProps {
   displayName?: string;
 }
 
-const QUICK_REACTIONS = ['🙏', '❤️', '👍', '😂', '🔥', '🥹'];
+const QUICK_REACTIONS = ['👍', '❤️', '😂', '😢', '😡'];
 
 export const MessageActionMenu = memo(function MessageActionMenu({
   targetId,

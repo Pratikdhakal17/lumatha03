@@ -3,6 +3,7 @@ import {
   Flame, Calendar, CheckSquare, Target, StickyNote, 
   Zap, Lock, ChevronDown, ChevronUp, FileText, Info
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 
 const TODO_KEY = 'lumatha_todos_v2';
@@ -48,16 +49,34 @@ function useCountUp(target: number, duration = 800) {
 }
 
 export function ProductivityAnalytics() {
+  const { user } = useAuth();
   const [barAnimated, setBarAnimated] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [tooltipCell, setTooltipCell] = useState<{ date: string; count: number; label: string } | null>(null);
   const [showScoreInfo, setShowScoreInfo] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
+  const storageSuffix = user?.id ? `:${user.id}` : '';
+  const TODO_KEY = `lumatha_todos_v2${storageSuffix}`;
+  const CUSTOM_FOLDERS_KEY = `lumatha_custom_folders_v2${storageSuffix}`;
+  const NOTES_KEY = `lumatha_notes_v2${storageSuffix}`;
+  const STREAK_KEY = `lumatha_streak${storageSuffix}`;
+  const TODO_HISTORY_KEY = `lumatha_todo_history${storageSuffix}`;
 
   useEffect(() => { setTimeout(() => setBarAnimated(true), 100); }, []);
 
+  useEffect(() => {
+    const sync = () => setRefreshTick((value) => value + 1);
+    window.addEventListener('storage', sync);
+    window.addEventListener('lumatha_todo_stats_updated', sync as EventListener);
+    return () => {
+      window.removeEventListener('storage', sync);
+      window.removeEventListener('lumatha_todo_stats_updated', sync as EventListener);
+    };
+  }, [user?.id]);
+
   const streak = useMemo(() => {
     try { const saved = localStorage.getItem(STREAK_KEY); if (saved) return JSON.parse(saved).count || 0; } catch {} return 0;
-  }, []);
+  }, [refreshTick, STREAK_KEY]);
 
   const taskStats = useMemo(() => {
     let totalCompleted = 0, totalTasks = 0;
@@ -82,7 +101,7 @@ export function ProductivityAnalytics() {
       }
     } catch {}
     return { totalCompleted, totalTasks, percentage: totalTasks > 0 ? Math.round((totalCompleted / totalTasks) * 100) : 0 };
-  }, []);
+  }, [refreshTick, TODO_KEY, CUSTOM_FOLDERS_KEY]);
 
   const allTimeStats = useMemo(() => {
     let total = 0, activeDays = 0, bestStreak = 0;
@@ -103,7 +122,7 @@ export function ProductivityAnalytics() {
       }
     } catch {}
     return { total, activeDays, bestStreak: Math.max(bestStreak, streak) };
-  }, [streak]);
+  }, [streak, refreshTick, TODO_HISTORY_KEY]);
 
   const notesStats = useMemo(() => {
     try {
@@ -116,7 +135,7 @@ export function ProductivityAnalytics() {
       }, 0);
       return { total: notes.length, totalWords };
     } catch { return { total: 0, totalWords: 0 }; }
-  }, []);
+  }, [refreshTick, NOTES_KEY]);
 
   const productivityScore = useMemo(() => {
     return Math.round((allTimeStats.total * 1.2) + (streak * 5) + (allTimeStats.activeDays * 2));
@@ -140,7 +159,7 @@ export function ProductivityAnalytics() {
       }
       return { day: getDayLabel(d), date: d, count };
     });
-  }, []);
+  }, [refreshTick, TODO_HISTORY_KEY]);
 
   // 91-day heatmap (13 weeks)
   const heatmapData = useMemo(() => {
@@ -158,7 +177,7 @@ export function ProductivityAnalytics() {
       cells.push({ date: isoStr, count, label: d.toLocaleDateString('en', { month: 'short', day: 'numeric' }) });
     }
     return cells;
-  }, []);
+  }, [refreshTick, TODO_HISTORY_KEY]);
 
   const maxVal = Math.max(...chartData.map(d => d.count), 1);
   const avgWeek = chartData.reduce((s, d) => s + d.count, 0) / 7;

@@ -23,19 +23,19 @@ interface DayHistory {
   [category: string]: { completed: number; total: number; items?: string[] };
 }
 
-function getHistory(): Record<string, DayHistory> {
-  const saved = localStorage.getItem(HISTORY_KEY);
+function getHistory(key: string): Record<string, DayHistory> {
+  const saved = localStorage.getItem(key);
   return saved ? JSON.parse(saved) : {};
 }
 
-function getTodos(): Record<string, any[]> {
-  const saved = localStorage.getItem(STORAGE_KEY);
+function getTodos(key: string): Record<string, any[]> {
+  const saved = localStorage.getItem(key);
   if (!saved) return {};
   return JSON.parse(saved);
 }
 
-function getCustomFolders(): any[] {
-  const saved = localStorage.getItem(CUSTOM_FOLDERS_KEY);
+function getCustomFolders(key: string): any[] {
+  const saved = localStorage.getItem(key);
   return saved ? JSON.parse(saved) : [];
 }
 
@@ -87,22 +87,40 @@ function getDayCategories(entry: DayHistory): Record<string, number> {
 }
 
 export function TodoProgressView({ onBack }: TodoProgressViewProps) {
+  const { user } = useAuth();
   const [activeSection, setActiveSection] = useState<Section>('overview');
   const [yearOffset, setYearOffset] = useState(0);
   const [expandedWeek, setExpandedWeek] = useState<number | null>(null);
   const [expandedMonth, setExpandedMonth] = useState<number | null>(null);
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
   const [selectedHeatmapDay, setSelectedHeatmapDay] = useState<string | null>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
 
-  const history = useMemo(() => getHistory(), []);
-  const todos = useMemo(() => getTodos(), []);
-  const customFolders = useMemo(() => getCustomFolders(), []);
+  const storageSuffix = user?.id ? `:${user.id}` : '';
+  const todoStorageKey = `${STORAGE_KEY}${storageSuffix}`;
+  const customFoldersStorageKey = `${CUSTOM_FOLDERS_KEY}${storageSuffix}`;
+  const historyStorageKey = `${HISTORY_KEY}${storageSuffix}`;
+  const streakStorageKey = `${STREAK_KEY}${storageSuffix}`;
+
+  useEffect(() => {
+    const sync = () => setRefreshTick((value) => value + 1);
+    window.addEventListener('storage', sync);
+    window.addEventListener('lumatha_todo_stats_updated', sync as EventListener);
+    return () => {
+      window.removeEventListener('storage', sync);
+      window.removeEventListener('lumatha_todo_stats_updated', sync as EventListener);
+    };
+  }, [user?.id]);
+
+  const history = useMemo(() => getHistory(historyStorageKey), [historyStorageKey, refreshTick]);
+  const todos = useMemo(() => getTodos(todoStorageKey), [todoStorageKey, refreshTick]);
+  const customFolders = useMemo(() => getCustomFolders(customFoldersStorageKey), [customFoldersStorageKey, refreshTick]);
 
   const streak = useMemo(() => {
-    const saved = localStorage.getItem(STREAK_KEY);
+    const saved = localStorage.getItem(streakStorageKey);
     if (saved) { const { count } = JSON.parse(saved); return count; }
     return 0;
-  }, []);
+  }, [streakStorageKey, refreshTick]);
 
   // Longest streak
   const longestStreak = useMemo(() => {
@@ -356,7 +374,6 @@ export function TodoProgressView({ onBack }: TodoProgressViewProps) {
     { id: 'anns', label: 'Anns', icon: <Bell className="w-3.5 h-3.5" /> },
   ];
 
-  const { user } = useAuth();
   const ANN_KEY = user?.id ? `lumatha_announcements:${user.id}` : 'lumatha_announcements';
   const [announcements, setAnnouncements] = useState<{ id: string; title: string; body?: string; date?: string; pinned?: boolean }[]>(() => {
     try {
@@ -379,7 +396,11 @@ export function TodoProgressView({ onBack }: TodoProgressViewProps) {
       }
     };
     window.addEventListener('lumatha_announcements_updated', onUpdate as EventListener);
-    return () => window.removeEventListener('lumatha_announcements_updated', onUpdate as EventListener);
+    window.addEventListener('lumatha_todo_stats_updated', onUpdate as EventListener);
+    return () => {
+      window.removeEventListener('lumatha_announcements_updated', onUpdate as EventListener);
+      window.removeEventListener('lumatha_todo_stats_updated', onUpdate as EventListener);
+    };
   }, [ANN_KEY]);
 
   return (

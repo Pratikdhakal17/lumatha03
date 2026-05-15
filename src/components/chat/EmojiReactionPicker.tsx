@@ -3,22 +3,22 @@ import { cn } from '@/lib/utils';
 
 // Top 5 reaction emojis - most commonly used
 const TOP_REACTIONS = [
-  '🙏', // Namaste - Purposeful greeting
-  '😂', // Haha - Laughing face with texture  
-  '❤️', // Love - Heart with texture
-  '😮', // Wow - Surprised face with texture
-  '😢', // Sad - Crying face with texture
+  '👍', // Like
+  '❤️', // Love
+  '😂', // Haha
+  '😢', // Sad
+  '😡', // Angry
 ];
 
 // All available reactions for "more" option
 const ALL_REACTIONS = [
   '🙏', // Namaste - Purposeful greeting
+  '👍', // Like
   '😂', // Haha - Laughing face with texture  
   '❤️', // Love - Heart with texture
   '😮', // Wow - Surprised face with texture
   '😢', // Sad - Crying face with texture
   '😡', // Angry - Angry face with texture
-  '👍', // Like - Thumbs up with texture
   '😄', // Happy - Wide smile with texture
   '💜', // Purple heart - Support/Love
   '😕', // Confused - Thinking face
@@ -38,12 +38,12 @@ const ALL_REACTIONS = [
 const getEmojiTitle = (emoji: string): string => {
   const titles: Record<string, string> = {
     '🙏': 'Namaste',
-    '😂': 'Haha',
+    '👍': 'Like',
     '❤️': 'Love',
+    '😂': 'Haha',
     '😮': 'Wow',
     '😢': 'Sad',
     '😡': 'Angry',
-    '👍': 'Like',
     '': 'Happy',
     '💜': 'Support',
     '😕': 'Confused',

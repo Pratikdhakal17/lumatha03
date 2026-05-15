@@ -2589,13 +2589,8 @@ export default function Chat() {
                 onPrimaryReaction={sendPrimaryReaction}
                 onPrimaryReactionLongPress={() => {
                   if (navigator.vibrate) navigator.vibrate(30);
-                  setShowEmojiStickerPanel(true);
+                  setShowQuickStickersSettings(true);
                 }}
-                onOpenReactionTray={() => setShowQuickStickersSettings(true)}
-                onQuickReaction={(emoji) => {
-                  void sendQuickReaction(emoji);
-                }}
-                quickReactions={quickStickers}
                 primaryReaction={quickStickers[0] || '🙏'}
                 rateLimit={rateLimit}
                 uploading={uploading}
@@ -2813,7 +2808,7 @@ export default function Chat() {
         <EmojiStickerPanel
           open={showEmojiStickerPanel}
           onOpenChange={setShowEmojiStickerPanel}
-          primaryEmoji={quickStickers[0] || '❤️'}
+          primaryEmoji={quickStickers[0] || '🙏'}
           primaryStickerId={primaryStickerId}
           onSendEmoji={sendQuickReaction}
           onSendImportedSticker={sendImportedSticker}

@@ -87,6 +87,7 @@ export default function Profile() {
   const { userId: rawUserId } = useParams();
   const { user: currentUser } = useAuth();
   const navigate = useNavigate();
+  const followGradient = 'linear-gradient(135deg, #F58529, #DD2A7B, #8134AF)';
 
   // Resolve the special "me" alias to the authenticated user's real ID.
   // This allows /profile/me to work for the logged-in user from nav shortcuts.
@@ -454,8 +455,7 @@ export default function Profile() {
   const profileTabs = [
     { id: 'posts', label: 'Posts' },
     { id: 'info', label: 'Info' },
-    { id: 'projects', label: 'Projects' },
-    { id: 'marketplace', label: 'Marketplace' },
+    { id: 'others', label: 'Others' },
   ];
   const visibleTabs = useVisibleTabContent(activeTab, profileTabs.map((tab) => tab.id));
 
@@ -695,8 +695,9 @@ export default function Profile() {
                     onClick={handleFollow}
                     className={cn(
                       "px-6 py-2 rounded-full text-xs font-bold transition-all duration-300 active:scale-95 border shadow-lg",
-                      isFollowing ? "bg-slate-800 text-white border-white/20" : "bg-orange-500 text-white border-white"
+                      isFollowing ? "bg-slate-800 text-white border-white/20" : "border-transparent"
                     )}
+                    style={isFollowing ? undefined : { background: followGradient, color: 'white' }}
                   >
                     {isFollowing ? 'Following' : 'Follow'}
                   </button>
@@ -776,7 +777,8 @@ export default function Profile() {
           <div className="flex gap-2">
             <button
               onClick={() => navigate('/chat')}
-              className="flex-1 py-2.5 px-4 rounded-xl transition-all text-sm font-bold flex items-center justify-center gap-2 active:scale-[0.98] bg-orange-500 text-white border-orange-400 shadow-lg"
+              className="flex-1 py-2.5 px-4 rounded-xl transition-all text-sm font-bold flex items-center justify-center gap-2 active:scale-[0.98] shadow-lg"
+              style={{ background: followGradient, color: 'white', border: 'none' }}
             >
               <MessageCircle className="w-4 h-4" />
               <span>Message</span>
@@ -1218,81 +1220,73 @@ export default function Profile() {
           </div>
         )}
 
-        {visibleTabs.has('marketplace') && activeTab === 'marketplace' && (
-          <div className="space-y-3">
-            {marketplaceLoading ? (
-              <div className="text-center py-20 text-slate-500">Loading marketplace...</div>
-            ) : (
-              <>
-            <div className="rounded-xl p-3" style={{ background: '#111827', border: '1px solid #1f2937' }}>
+        {visibleTabs.has('others') && activeTab === 'others' && (
+          <div className="space-y-5 px-4 py-4">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs" style={{ color: '#94A3B8' }}>Seller profile</p>
-                  <p className="text-sm font-semibold text-white">{marketplaceProfile?.username || profile?.name || 'Unnamed Seller'}</p>
+                <h3 className="text-white text-sm font-bold uppercase tracking-[0.18em]">Marketplace</h3>
+                <span className="text-[11px]" style={{ color: '#94A3B8' }}>{marketplaceListingsCount} items</span>
+              </div>
+              {marketplaceLoading ? (
+                <div className="text-center py-12 text-slate-500">Loading marketplace...</div>
+              ) : marketplaceListingsCount === 0 ? (
+                <div className="text-center py-10 rounded-xl" style={{ background: '#111827' }}>
+                  <p className="text-sm text-white mb-1">No marketplace listings yet</p>
+                  <p className="text-xs" style={{ color: '#94A3B8' }}>Listings will appear here.</p>
                 </div>
-                <span
-                  className="px-2.5 py-1 rounded-full text-[11px]"
-                  style={{
-                    background: marketplaceProfile?.is_phone_verified ? 'rgba(16,185,129,0.1)' : 'rgba(148,163,184,0.1)',
-                    color: marketplaceProfile?.is_phone_verified ? '#10B981' : '#94A3B8',
-                    border: marketplaceProfile?.is_phone_verified ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(148,163,184,0.25)',
-                  }}
-                >
-                  {marketplaceProfile?.is_phone_verified ? 'Verified' : 'Unverified'}
-                </span>
-              </div>
-
-              <div className="mt-3 flex gap-2">
-                <button
-                  onClick={() => navigate(`/marketplace/profile/${userId}`)}
-                  className="flex-1 py-2 rounded-lg text-sm font-semibold"
-                  style={{ background: '#1f2937', color: 'white' }}
-                >
-                  View Marketplace Profile
-                </button>
-                {isOwnProfile && (
+              ) : (
+                marketplaceListings.map((listing) => (
                   <button
-                    onClick={() => navigate('/marketplace/edit-profile')}
-                    className="px-3 py-2 rounded-lg text-sm font-semibold"
-                    style={{ background: '#7C3AED', color: 'white' }}
+                    key={listing.id}
+                    onClick={() => navigate(`/marketplace?listing=${listing.id}`)}
+                    className="w-full p-3 rounded-xl text-left"
+                    style={{ background: '#111827', border: '1px solid #1f2937' }}
                   >
-                    Edit
+                    <div className="flex items-center gap-3">
+                      {listing.media_urls?.[0] ? (
+                        <img src={listing.media_urls[0]} alt="" className="w-14 h-14 rounded-lg object-cover" />
+                      ) : (
+                        <div className="w-14 h-14 rounded-lg flex items-center justify-center" style={{ background: '#1f2937' }}>
+                          <Image className="w-4 h-4" style={{ color: '#94A3B8' }} />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-white truncate">{listing.title}</p>
+                        <p className="text-xs" style={{ color: '#94A3B8' }}>{listing.type?.toUpperCase()} {listing.location ? `• ${listing.location}` : ''}</p>
+                      </div>
+                    </div>
                   </button>
-                )}
-              </div>
+                ))
+              )}
             </div>
 
-            {marketplaceListingsCount === 0 ? (
-              <div className="text-center py-10 rounded-xl" style={{ background: '#111827' }}>
-                <p className="text-sm text-white mb-1">No marketplace listings yet</p>
-                <p className="text-xs" style={{ color: '#94A3B8' }}>Listings will appear here.</p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-white text-sm font-bold uppercase tracking-[0.18em]">AB Dev Projects</h3>
+                <span className="text-[11px]" style={{ color: '#94A3B8' }}>{abDevProjects.length} posts</span>
               </div>
-            ) : (
-              marketplaceListings.map((listing) => (
-                <button
-                  key={listing.id}
-                  onClick={() => navigate(`/marketplace?listing=${listing.id}`)}
-                  className="w-full p-3 rounded-xl text-left"
-                  style={{ background: '#111827', border: '1px solid #1f2937' }}
-                >
-                  <div className="flex items-center gap-3">
-                    {listing.media_urls?.[0] ? (
-                      <img src={listing.media_urls[0]} alt="" className="w-14 h-14 rounded-lg object-cover" />
-                    ) : (
-                      <div className="w-14 h-14 rounded-lg flex items-center justify-center" style={{ background: '#1f2937' }}>
-                        <Image className="w-4 h-4" style={{ color: '#94A3B8' }} />
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-white truncate">{listing.title}</p>
-                      <p className="text-xs" style={{ color: '#94A3B8' }}>{listing.type?.toUpperCase()} {listing.location ? `• ${listing.location}` : ''}</p>
-                    </div>
-                  </div>
-                </button>
-              ))
-            )}
-              </>
-            )}
+              {abDevProjects.length === 0 ? (
+                <div className="text-center py-12 text-slate-500">
+                  <Code className="w-8 h-8 mx-auto mb-2 text-slate-700" />
+                  <p>No AB Dev projects yet</p>
+                </div>
+              ) : (
+                abDevProjects.map((post) => (
+                  <EnhancedPostCard
+                    key={post.id}
+                    post={post}
+                    isSaved={saved.includes(post.id)}
+                    isLiked={likes.some((l) => l.post_id === post.id)}
+                    likesCount={likesCount[post.id] || 0}
+                    currentUserId={currentUser?.id || ''}
+                    onToggleSave={() => toggleSave(post.id)}
+                    onToggleLike={() => toggleLike(post.id)}
+                    onDelete={fetchProfileData}
+                    onUpdate={fetchProfileData}
+                  />
+                ))
+              )}
+            </div>
           </div>
         )}
 

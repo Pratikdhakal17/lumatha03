@@ -172,6 +172,12 @@ export function TodoModule() {
         archiveCompletedTodos('monthly');
         updated.monthly = updated.monthly.map(t => ({ ...t, completed: false, completed_at: undefined }));
       }
+
+      // Reset yearly on Jan 1st so the 365-day overview rolls over cleanly
+      if (now.getMonth() === 0 && currentDateOfMonth === 1) {
+        archiveCompletedTodos('yearly');
+        updated.yearly = updated.yearly.map(t => ({ ...t, completed: false, completed_at: undefined }));
+      }
       
       setTodos(updated);
       localStorage.setItem(todosStorageKey, JSON.stringify(updated));
@@ -193,6 +199,7 @@ export function TodoModule() {
       };
       setStats(resetStats);
       localStorage.setItem(statsStorageKey, JSON.stringify(resetStats));
+      window.dispatchEvent(new CustomEvent('lumatha_todo_stats_updated', { detail: { source: 'todo-reset' } }));
       
       localStorage.setItem(lastResetStorageKey, today);
       
@@ -258,6 +265,7 @@ export function TodoModule() {
     };
     setStats(newStats);
     localStorage.setItem(statsStorageKey, JSON.stringify(newStats));
+    window.dispatchEvent(new CustomEvent('lumatha_todo_stats_updated', { detail: { source: 'todo-save' } }));
   };
 
   const clearHistory = () => {
@@ -463,21 +471,6 @@ export function TodoModule() {
           </div>
           <div className="h-1 rounded-full overflow-hidden" style={{ background: '#1e293b' }}>
             <div className="h-full rounded-full" style={{ width: `${overallProgress}%`, background: 'linear-gradient(90deg, #7C3AED, #3B82F6)', transition: 'width 1s' }} />
-          </div>
-        </div>
-      </div>
-
-      {/* Announcements quick editor */}
-      <div className="mb-3 p-3 rounded-xl" style={{ background: '#0b1220', border: '1px solid #1f2937' }}>
-        <div className="flex items-start gap-2">
-          <div className="flex-shrink-0 mt-1"><Bell className="w-5 h-5 text-amber-400" /></div>
-          <div className="flex-1">
-            <input value={annTitle} onChange={(e) => setAnnTitle(e.target.value)} placeholder="Announcement title" className="w-full mb-2 px-3 py-2 rounded border bg-transparent text-sm" />
-            <textarea value={annBody} onChange={(e) => setAnnBody(e.target.value)} placeholder="Details (optional)" className="w-full px-3 py-2 rounded border bg-transparent text-sm" rows={2} />
-            <div className="flex items-center justify-end gap-2 mt-2">
-              <Button variant="ghost" size="sm" onClick={() => { setAnnTitle(''); setAnnBody(''); }}>Cancel</Button>
-              <Button size="sm" onClick={saveAnnouncement} className="bg-amber-400 text-black">Save</Button>
-            </div>
           </div>
         </div>
       </div>
