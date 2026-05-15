@@ -306,6 +306,7 @@ function LayoutContent({ children }: LayoutProps) {
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [managedSectionOrder, setManagedSectionOrder] = useState<ManagedSectionKey[]>([...MANAGED_SECTIONS]);
   const [headerVisible, setHeaderVisible] = useState(true);
+  const [bottomNavVisible, setBottomNavVisible] = useState(true);
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
   const feedCenterRef = useRef<HTMLDivElement>(null);
@@ -339,9 +340,20 @@ function LayoutContent({ children }: LayoutProps) {
       }
     };
 
+    const handleBottomNav = (e: Event) => {
+      try {
+        const next = (e as CustomEvent<boolean>).detail;
+        setBottomNavVisible(Boolean(next));
+      } catch {
+        // ignore
+      }
+    };
+
     window.addEventListener('lumatha_mobile_sidebar_toggle', openMobileSidebarFromEvent as EventListener);
+    window.addEventListener('lumatha_bottom_nav_visibility', handleBottomNav as EventListener);
     return () => {
       window.removeEventListener('lumatha_mobile_sidebar_toggle', openMobileSidebarFromEvent as EventListener);
+      window.removeEventListener('lumatha_bottom_nav_visibility', handleBottomNav as EventListener);
     };
   }, [isMobile]);
 
@@ -810,8 +822,8 @@ function LayoutContent({ children }: LayoutProps) {
           {children}
         </div>
         
-        {/* Bottom navigation - Home only; visibility follows header (hide on scroll down) */}
-        {isMobile && location.pathname === '/' && headerVisible && <SubNavigation visible={true} />}
+        {/* Bottom navigation - Home only; controlled by scroll events to hide on scroll down */}
+        {isMobile && location.pathname === '/' && bottomNavVisible && <SubNavigation visible={true} />}
       </main>
       <CreatePostSheet open={createSheetOpen} onOpenChange={setCreateSheetOpen} />
       <LumathaAssistant open={assistantOpen} onClose={() => setAssistantOpen(false)} />

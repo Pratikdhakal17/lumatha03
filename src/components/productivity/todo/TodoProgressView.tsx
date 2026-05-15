@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { 
   ArrowLeft, Calendar, TrendingUp, Award, Target, Flame, Trophy, Gem, Medal, Sprout,
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, CheckSquare, Folder, Star,
-  Zap, BarChart3, Clock, Crown, Shield, Rocket, Hash, ArrowUpRight, ArrowDownRight, Minus
+  Zap, BarChart3, Clock, Crown, Shield, Rocket, Hash, ArrowUpRight, ArrowDownRight, Minus, Bell
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TODO_CATEGORIES, TodoCategory } from '@/data/defaultTodos';
@@ -56,7 +56,7 @@ const CATEGORY_BG: Record<string, string> = {
   yearly: 'bg-amber-500/10', lifetime: 'bg-rose-500/10', custom: 'bg-emerald-500/10',
 };
 
-type Section = 'overview' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'lifetime' | 'custom';
+type Section = 'overview' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'lifetime' | 'custom' | 'anns';
 
 // Helper to get day count from history entry
 function getDayCount(entry: DayHistory): number {
@@ -352,7 +352,22 @@ export function TodoProgressView({ onBack }: TodoProgressViewProps) {
     { id: 'monthly', label: 'Monthly', icon: <BarChart3 className="w-3.5 h-3.5" /> },
     { id: 'lifetime', label: 'Lifetime', icon: <Rocket className="w-3.5 h-3.5" /> },
     { id: 'custom', label: 'Custom', icon: <Folder className="w-3.5 h-3.5" /> },
+    { id: 'anns', label: 'Anns', icon: <Bell className="w-3.5 h-3.5" /> },
   ];
+
+  // Announcements storage
+  function getAnnouncements(): { id: string; title: string; body?: string; date?: string; pinned?: boolean }[] {
+    try {
+      const raw = localStorage.getItem('lumatha_announcements');
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed;
+    } catch {
+      return [];
+    }
+  }
+  const announcements = useMemo(() => getAnnouncements(), []);
 
   return (
     <div className="space-y-3 page-enter">
@@ -378,6 +393,38 @@ export function TodoProgressView({ onBack }: TodoProgressViewProps) {
           </button>
         ))}
       </div>
+
+      {/* Announcements section */}
+      {activeSection === 'anns' && (
+        <Card className="border-border">
+          <CardContent className="p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold">Announcements</h3>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="ghost" onClick={() => { localStorage.removeItem('lumatha_announcements'); window.location.reload(); }}>Clear All</Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {announcements.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No announcements</p>
+              ) : (
+                announcements.map((a) => (
+                  <div key={a.id} className="p-3 rounded-xl bg-white/5 border border-white/6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-semibold">{a.title}</div>
+                        {a.date && <div className="text-[12px] text-muted-foreground">{a.date}</div>}
+                      </div>
+                      {a.pinned && <div className="text-[11px] text-amber-300">Pinned</div>}
+                    </div>
+                    {a.body && <div className="text-sm text-muted-foreground mt-2">{a.body}</div>}
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ==================== OVERVIEW ==================== */}
       {activeSection === 'overview' && (

@@ -151,7 +151,8 @@ export default function Search() {
     if (!user) return;
     const [peopleRes, postsRes, followRes, likesRes, marketplaceRes, questsRes] = await Promise.all([
       supabase.from('profiles').select('*').neq('id', user.id).limit(20),
-      supabase.from('posts').select('*, profiles(*)').eq('visibility', 'public').neq('category', 'ghost').or('file_url.is.not.null,media_urls.is.not.null').order('created_at', { ascending: false }).limit(60),
+      // include public-like posts: visibility public OR visibility null OR audience global OR audience null; exclude ghost category
+      supabase.from('posts').select('*, profiles(*)').in('is_private', [false, null]).or('visibility.eq.public,visibility.is.null,audience.eq.global,audience.is.null').neq('category', 'ghost').or('file_url.is.not.null,media_urls.is.not.null').order('created_at', { ascending: false }).limit(120),
       supabase.from('follows').select('following_id').eq('follower_id', user.id),
       supabase.from('likes').select('post_id').eq('user_id', user.id),
       supabase.from('marketplace_listings').select('*').eq('status', 'active').order('created_at', { ascending: false }).limit(15),
@@ -161,7 +162,14 @@ export default function Search() {
     const followingIds = new Set(followRes.data?.map(f => f.following_id) || []);
     setFollowing(followingIds);
     setSuggestedPeople((peopleRes.data || []).filter(p => !followingIds.has(p.id)).slice(0, 10));
-    setExplorePosts(postsRes.data || []);
+    // Shuffle explore posts to avoid grouping by country/alphabet — use Fisher-Yates
+    const rawExplore = postsRes.data || [];
+    const shuffledExplore = [...rawExplore];
+    for (let i = shuffledExplore.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledExplore[i], shuffledExplore[j]] = [shuffledExplore[j], shuffledExplore[i]];
+    }
+    setExplorePosts(shuffledExplore);
     setMarketplaceListings(marketplaceRes.data || []);
     setAdventureQuests(questsRes.data || []);
     setLikedPosts(new Set(likesRes.data?.map(l => l.post_id) || []));

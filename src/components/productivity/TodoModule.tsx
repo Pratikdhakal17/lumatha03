@@ -108,10 +108,13 @@ export function TodoModule() {
   useEffect(() => { saveStats(); }, [todos]);
 
   // Check and auto-reset daily/weekly/monthly todos AFTER todos are loaded
+  // and periodically while the app remains open so resets occur at midnight
   useEffect(() => {
-    if (Object.values(todos).some(arr => arr.length > 0)) {
-      checkAndAutoReset();
-    }
+    // Run immediately once
+    checkAndAutoReset();
+    // Check every minute to catch day/week/month boundaries while app is open
+    const id = setInterval(() => checkAndAutoReset(), 60 * 1000);
+    return () => clearInterval(id);
   }, []);
 
   // Check and auto-reset daily/weekly/monthly todos - AUTO RESET TO 0 EVERYDAY

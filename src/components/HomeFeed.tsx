@@ -72,10 +72,12 @@ export function HomeFeed({ activeTab }: HomeFeedProps) {
       // Filter based on active tab
       switch (activeTab) {
         case 'regional':
-          query = query.eq('visibility', 'public').in('category', ['explore', 'abdev']);
+          // Include posts that are explicitly public or have no visibility set (audience/global handled server-side)
+          query = query.or('visibility.eq.public,visibility.is.null').in('category', ['explore', 'abdev']);
           break;
         case 'global':
-          query = query.eq('visibility', 'public').in('category', ['inspire', 'knowledge', 'creative', 'fun', 'explore', 'abdev']);
+          // Include public and null-visibility posts across main categories
+          query = query.or('visibility.eq.public,visibility.is.null').in('category', ['inspire', 'knowledge', 'creative', 'fun', 'explore', 'abdev']);
           break;
         case 'friends':
           const { data: following } = await supabase

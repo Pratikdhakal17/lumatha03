@@ -181,14 +181,16 @@ export default function FunPun() {
     setLoadingProjects(true);
     try {
       // Load all public AB Dev projects (visibility='public' AND is_private=false AND audience='global')
+      // Load public AB Dev projects. Some rows use `visibility` = null with `audience='global'` — include those too.
       const publicQuery = supabase
         .from('posts')
         .select('*, profiles(*)')
         .eq('category', 'abdev')
-        .eq('visibility', 'public')
-        .eq('is_private', false)
+        .in('is_private', [false, null])
+        // include rows where visibility is public or null, and where audience is global or null
+        .or('visibility.eq.public,visibility.is.null,audience.eq.global,audience.is.null')
         .order('created_at', { ascending: false })
-        .limit(60);
+        .limit(80);
 
       const { data: publicData, error: publicError } = await publicQuery;
       

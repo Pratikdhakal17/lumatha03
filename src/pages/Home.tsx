@@ -177,8 +177,12 @@ export default function Home() {
       const currentScrollY = scroller.scrollTop;
       if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
         setShowTopElements(false);
+        // hide bottom nav on scroll down
+        window.dispatchEvent(new CustomEvent('lumatha_bottom_nav_visibility', { detail: false }));
       } else {
         setShowTopElements(true);
+        // show bottom nav on scroll up
+        window.dispatchEvent(new CustomEvent('lumatha_bottom_nav_visibility', { detail: true }));
       }
       lastScrollY.current = currentScrollY;
     };
@@ -252,7 +256,13 @@ export default function Home() {
 
       // Shuffle posts for "random" feel if requested or on global feed
       if (feedScope === 'global' && activeSubFilter === 'all') {
-        processedPosts = [...processedPosts].sort(() => Math.random() - 0.5);
+        // Use Fisher-Yates shuffle for a better uniform random order
+        const shuffled = [...processedPosts];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        processedPosts = shuffled;
       }
 
       // Keep travel stories primarily in the dedicated Travel Stories section.
@@ -347,7 +357,7 @@ export default function Home() {
         </div>
       )}
 
-      <div className="w-full space-y-0 px-4 md:px-4 lg:px-6">
+      <div className="w-full space-y-0 px-0 md:px-4 lg:px-6">
         <FeedFilterTabs contentFilter={contentFilter} onContentFilterChange={setContentFilter} subFilter={subFilter} onSubFilterChange={(filter) => setSubFilter(filter as MobileFeedChipId)} />
         {subFilter === 'travel' ? (
           <div className="mt-4">

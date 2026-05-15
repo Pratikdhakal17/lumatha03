@@ -113,16 +113,16 @@ Keep answers practical, concise, and helpful. Do not provide political, historic
     }]);
   }, [open]);
 
-  // Save ONLY assistant responses to localStorage (ephemeral, per-session)
-  // User questions are NOT persisted
-  useEffect(() => {
-    if (messages.length > 0) {
-      const responsesOnly = messages.filter(m => m.role === 'assistant').slice(-20);
-      if (responsesOnly.length > 0) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(responsesOnly));
+    // Persist full conversation (both user and assistant messages) so sender questions
+    // are retained in the chat history and visible on reopen.
+    useEffect(() => {
+      if (messages.length > 0) {
+        const toSave = messages.slice(-60);
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+        } catch {}
       }
-    }
-  }, [messages]);
+    }, [messages]);
 
   // Auto scroll
   useEffect(() => {
@@ -160,8 +160,8 @@ Keep answers practical, concise, and helpful. Do not provide political, historic
       const reply = data?.reply || 'Sorry sathi, something went wrong. Try again? 🙏';
       const assistantMsg: ChatMessage = { id: Date.now() + 1, role: 'assistant', content: reply, time: new Date() };
       
-      // Remove user question, keep only assistant response (ephemeral questions)
-      setMessages(prev => prev.filter(m => m.role === 'assistant').concat(assistantMsg));
+        // Keep full conversation (user + assistant). Append assistant reply.
+        setMessages(prev => [...prev, assistantMsg]);
     } catch (e) {
       console.error('Assistant error:', e);
       const errorMsg: ChatMessage = {
@@ -170,8 +170,8 @@ Keep answers practical, concise, and helpful. Do not provide political, historic
         content: `Mero sathi, I am having a little trouble connecting right now. 😔\n\nCould you try sending that again or check your internet? I'm always here to help once we're back online! 🙏`,
         time: new Date(),
       };
-      // Remove user question on error too
-      setMessages(prev => prev.filter(m => m.role === 'assistant').concat(errorMsg));
+        // Keep full conversation and append error reply
+        setMessages(prev => [...prev, errorMsg]);
     } finally {
       setLoading(false);
     }
