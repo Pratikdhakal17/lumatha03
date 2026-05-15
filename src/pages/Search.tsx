@@ -151,8 +151,8 @@ export default function Search() {
     if (!user) return;
     const [peopleRes, postsRes, followRes, likesRes, marketplaceRes, questsRes] = await Promise.all([
       supabase.from('profiles').select('*').neq('id', user.id).limit(20),
-      // include public-like posts: visibility public OR visibility null OR audience global OR audience null; exclude ghost category
-      supabase.from('posts').select('*, profiles(*)').in('is_private', [false, null]).or('visibility.eq.public,visibility.is.null,audience.eq.global,audience.is.null').neq('category', 'ghost').or('file_url.is.not.null,media_urls.is.not.null').order('created_at', { ascending: false }).limit(120),
+      // Keep the fetch broad and filter client-side so discovery remains stable even if field values are inconsistent.
+      supabase.from('posts').select('*, profiles(*)').neq('category', 'ghost').order('created_at', { ascending: false }).limit(200),
       supabase.from('follows').select('following_id').eq('follower_id', user.id),
       supabase.from('likes').select('post_id').eq('user_id', user.id),
       supabase.from('marketplace_listings').select('*').eq('status', 'active').order('created_at', { ascending: false }).limit(15),
@@ -162,8 +162,13 @@ export default function Search() {
     const followingIds = new Set(followRes.data?.map(f => f.following_id) || []);
     setFollowing(followingIds);
     setSuggestedPeople((peopleRes.data || []).filter(p => !followingIds.has(p.id)).slice(0, 10));
-    // Shuffle explore posts to avoid grouping by country/alphabet — use Fisher-Yates
-    const rawExplore = postsRes.data || [];
+    // Filter to public-like rows and shuffle so places don't repeat by country or alphabetical order.
+    const rawExplore = (postsRes.data || []).filter((post) => {
+      const visibility = post.visibility ?? 'public';
+      const audience = post.audience ?? 'global';
+      const isPrivate = post.is_private === true;
+      return !isPrivate && (visibility === 'public' || visibility === null || audience === 'global' || audience === null);
+    });
     const shuffledExplore = [...rawExplore];
     for (let i = shuffledExplore.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));

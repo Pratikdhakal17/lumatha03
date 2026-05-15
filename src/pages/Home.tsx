@@ -358,18 +358,20 @@ export default function Home() {
       )}
 
       <div className="w-full space-y-0 px-0 md:px-4 lg:px-6">
-        <FeedFilterTabs contentFilter={contentFilter} onContentFilterChange={setContentFilter} subFilter={subFilter} onSubFilterChange={(filter) => setSubFilter(filter as MobileFeedChipId)} />
-        {subFilter === 'travel' ? (
-          <div className="mt-4">
-            <TravelStories />
-          </div>
-        ) : showSkeleton ? (
-          <FeedSkeleton count={3} />
-        ) : (
-          <FeedInterleaver posts={posts} renderPost={(post) => (
-            <EnhancedPostCard key={post.id} post={post} isSaved={savedPosts.has(post.id)} isLiked={likedPosts.has(post.id)} likesCount={likeCounts[post.id] || 0} currentUserId={user?.id || ''} onToggleSave={() => toggleSave(post.id)} onToggleLike={() => toggleLike(post.id)} onDelete={handleDelete} onUpdate={fetchPosts} />
-          )} widgets={widgets} />
-        )}
+        <div className="w-full md:max-w-2xl md:mx-auto lg:max-w-2xl">
+          <FeedFilterTabs contentFilter={contentFilter} onContentFilterChange={setContentFilter} subFilter={subFilter} onSubFilterChange={(filter) => setSubFilter(filter as MobileFeedChipId)} />
+          {subFilter === 'travel' ? (
+            <div className="mt-4">
+              <TravelStories />
+            </div>
+          ) : showSkeleton ? (
+            <FeedSkeleton count={3} />
+          ) : (
+            <FeedInterleaver posts={posts} renderPost={(post) => (
+              <EnhancedPostCard key={post.id} post={post} isSaved={savedPosts.has(post.id)} isLiked={likedPosts.has(post.id)} likesCount={likeCounts[post.id] || 0} currentUserId={user?.id || ''} onToggleSave={() => toggleSave(post.id)} onToggleLike={() => toggleLike(post.id)} onDelete={handleDelete} onUpdate={fetchPosts} />
+            )} widgets={widgets} />
+          )}
+        </div>
       </div>
 
       <CommentsDialog postId={selectedPostId} open={commentDialogOpen} onOpenChange={setCommentDialogOpen} postTitle="" />

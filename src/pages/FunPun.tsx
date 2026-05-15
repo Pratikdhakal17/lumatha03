@@ -186,9 +186,6 @@ export default function FunPun() {
         .from('posts')
         .select('*, profiles(*)')
         .eq('category', 'abdev')
-        .in('is_private', [false, null])
-        // include rows where visibility is public or null, and where audience is global or null
-        .or('visibility.eq.public,visibility.is.null,audience.eq.global,audience.is.null')
         .order('created_at', { ascending: false })
         .limit(80);
 
@@ -214,7 +211,12 @@ export default function FunPun() {
         });
       }
 
-      let allProjects = publicData || [];
+      let allProjects = (publicData || []).filter((project) => {
+        const visibility = project.visibility ?? 'public';
+        const audience = project.audience ?? 'global';
+        const isPrivate = project.is_private === true;
+        return !isPrivate && (visibility === 'public' || visibility === null || audience === 'global' || audience === null);
+      });
 
       // If user is logged in, also load their private projects
       if (user?.id) {
