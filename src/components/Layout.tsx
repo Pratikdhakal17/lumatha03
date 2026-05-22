@@ -224,9 +224,15 @@ function MobileSidebarDrawer({ open, onClose, onNavigate, isActive, unreadMessag
       >
         {/* Header - LUMATHA text aligned left */}
         <div className="p-5 border-b border-white/5 flex flex-col items-start justify-start bg-[#0B0D1F] min-h-[80px]">
-          <p className="text-lg font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
-          <p className="text-[9px] text-blue-400/70 uppercase tracking-[0.16em] font-bold whitespace-nowrap">Social Universe</p>
-        </div>
+  <button className="text-lg font-black tracking-wide text-blue-600 whitespace-nowrap hover:opacity-80 active:scale-95 transition-all" onClick={() => {
+    const event = new CustomEvent('lumatha_refresh_feed');
+    window.dispatchEvent(event);
+  }}>LUMATHA</button>
+  <button className="text-[9px] text-blue-400/70 uppercase tracking-[0.16em] font-bold whitespace-nowrap hover:opacity-80 active:scale-95 transition-all" onClick={() => {
+    const event = new CustomEvent('lumatha_refresh_section', { detail: { pathname: location.pathname } });
+    window.dispatchEvent(event);
+  }}>Social Universe</button>
+</div>
         {/* Navigation items - optimized for faster touch response */}
         <div className="flex-1 overflow-y-auto py-3 px-4 space-y-1.5 bg-[#0B0D1F]" style={{ touchAction: 'pan-y' }}>
           {items.map((item) => {
@@ -265,8 +271,8 @@ function DesktopSidebar({ isActive, onNavigate, unreadMessages, items, hidden = 
   return (
     <div className={cn("hidden lg:flex flex-col w-[280px] h-screen sticky top-0 border-r border-white/10 bg-[#0B0D1F] transition-all duration-500", hidden ? "-ml-[280px] opacity-0 pointer-events-none" : "ml-0 opacity-100")}>
       <div className="flex flex-col items-start justify-start h-auto px-4 py-3 border-b border-white/10 shrink-0">
-        <p className="text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
-        <p className="text-[8px] text-blue-400/70 uppercase tracking-[0.14em] font-bold whitespace-nowrap">Social Universe</p>
+        <button className="text-base font-black tracking-wide text-blue-600 whitespace-nowrap hover:opacity-80 transition-opacity" onClick={() => window.dispatchEvent(new CustomEvent('lumatha_refresh_feed'))}>LUMATHA</button>
+        <button className="text-[8px] text-blue-400/70 uppercase tracking-[0.14em] font-bold whitespace-nowrap hover:opacity-80 transition-opacity" onClick={() => window.dispatchEvent(new CustomEvent('lumatha_refresh_section', { detail: { pathname: location.pathname } }))}>Social Universe</button>
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto pr-2 no-scrollbar">
         {items.map((item) => {
@@ -705,7 +711,7 @@ function LayoutContent({ children }: LayoutProps) {
                       <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
                     </button>
                   )}
-                  <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
+                  <button onClick={() => window.dispatchEvent(new CustomEvent('lumatha_refresh_feed'))} className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap hover:opacity-80 transition-opacity">LUMATHA</button>
                 </>
               ) : isFeedPage ? (
                 <>
@@ -718,7 +724,7 @@ function LayoutContent({ children }: LayoutProps) {
                       <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
                     </button>
                   )}
-                  <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
+                  <button onClick={() => window.dispatchEvent(new CustomEvent('lumatha_refresh_feed'))} className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap hover:opacity-80 transition-opacity">LUMATHA</button>
                 </>
               ) : (
                 // Other sections: Show back or sidebar icon + section name
@@ -744,7 +750,7 @@ function LayoutContent({ children }: LayoutProps) {
                       </button>
                     )
                   )}
-                  <p className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap">LUMATHA</p>
+                  <button onClick={() => window.dispatchEvent(new CustomEvent('lumatha_refresh_feed'))} className="text-sm md:text-base font-black tracking-wide text-blue-600 whitespace-nowrap hover:opacity-80 transition-opacity">LUMATHA</button>
                 </>
               )}
             </div>

@@ -153,30 +153,34 @@ export function TodoModule() {
       // Archive completed todos before resetting
       archiveCompletedTodos('daily');
       
-      // Reset ALL todos to incomplete (completed = false) - clears to 0
+      // Reset ALL todos to fresh defaults after their duration expires - auto-clearing custom tasks
       const updated = { ...todos };
       
-      // Always reset daily todos every day
-      updated.daily = updated.daily.map(t => ({ ...t, completed: false, completed_at: undefined }));
+      // Always auto-clear daily todos every day back to default templates
+      const dailyDefaults = getDefaultTodos('daily');
+      updated.daily = dailyDefaults.map((text, i) => ({ id: `daily-${Date.now()}-${i}`, text, completed: false, category: 'daily', created_at: new Date().toISOString() }));
       
       // Reset weekly on Monday (day 1)
       const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday
       if (currentDay === 1) {
         archiveCompletedTodos('weekly');
-        updated.weekly = updated.weekly.map(t => ({ ...t, completed: false, completed_at: undefined }));
+        const weeklyDefaults = getDefaultTodos('weekly');
+        updated.weekly = weeklyDefaults.map((text, i) => ({ id: `weekly-${Date.now()}-${i}`, text, completed: false, category: 'weekly', created_at: new Date().toISOString() }));
       }
       
       // Reset monthly on 1st of month
       const currentDateOfMonth = now.getDate();
       if (currentDateOfMonth === 1) {
         archiveCompletedTodos('monthly');
-        updated.monthly = updated.monthly.map(t => ({ ...t, completed: false, completed_at: undefined }));
+        const monthlyDefaults = getDefaultTodos('monthly');
+        updated.monthly = monthlyDefaults.map((text, i) => ({ id: `monthly-${Date.now()}-${i}`, text, completed: false, category: 'monthly', created_at: new Date().toISOString() }));
       }
 
       // Reset yearly on Jan 1st so the 365-day overview rolls over cleanly
       if (now.getMonth() === 0 && currentDateOfMonth === 1) {
         archiveCompletedTodos('yearly');
-        updated.yearly = updated.yearly.map(t => ({ ...t, completed: false, completed_at: undefined }));
+        const yearlyDefaults = getDefaultTodos('yearly');
+        updated.yearly = yearlyDefaults.map((text, i) => ({ id: `yearly-${Date.now()}-${i}`, text, completed: false, category: 'yearly', created_at: new Date().toISOString() }));
       }
       
       setTodos(updated);
@@ -207,6 +211,23 @@ export function TodoModule() {
       console.log('Auto-reset complete for', today);
     }
   };
+
+  // Listen for universal refresh section trigger from branding header logo
+  useEffect(() => {
+    const handleRefresh = (e: Event) => {
+      const isTodoView = window.location.search.includes('tab=todo') || window.location.pathname.startsWith('/education');
+      if (isTodoView) {
+        loadTodos();
+        loadCustomFolders();
+        loadStreak();
+        loadStats();
+        loadHistory();
+        toast.success('Tasks refreshed!');
+      }
+    };
+    window.addEventListener('lumatha_refresh_section', handleRefresh);
+    return () => window.removeEventListener('lumatha_refresh_section', handleRefresh);
+  }, [user?.id, todosStorageKey]);
 
   const archiveCompletedTodos = (category: TodoCategory) => {
     const completedTodos = todos[category].filter(t => t.completed);
