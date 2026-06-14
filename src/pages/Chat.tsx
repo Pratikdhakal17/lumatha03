@@ -1,8 +1,8 @@
 import React, { Suspense, lazy, useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Send, Search, Paperclip, X, MoreVertical, 
+import {
+  Send, Search, Paperclip, X, MoreVertical,
   Archive, Ghost, Trash2, Mic, Music,
   Image, Users, UserSearch, MessageCircle, Star, Video as VideoIcon,
   Palette, Eye, Pin, Forward, Copy, Phone,
@@ -39,8 +39,8 @@ import { beginPerfTrace, endPerfTrace } from '@/lib/perfMarkers';
 import { useRouteLoadTrace } from '@/hooks/useRouteLoadTrace';
 import { QuickStickersSettings } from '@/components/chat/QuickStickersSettings';
 import { EmojiStickerPanel, type ImportedSticker, loadImportedStickers } from '@/components/chat/EmojiStickerPanel';
-import { 
-  MessageAttachmentsMenu, 
+import {
+  MessageAttachmentsMenu,
   GalleryAttachment,
   MomentAttachment,
   DocumentAttachment,
@@ -92,14 +92,14 @@ const NOTIFICATION_TYPES = {
 };
 
 // Notification queue for premium Instagram-style popups
-let notificationQueue: Array<{id: string; type: string; user?: string; title: string; content: string}> = [];
-const triggerNotificationPopup = (notification: {type: string; user?: string; title: string; content: string}) => {
+let notificationQueue: Array<{ id: string; type: string; user?: string; title: string; content: string }> = [];
+const triggerNotificationPopup = (notification: { type: string; user?: string; title: string; content: string }) => {
   const id = `notif-${Date.now()}-${Math.random()}`;
-  notificationQueue.push({id, ...notification});
-  
+  notificationQueue.push({ id, ...notification });
+
   // Create toast notification with custom styling
   let icon = '';
-  switch(notification.type) {
+  switch (notification.type) {
     case NOTIFICATION_TYPES.LIKE: icon = '❤️'; break;
     case NOTIFICATION_TYPES.COMMENT: icon = '💬'; break;
     case NOTIFICATION_TYPES.FOLLOW: icon = '👥'; break;
@@ -108,12 +108,12 @@ const triggerNotificationPopup = (notification: {type: string; user?: string; ti
     case NOTIFICATION_TYPES.MESSAGE: icon = '📬'; break;
     default: icon = '📬';
   }
-  
+
   toast.success(`${icon} ${notification.title}`, {
     description: notification.content,
     duration: 4000,
   });
-  
+
   // Auto-remove from queue after 5s
   setTimeout(() => { notificationQueue = notificationQueue.filter(n => n.id !== id); }, 5000);
 };
@@ -333,12 +333,12 @@ export default function Chat() {
         // no-op
       }
     };
-    return () => { try { delete (window as any).openChat; } catch {} };
+    return () => { try { delete (window as any).openChat; } catch { } };
   }, [navigate]);
-  
+
   // Track route performance for Chat page
   useRouteLoadTrace('Chat', 250);
-  
+
   // Core state
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -476,25 +476,25 @@ export default function Chat() {
 
   const longPressQuickReactions = useMemo(() => {
     return [...new Set([...Object.keys(reactionUsage), ...QUICK_REACTIONS, '😮', '😢', '😡'])]
-      try {
-        return [...new Set([...Object.keys(reactionUsage), ...QUICK_REACTIONS, '😮', '😢', '😡'])]
-          .sort((a, b) => (reactionUsage[b] || 0) - (reactionUsage[a] || 0))
-          .slice(0, 5);
-      } catch (err) {
-        console.error('[Chat] longPressQuickReactions useMemo failed', err);
-        return QUICK_REACTIONS.slice(0, 5);
-      }
+    try {
+      return [...new Set([...Object.keys(reactionUsage), ...QUICK_REACTIONS, '😮', '😢', '😡'])]
+        .sort((a, b) => (reactionUsage[b] || 0) - (reactionUsage[a] || 0))
+        .slice(0, 5);
+    } catch (err) {
+      console.error('[Chat] longPressQuickReactions useMemo failed', err);
+      return QUICK_REACTIONS.slice(0, 5);
+    }
   }, [reactionUsage]);
 
   const primaryStickerPreview = useMemo(() => {
     if (!primaryStickerId) return null;
-      try {
-        if (!primaryStickerId) return null;
-        return loadImportedStickers().find((item) => item.id === primaryStickerId) || null;
-      } catch (err) {
-        console.error('[Chat] primaryStickerPreview useMemo failed', err);
-        return null;
-      }
+    try {
+      if (!primaryStickerId) return null;
+      return loadImportedStickers().find((item) => item.id === primaryStickerId) || null;
+    } catch (err) {
+      console.error('[Chat] primaryStickerPreview useMemo failed', err);
+      return null;
+    }
   }, [primaryStickerId, showEmojiStickerPanel]);
   // Defensive: guard theme mapping to avoid any unexpected runtime errors
   try {
@@ -796,7 +796,7 @@ export default function Chat() {
     try {
       const container = conversationsContainerRef.current;
       if (container) previousConversationsScrollRef.current = container.scrollTop || 0;
-    } catch {}
+    } catch { }
     setCurrentChatUser(userId);
     // Reset transient overlays/banners so state from a previous chat does not leak.
     setLongPressTarget(null);
@@ -821,7 +821,7 @@ export default function Chat() {
         .eq('from_user_id', userId)
         .eq('type', 'message')
         .eq('is_read', false)
-        .then(() => {});
+        .then(() => { });
     }
   }, [userId, fetchMessages, user]);
 
@@ -1523,7 +1523,7 @@ export default function Chat() {
           previousConversationsScrollRef.current = 0;
         }
       }, 60);
-    } catch {}
+    } catch { }
   };
 
   function openMobileSidebar() {
@@ -1535,7 +1535,7 @@ export default function Chat() {
     setViewedOnceMessages((prev) => {
       const updated = new Set(prev);
       updated.add(msgId);
-      try { localStorage.setItem('viewedOnceMessages', JSON.stringify([...updated])); } catch {}
+      try { localStorage.setItem('viewedOnceMessages', JSON.stringify([...updated])); } catch { }
       return updated;
     });
   }, []);
@@ -1849,7 +1849,7 @@ export default function Chat() {
       window.open(targetUrl, '_blank', 'noopener,noreferrer');
       return;
     }
-    
+
     // Robustness fix: Ensure any existing dialogs/sheets have a moment to close
     // Increased delay to 180ms to ensure the settings sheet transition is well underway
     setTimeout(() => {
@@ -1860,75 +1860,75 @@ export default function Chat() {
   const detailMediaData = useMemo(() => {
     try {
       const pics: Array<{ id: string; url: string }> = [];
-    imageMessages.forEach((msg) => {
-      if (!msg.media_url) return;
-      if (msg.media_type === 'images') {
-        try {
-          const urls = JSON.parse(msg.media_url) as string[];
-          urls.forEach((url, idx) => {
-            if (typeof url === 'string' && url) {
-              pics.push({ id: `${msg.id}-${idx}`, url });
-            }
-          });
-        } catch {
+      imageMessages.forEach((msg) => {
+        if (!msg.media_url) return;
+        if (msg.media_type === 'images') {
+          try {
+            const urls = JSON.parse(msg.media_url) as string[];
+            urls.forEach((url, idx) => {
+              if (typeof url === 'string' && url) {
+                pics.push({ id: `${msg.id}-${idx}`, url });
+              }
+            });
+          } catch {
+            pics.push({ id: msg.id, url: msg.media_url });
+          }
+        } else {
           pics.push({ id: msg.id, url: msg.media_url });
         }
-      } else {
-        pics.push({ id: msg.id, url: msg.media_url });
-      }
-    });
-
-    const videos = videoMessages
-      .filter((msg) => !!msg.media_url)
-      .map((msg) => ({ id: msg.id, url: msg.media_url as string }));
-
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const shared = sharedMessages.reduce<Array<{ id: string; url: string; title: string; domain: string; createdAt?: string | null }>>((acc, msg) => {
-      const content = msg.content || '';
-      const directUrl = extractFirstUrl(content);
-      const postId = extractSharedPostId(content);
-      const fallbackUrl = postId && origin ? `${origin}/public?post=${postId}` : null;
-      const url = directUrl || fallbackUrl;
-      if (!url) return acc;
-
-      let domain = 'link';
-      try {
-        domain = new URL(url).hostname;
-      } catch {
-        // keep default
-      }
-
-      acc.push({
-        id: msg.id,
-        url,
-        title: postId ? 'Shared post' : 'Shared link',
-        domain,
-        createdAt: msg.created_at,
       });
-      return acc;
-    }, []);
 
-    const pdf = pdfMessages
-      .filter((msg) => !!msg.media_url)
-      .map((msg) => {
-        const source = msg.media_url as string;
-        let name = 'Document.pdf';
+      const videos = videoMessages
+        .filter((msg) => !!msg.media_url)
+        .map((msg) => ({ id: msg.id, url: msg.media_url as string }));
+
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const shared = sharedMessages.reduce<Array<{ id: string; url: string; title: string; domain: string; createdAt?: string | null }>>((acc, msg) => {
+        const content = msg.content || '';
+        const directUrl = extractFirstUrl(content);
+        const postId = extractSharedPostId(content);
+        const fallbackUrl = postId && origin ? `${origin}/public?post=${postId}` : null;
+        const url = directUrl || fallbackUrl;
+        if (!url) return acc;
+
+        let domain = 'link';
         try {
-          const pathname = new URL(source).pathname;
-          const raw = pathname.split('/').pop();
-          if (raw) name = decodeURIComponent(raw);
+          domain = new URL(url).hostname;
         } catch {
-          const raw = source.split('/').pop();
-          if (raw) name = raw;
+          // keep default
         }
 
-        return {
+        acc.push({
           id: msg.id,
-          url: source,
-          name,
+          url,
+          title: postId ? 'Shared post' : 'Shared link',
+          domain,
           createdAt: msg.created_at,
-        };
-      });
+        });
+        return acc;
+      }, []);
+
+      const pdf = pdfMessages
+        .filter((msg) => !!msg.media_url)
+        .map((msg) => {
+          const source = msg.media_url as string;
+          let name = 'Document.pdf';
+          try {
+            const pathname = new URL(source).pathname;
+            const raw = pathname.split('/').pop();
+            if (raw) name = decodeURIComponent(raw);
+          } catch {
+            const raw = source.split('/').pop();
+            if (raw) name = raw;
+          }
+
+          return {
+            id: msg.id,
+            url: source,
+            name,
+            createdAt: msg.created_at,
+          };
+        });
 
       return { pics, videos, shared, pdf };
     } catch (err) {
@@ -1939,20 +1939,20 @@ export default function Chat() {
 
   const openMediaFromDetails = useCallback((url: string) => {
     console.debug('[Chat] openMediaFromDetails', url, 'allChatMedia count:', allChatMedia.length);
-    
+
     // First check if URL is in allChatMedia (main chat media viewer)
     if (allChatMedia.some((item) => item.url === url)) {
       console.debug('[Chat] URL found in allChatMedia, opening viewer');
       openChatMediaViewer(url);
       return;
     }
-    
+
     // If not in allChatMedia, check if it's in detailMediaData and add it temporarily
     const allDetailUrls = [
       ...detailMediaData.pics.map(p => p.url),
       ...detailMediaData.videos.map(v => v.url)
     ];
-    
+
     if (allDetailUrls.includes(url)) {
       console.debug('[Chat] URL found in detailMediaData but not allChatMedia, adding to viewer');
       // Create a temporary combined array for the viewer
@@ -1967,7 +1967,7 @@ export default function Chat() {
         return;
       }
     }
-    
+
     console.debug('[Chat] URL not found anywhere, opening in new tab');
     window.open(url, '_blank', 'noopener,noreferrer');
   }, [allChatMedia, openChatMediaViewer, detailMediaData]);
@@ -2287,6 +2287,9 @@ export default function Chat() {
       event.stopPropagation();
       return;
     }
+    // Force navigation to ensure the chat opens properly
+    event.preventDefault();
+    event.stopPropagation();
     navigate(`/chat/${userId}`);
   }, [navigate]);
 
@@ -2301,13 +2304,13 @@ export default function Chat() {
 
   if (currentChatUser) {
     return (
-        <div
-          className={cn(
-            "flex flex-col chat-protected bg-[#0a0f1e]",
-            "fixed inset-0 z-40 w-full overflow-hidden min-h-0"
-          )}
-          style={{ height: '100svh', maxHeight: '100dvh' }}
-        >
+      <div
+        className={cn(
+          "flex flex-col chat-protected bg-[#0a0f1e]",
+          "fixed inset-0 z-40 w-full overflow-hidden min-h-0"
+        )}
+        style={{ height: '100svh', maxHeight: '100dvh' }}
+      >
         <WatermarkOverlay username={username} enabled={false} />
         {isBlurred && <BlurOverlay />}
 
@@ -2481,10 +2484,10 @@ export default function Chat() {
               </div>
               {/* Heart reaction to message being replied to */}
               {replyTo && !editingMsg && (
-                <button 
+                <button
                   className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 hover:bg-white/10 transition-colors"
-                  onClick={() => { 
-                    handleReactToMessage(replyTo.id, '❤️'); 
+                  onClick={() => {
+                    handleReactToMessage(replyTo.id, '❤️');
                     setReplyTo(null);
                   }}
                   title="React with heart"
@@ -2501,37 +2504,37 @@ export default function Chat() {
           {/* Media Preview */}
           {mediaPreviews.length > 0 && (
             <div className="shrink-0 p-2.5" style={{ background: '#111827', borderTop: '1px solid #1f2937', paddingBottom: 'calc(10px + env(safe-area-inset-bottom, 0px))' }}>
-            <div className="flex items-center gap-2 mb-1">
-              <button
-                className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium transition-all", viewOnceMode ? "text-white" : "")}
-                style={viewOnceMode ? { background: '#7C3AED' } : { background: '#1e293b', color: '#94A3B8', border: '1px solid #374151' }}
-                onClick={() => setViewOnceMode(!viewOnceMode)}
-              >
-                <Eye className="w-3.5 h-3.5" />
-                View once {viewOnceMode ? '✓' : ''}
-              </button>
+              <div className="flex items-center gap-2 mb-1">
+                <button
+                  className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium transition-all", viewOnceMode ? "text-white" : "")}
+                  style={viewOnceMode ? { background: '#7C3AED' } : { background: '#1e293b', color: '#94A3B8', border: '1px solid #374151' }}
+                  onClick={() => setViewOnceMode(!viewOnceMode)}
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  View once {viewOnceMode ? '✓' : ''}
+                </button>
+              </div>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                {mediaPreviews.map((preview, i) => (
+                  <div key={i} className="relative shrink-0">
+                    {mediaFiles[i]?.type.startsWith('video') ? (
+                      <div className="h-16 w-16 rounded-xl flex items-center justify-center" style={{ background: '#1e293b' }}><VideoIcon className="w-6 h-6" style={{ color: '#4B5563' }} /></div>
+                    ) : (
+                      <img src={preview} alt="" className="h-16 w-16 object-cover rounded-xl" />
+                    )}
+                    <button className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full flex items-center justify-center shadow-md" style={{ background: '#EF4444' }} onClick={() => removeMedia(i)}>
+                      <X className="w-3 h-3 text-white" />
+                    </button>
+                    {viewOnceMode && (
+                      <div className="absolute bottom-0.5 left-0.5 px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(124,58,237,0.8)' }}>
+                        <Eye className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-              {mediaPreviews.map((preview, i) => (
-                <div key={i} className="relative shrink-0">
-                  {mediaFiles[i]?.type.startsWith('video') ? (
-                    <div className="h-16 w-16 rounded-xl flex items-center justify-center" style={{ background: '#1e293b' }}><VideoIcon className="w-6 h-6" style={{ color: '#4B5563' }} /></div>
-                  ) : (
-                    <img src={preview} alt="" className="h-16 w-16 object-cover rounded-xl" />
-                  )}
-                  <button className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full flex items-center justify-center shadow-md" style={{ background: '#EF4444' }} onClick={() => removeMedia(i)}>
-                    <X className="w-3 h-3 text-white" />
-                  </button>
-                  {viewOnceMode && (
-                    <div className="absolute bottom-0.5 left-0.5 px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(124,58,237,0.8)' }}>
-                      <Eye className="w-3 h-3 text-white" />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+          )}
 
           {uploading && mediaFiles.length > 0 && <UploadProgressBar filesCount={mediaFiles.length} currentIndex={uploadIndex} />}
 
@@ -2667,22 +2670,22 @@ export default function Chat() {
               try {
                 setUploading(true);
                 setUploadIndex(0);
-                
+
                 // Upload moment to storage
                 const ext = 'jpg';
                 const name = `${user.id}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${ext}`;
                 const { error } = await supabase.storage.from('chat-media').upload(name, blob, { cacheControl: '31536000', contentType: 'image/jpeg' });
-                
+
                 if (error) {
                   toast.error('Failed to upload moment');
                   return;
                 }
-                
+
                 const mediaUrl = getPublicUrlSafe('chat-media', name) ?? '';
-                
+
                 // Send message with capturing_moment media type (view-once moment capture)
                 await sendMessage(currentChatUser, '📸 Capture Moment', mediaUrl, 'capturing_moment');
-                
+
                 setShowAttachments(false);
                 setSelectedAttachmentType(null);
                 toast.success('Moment sent');
@@ -2977,25 +2980,25 @@ export default function Chat() {
       {/* Subsection Navigation - Layout handles the top header */}
       <SubsectionNavigation />
 
-        {/* Search Bar - Only show when in main tab and search is enabled */}
-        {chatTab === 'main' && showSearch && (
-          <div className="px-4 py-2.5 border-b border-white/5" style={{ background: '#0a0f1e' }}>
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#4B5563' }} />
-              <input
-                ref={searchInputRef}
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search conversations..."
-                className="w-full h-11 rounded-full pl-11 pr-10 text-[14px] font-medium text-white placeholder:text-[#4B5563] outline-none"
-                style={{ background: '#111827', border: '1px solid #1f2937' }}
-              />
-              <button onClick={() => { setShowSearch(false); setSearchQuery(''); }} className="absolute right-3 top-1/2 -translate-y-1/2">
-                <X className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </div>
+      {/* Search Bar - Only show when in main tab and search is enabled */}
+      {chatTab === 'main' && showSearch && (
+        <div className="px-4 py-2.5 border-b border-white/5" style={{ background: '#0a0f1e' }}>
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#4B5563' }} />
+            <input
+              ref={searchInputRef}
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search conversations..."
+              className="w-full h-11 rounded-full pl-11 pr-10 text-[14px] font-medium text-white placeholder:text-[#4B5563] outline-none"
+              style={{ background: '#111827', border: '1px solid #1f2937' }}
+            />
+            <button onClick={() => { setShowSearch(false); setSearchQuery(''); }} className="absolute right-3 top-1/2 -translate-y-1/2">
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
           </div>
-        )}
+        </div>
+      )}
 
       {/* Main / Archived content - All tabs have consistent banner sizing */}
       {chatTab === 'find' ? (
@@ -3076,18 +3079,18 @@ export default function Chat() {
             </div>
           </div>
           <div ref={conversationsContainerRef} className="px-4 pt-2">
-          {visibleConversations.map(conv => renderHiddenChatRow(conv))}
-          {remainingConversations > 0 && (
-            <div className="flex justify-center py-3">
-              <button
-                onClick={() => setChatRenderCount((prev) => prev + CHAT_WINDOW_STEP)}
-                className="px-4 py-2 rounded-full text-[12px] font-semibold"
-                style={{ background: '#0f172a', color: '#94A3B8', border: '1px solid #334155' }}
-              >
-                Load more hidden chats ({remainingConversations})
-              </button>
-            </div>
-          )}
+            {visibleConversations.map(conv => renderHiddenChatRow(conv))}
+            {remainingConversations > 0 && (
+              <div className="flex justify-center py-3">
+                <button
+                  onClick={() => setChatRenderCount((prev) => prev + CHAT_WINDOW_STEP)}
+                  className="px-4 py-2 rounded-full text-[12px] font-semibold"
+                  style={{ background: '#0f172a', color: '#94A3B8', border: '1px solid #334155' }}
+                >
+                  Load more hidden chats ({remainingConversations})
+                </button>
+              </div>
+            )}
           </div>
         </>
       ) : sortedConversations.length > 0 ? (
@@ -3105,44 +3108,44 @@ export default function Chat() {
             </div>
           </div>
           <div ref={conversationsContainerRef} className="pt-2">
-          {visibleConversations.map(conv => {
-            const isPinned = pinnedChats.has(conv.user_id);
-            const isMuted = mutedChats.has(conv.user_id);
-            const isPrivate = privateChats.has(conv.user_id);
-            const hasUnread = conv.unread_count > 0;
-            const isYou = conv.last_message?.startsWith('You:') || false;
-            const preview = conv.last_message || '';
+            {visibleConversations.map(conv => {
+              const isPinned = pinnedChats.has(conv.user_id);
+              const isMuted = mutedChats.has(conv.user_id);
+              const isPrivate = privateChats.has(conv.user_id);
+              const hasUnread = conv.unread_count > 0;
+              const isYou = conv.last_message?.startsWith('You:') || false;
+              const preview = conv.last_message || '';
 
-            return (
-              <div key={conv.user_id}>
-                <ChatConversationRow
-                  conv={conv}
-                  isMobile={isMobile}
-                  nickname={chatNicknames[conv.user_id]}
-                  isPinned={isPinned}
-                  isMuted={isMuted}
-                  isPrivate={isPrivate}
-                  hasUnread={hasUnread}
-                  preview={preview}
-                  onRowClick={handleConversationRowClick}
-                  onNavigate={(targetUserId) => navigate(`/chat/${targetUserId}`)}
-                  onOpenOptions={openConversationOptions}
-                  formatTime={formatTime}
-                />
+              return (
+                <div key={conv.user_id}>
+                  <ChatConversationRow
+                    conv={conv}
+                    isMobile={isMobile}
+                    nickname={chatNicknames[conv.user_id]}
+                    isPinned={isPinned}
+                    isMuted={isMuted}
+                    isPrivate={isPrivate}
+                    hasUnread={hasUnread}
+                    preview={preview}
+                    onRowClick={handleConversationRowClick}
+                    onNavigate={(targetUserId) => navigate(`/chat/${targetUserId}`)}
+                    onOpenOptions={openConversationOptions}
+                    formatTime={formatTime}
+                  />
+                </div>
+              );
+            })}
+            {remainingConversations > 0 && (
+              <div className="flex justify-center py-3">
+                <button
+                  onClick={() => setChatRenderCount((prev) => prev + CHAT_WINDOW_STEP)}
+                  className="px-4 py-2 rounded-full text-[12px] font-semibold"
+                  style={{ background: '#0f172a', color: '#94A3B8', border: '1px solid #334155' }}
+                >
+                  Load more chats ({remainingConversations})
+                </button>
               </div>
-            );
-          })}
-          {remainingConversations > 0 && (
-            <div className="flex justify-center py-3">
-              <button
-                onClick={() => setChatRenderCount((prev) => prev + CHAT_WINDOW_STEP)}
-                className="px-4 py-2 rounded-full text-[12px] font-semibold"
-                style={{ background: '#0f172a', color: '#94A3B8', border: '1px solid #334155' }}
-              >
-                Load more chats ({remainingConversations})
-              </button>
-            </div>
-          )}
+            )}
           </div>
         </>
       ) : (
@@ -3174,60 +3177,60 @@ export default function Chat() {
         const targetAvatar = targetConv?.user_avatar;
         const hasNickname = Boolean(chatNicknames[longPressTarget || '']);
         return (
-        <div className="fixed inset-0 z-50">
-          <div
-            className="absolute inset-0 bg-black/55"
-            onClick={handleConversationBackdropClose}
-            style={{ cursor: 'pointer' }}
-            aria-label="Close conversation options"
-          />
-          <div className="absolute bottom-0 left-0 right-0 mx-auto w-full max-w-[420px] rounded-t-3xl border border-white/10" style={{ background: '#111827', animation: 'slideUp 0.25s ease-out' }} onClick={(e) => e.stopPropagation()}>
-            {/* User Profile Header */}
-            <div 
-              className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-white/[0.02] transition-colors" 
-              style={{ borderBottom: '1px solid #1f2937' }}
-              onClick={() => { closeConversationOptions(); navigate(`/profile/${longPressTarget}`); }}
-            >
-              <Avatar className="w-14 h-14 ring-2 ring-[#7C3AED]/30">
-                <AvatarImage src={targetAvatar || undefined} />
-                <AvatarFallback style={{ background: 'rgba(124,58,237,0.2)', color: '#A78BFA', fontSize: 20, fontWeight: 700 }}>
-                  {targetName.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-[17px] font-bold text-white truncate" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{targetName}</p>
-                <p className="text-[13px] text-[#64748B] truncate">{hasNickname ? targetConv?.user_name : 'Tap to view profile'}</p>
-              </div>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); closeConversationOptions(); }}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/5"
-                aria-label="Close options"
+          <div className="fixed inset-0 z-50">
+            <div
+              className="absolute inset-0 bg-black/55"
+              onClick={handleConversationBackdropClose}
+              style={{ cursor: 'pointer' }}
+              aria-label="Close conversation options"
+            />
+            <div className="absolute bottom-0 left-0 right-0 mx-auto w-full max-w-[420px] rounded-t-3xl border border-white/10" style={{ background: '#111827', animation: 'slideUp 0.25s ease-out' }} onClick={(e) => e.stopPropagation()}>
+              {/* User Profile Header */}
+              <div
+                className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                style={{ borderBottom: '1px solid #1f2937' }}
+                onClick={() => { closeConversationOptions(); navigate(`/profile/${longPressTarget}`); }}
               >
-                <X className="w-4 h-4" style={{ color: '#94A3B8' }} />
-              </button>
-            </div>
-            <div className="py-2 max-h-[58vh] overflow-y-auto">
-              {[
-                ...(chatTab !== 'hidden' ? [
-                  { icon: <Pin className="w-5 h-5" />, label: pinnedChats.has(longPressTarget || '') ? 'Unpin Chat' : 'Pin Chat', action: () => longPressTarget && togglePinChat(longPressTarget), color: '#94A3B8' },
-                ] : []),
-                { icon: <Archive className="w-5 h-5" />, label: chatTab === 'hidden' ? (archivedChats.has(longPressTarget || '') ? 'Unarchive Chat' : 'Archive Chat') : 'Archive Chat', action: () => { if (longPressTarget) toggleInSet('archivedChats', longPressTarget, archivedChats, setArchivedChats); }, color: '#94A3B8' },
-                { icon: <Lock className="w-5 h-5" />, label: privateChats.has(longPressTarget || '') ? 'Remove from Private' : 'Add to Private', action: () => { if (longPressTarget) toggleInSet('privateChats', longPressTarget, privateChats, setPrivateChats); }, color: '#C4B5FD' },
-                { icon: <Users className="w-5 h-5" />, label: 'Create Group', action: () => { setShowGroupCreation(true); }, color: '#94A3B8' },
-              ].map((item, i) => (
+                <Avatar className="w-14 h-14 ring-2 ring-[#7C3AED]/30">
+                  <AvatarImage src={targetAvatar || undefined} />
+                  <AvatarFallback style={{ background: 'rgba(124,58,237,0.2)', color: '#A78BFA', fontSize: 20, fontWeight: 700 }}>
+                    {targetName.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[17px] font-bold text-white truncate" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{targetName}</p>
+                  <p className="text-[13px] text-[#64748B] truncate">{hasNickname ? targetConv?.user_name : 'Tap to view profile'}</p>
+                </div>
                 <button
-                  key={i}
-                  onClick={() => { item.action(); closeConversationOptions(); }}
-                  className="w-full flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-white/[0.03]"
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); closeConversationOptions(); }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/5"
+                  aria-label="Close options"
                 >
-                  <span style={{ color: item.color }}>{item.icon}</span>
-                  <span className="text-[15px] font-medium" style={{ color: item.color }}>{item.label}</span>
+                  <X className="w-4 h-4" style={{ color: '#94A3B8' }} />
                 </button>
-              ))}
+              </div>
+              <div className="py-2 max-h-[58vh] overflow-y-auto">
+                {[
+                  ...(chatTab !== 'hidden' ? [
+                    { icon: <Pin className="w-5 h-5" />, label: pinnedChats.has(longPressTarget || '') ? 'Unpin Chat' : 'Pin Chat', action: () => longPressTarget && togglePinChat(longPressTarget), color: '#94A3B8' },
+                  ] : []),
+                  { icon: <Archive className="w-5 h-5" />, label: chatTab === 'hidden' ? (archivedChats.has(longPressTarget || '') ? 'Unarchive Chat' : 'Archive Chat') : 'Archive Chat', action: () => { if (longPressTarget) toggleInSet('archivedChats', longPressTarget, archivedChats, setArchivedChats); }, color: '#94A3B8' },
+                  { icon: <Lock className="w-5 h-5" />, label: privateChats.has(longPressTarget || '') ? 'Remove from Private' : 'Add to Private', action: () => { if (longPressTarget) toggleInSet('privateChats', longPressTarget, privateChats, setPrivateChats); }, color: '#C4B5FD' },
+                  { icon: <Users className="w-5 h-5" />, label: 'Create Group', action: () => { setShowGroupCreation(true); }, color: '#94A3B8' },
+                ].map((item, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { item.action(); closeConversationOptions(); }}
+                    className="w-full flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-white/[0.03]"
+                  >
+                    <span style={{ color: item.color }}>{item.icon}</span>
+                    <span className="text-[15px] font-medium" style={{ color: item.color }}>{item.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
         );
       })()}
 

@@ -199,7 +199,7 @@ export default function FunPun() {
         .limit(80);
 
       const { data: publicData, error: publicError } = await publicQuery;
-      
+
       if (publicError) {
         console.error('[AB Dev] RLS Error loading public projects:', {
           message: publicError.message,
@@ -815,7 +815,7 @@ export default function FunPun() {
       </div>
 
       <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
-        <DialogContent className="max-w-4xl bg-[#0a0f1e] border-white/10 max-h-[90vh] overflow-y-auto w-[96vw]">
+        <DialogContent className="max-w-4xl bg-[#0a0f1e] border-white/10 max-h-[90vh] overflow-y-auto w-[96vw] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           <DialogHeader>
             <DialogTitle>Upload New Project to AB Dev</DialogTitle>
           </DialogHeader>
@@ -912,8 +912,8 @@ export default function FunPun() {
               <Button variant="outline" onClick={() => setShowUploadModal(false)}>
                 Cancel
               </Button>
-              <Button 
-                onClick={handlePublish} 
+              <Button
+                onClick={handlePublish}
                 className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold"
               >
                 Publish

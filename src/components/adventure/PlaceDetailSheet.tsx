@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { 
-  ArrowLeft, MapPin, Star, Check, Heart, 
+import {
+  ArrowLeft, MapPin, Star, Check, Heart,
   ExternalLink, Sparkles, Calendar, Users, MessageCircle, Bookmark, X,
   Navigation
 } from 'lucide-react';
@@ -111,22 +111,22 @@ export function PlaceDetailSheet({
               <h2 className="text-[17px] font-bold text-white truncate font-['Space_Grotesk']">{place.name}</h2>
             </div>
           </div>
-          
+
           <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
             <div className="w-full aspect-video overflow-hidden relative">
               <img src={place.image} className="w-full h-full object-cover" alt="" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1e] to-transparent" />
             </div>
             <div className="relative z-10 min-h-0 flex-1 flex flex-col">
-               <AdventureCommentsDialog 
-                 open={true} 
-                 onOpenChange={() => {}} 
-                 itemId={place.id} 
-                 itemTitle={place.name} 
-                 itemType="place"
-                   mediaUrl={place.image}
-                 inline
-               />
+              <AdventureCommentsDialog
+                open={true}
+                onOpenChange={() => { }}
+                itemId={place.id}
+                itemTitle={place.name}
+                itemType="place"
+                mediaUrl={place.image}
+                inline
+              />
             </div>
           </div>
         </SheetContent>
@@ -136,9 +136,9 @@ export function PlaceDetailSheet({
 
   return (
     <Sheet open={true} onOpenChange={onOpenChange}>
-      <SheetContent 
-        side="bottom" 
-        className="h-full sm:h-full md:h-full rounded-none p-0 border-0 [&>button]:hidden shadow-2xl flex flex-col"
+      <SheetContent
+        side="bottom"
+        className="max-h-[85vh] sm:max-h-[90vh] md:max-h-[90vh] rounded-t-3xl p-0 border-0 [&>button]:hidden shadow-2xl flex flex-col"
         style={{ background: '#0a0f1e' }}
       >
         <SheetTitle className="sr-only">Place details</SheetTitle>
@@ -158,8 +158,8 @@ export function PlaceDetailSheet({
 
         <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
           <div className="w-full aspect-[4/3] relative overflow-hidden">
-            <LazyBlurImage 
-              src={place.image} 
+            <LazyBlurImage
+              src={place.image}
               alt={place.name}
               className="w-full h-full object-cover"
             />
@@ -198,7 +198,7 @@ export function PlaceDetailSheet({
                 {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month) => {
                   const isBest = bestMonths.includes(month);
                   return (
-                    <div 
+                    <div
                       key={month}
                       className={cn(
                         "shrink-0 w-14 h-16 rounded-2xl flex flex-col items-center justify-center gap-1 border transition-all",
@@ -216,7 +216,7 @@ export function PlaceDetailSheet({
         </div>
 
         <div className="fixed bottom-0 left-0 right-0 p-6 border-t border-white/5 bg-[#0a0f1e]/95 backdrop-blur-2xl z-30 flex items-center gap-3 pb-safe">
-          <button 
+          <button
             onClick={onToggleLove}
             className={cn(
               "w-12 h-12 rounded-xl border flex items-center justify-center transition-all active:scale-90",
@@ -225,15 +225,15 @@ export function PlaceDetailSheet({
           >
             <Heart className={cn("w-5 h-5", isLoved && "fill-current")} />
           </button>
-          
-          <button 
+
+          <button
             onClick={() => setShowComments(true)}
             className="w-12 h-12 rounded-xl bg-slate-900 border border-white/5 flex items-center justify-center text-slate-500 active:scale-90 transition-all"
           >
             <MessageCircle className="w-5 h-5" />
           </button>
 
-          <button 
+          <button
             onClick={onToggleSave ? onToggleSave : () => { toast.success('Saved to collection ✨'); }}
             className={cn(
               "w-12 h-12 rounded-xl border flex items-center justify-center transition-all active:scale-90",

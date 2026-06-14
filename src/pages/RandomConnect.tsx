@@ -17,7 +17,7 @@ const RandomConnect: React.FC = () => {
   const sessionStartRef = useRef<number>(0);
   const [showMemories, setShowMemories] = useState(false);
   const prevStatusRef = useRef<string>('idle');
-  
+
   const {
     status, mode, setMode, language, setLanguage, region, setRegion,
     interests, setInterests, matchedInterests,
@@ -115,7 +115,7 @@ const RandomConnect: React.FC = () => {
   const partnerId = session?.user1_id === user.id ? session?.user2_id : session?.user1_id;
 
   return (
-    <div className="min-h-screen pb-20" style={{ background: 'hsl(220,60%,8%)' }}>
+    <div className="h-screen overflow-y-auto pb-20" style={{ background: 'hsl(220,60%,8%)' }}>
       {status === 'idle' && (
         <ModeSelector
           mode={mode} setMode={setMode}

@@ -214,25 +214,35 @@ function MobileSidebarDrawer({ open, onClose, onNavigate, isActive, unreadMessag
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent 
-        side="left" 
+      <SheetContent
+        side="left"
         className="w-[80vw] max-w-[280px] min-w-[240px] p-0 border-r border-white/5 bg-[#0B0D1F] flex flex-col"
-        style={{ 
+        style={{
           willChange: 'transform',
           transform: 'translateZ(0)',
         }}
       >
-        {/* Header - LUMATHA text aligned left */}
-        <div className="p-5 border-b border-white/5 flex flex-col items-start justify-start bg-[#0B0D1F] min-h-[80px]">
-  <button className="text-lg font-black tracking-wide text-blue-600 whitespace-nowrap hover:opacity-80 active:scale-95 transition-all" onClick={() => {
-    const event = new CustomEvent('lumatha_refresh_feed');
-    window.dispatchEvent(event);
-  }}>LUMATHA</button>
-  <button className="text-[9px] text-blue-400/70 uppercase tracking-[0.16em] font-bold whitespace-nowrap hover:opacity-80 active:scale-95 transition-all" onClick={() => {
-    const event = new CustomEvent('lumatha_refresh_section', { detail: { pathname: location.pathname } });
-    window.dispatchEvent(event);
-  }}>Social Universe</button>
-</div>
+        {/* Header - LUMATHA text aligned left with close button */}
+        <div className="p-5 border-b border-white/5 flex items-center justify-between bg-[#0B0D1F] min-h-[80px]">
+          <div className="flex flex-col items-start justify-start">
+            <button className="text-lg font-black tracking-wide text-blue-600 whitespace-nowrap hover:opacity-80 active:scale-95 transition-all" onClick={() => {
+              const event = new CustomEvent('lumatha_refresh_feed');
+              window.dispatchEvent(event);
+            }}>LUMATHA</button>
+            <button className="text-[9px] text-blue-400/70 uppercase tracking-[0.16em] font-bold whitespace-nowrap hover:opacity-80 active:scale-95 transition-all" onClick={() => {
+              const event = new CustomEvent('lumatha_refresh_section', { detail: { pathname: location.pathname } });
+              window.dispatchEvent(event);
+            }}>Social Universe</button>
+          </div>
+          {/* Custom close button (X icon) */}
+          <button
+            onClick={onClose}
+            className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5"
+            aria-label="Close sidebar"
+          >
+            <X className="w-5 h-5 text-blue-500" strokeWidth={2} />
+          </button>
+        </div>
         {/* Navigation items - optimized for faster touch response */}
         <div className="flex-1 overflow-y-auto py-3 px-4 space-y-1.5 bg-[#0B0D1F]" style={{ touchAction: 'pan-y' }}>
           {items.map((item) => {
@@ -240,9 +250,9 @@ function MobileSidebarDrawer({ open, onClose, onNavigate, isActive, unreadMessag
             const Icon = item.icon;
             const showBadge = item.url === '/chat' && unreadMessages > 0;
             return (
-              <button 
-                key={item.url} 
-                onClick={() => handleNavigate(item.url)} 
+              <button
+                key={item.url}
+                onClick={() => handleNavigate(item.url)}
                 className={cn(
                   "w-full flex items-center gap-3.5 px-4 py-4 rounded-xl transition-colors duration-150 relative active:scale-95",
                   active ? "bg-primary/10 text-primary ring-1 ring-primary/20" : "text-slate-400 hover:bg-white/[0.03] hover:text-slate-200"
@@ -317,7 +327,7 @@ function LayoutContent({ children }: LayoutProps) {
   const ticking = useRef(false);
   const feedCenterRef = useRef<HTMLDivElement>(null);
   const previousPathRef = useRef(location.pathname);
-  
+
   // Layout mode state for zone-based navigation
   const [layoutMode, setLayoutMode] = useState<number>(() => {
     if (typeof window !== 'undefined') {
@@ -325,7 +335,7 @@ function LayoutContent({ children }: LayoutProps) {
     }
     return 1;
   });
-  
+
   // Select appropriate menu items based on layout mode
   const currentMenuItems = useMemo(() => {
     switch (layoutMode) {
@@ -420,13 +430,13 @@ function LayoutContent({ children }: LayoutProps) {
       if (remote) setManagedSectionOrder(remote);
     };
     loadOrder();
-    
+
     // Listen for section order changes from Settings page
     const handleOrderChange = () => {
       setManagedSectionOrder(readManagedSectionOrder(user.id));
     };
     window.addEventListener('lumatha-manage-order-changed', handleOrderChange);
-    
+
     // Also listen for storage changes (in case another tab updates)
     const handleStorage = (e: StorageEvent) => {
       if (e.key === SECTION_ORDER_STORAGE_KEY || e.key?.includes('lumatha_section_order')) {
@@ -438,13 +448,13 @@ function LayoutContent({ children }: LayoutProps) {
       }
     };
     window.addEventListener('storage', handleStorage);
-    
+
     // Listen for layout mode changes from Settings/SubNavigation
     const handleLayoutChange = (e: CustomEvent) => {
       setLayoutMode(e.detail);
     };
     window.addEventListener('lumatha_layout_change', handleLayoutChange as EventListener);
-    
+
     return () => {
       window.removeEventListener('lumatha-manage-order-changed', handleOrderChange);
       window.removeEventListener('storage', handleStorage);
@@ -468,21 +478,25 @@ function LayoutContent({ children }: LayoutProps) {
   // Header visibility rules:
   // - ALL sections: Show header always (NO scroll hiding for stability)
   // - Active chat (/chat/:id): Hide app header completely (chat has its own header)
+  // - Subsections (search, private, notifications, profile, edit-profile): Hide LUMATHA banner, show minimal header
   const isChatListView = location.pathname === '/chat';
   const isInActiveChat = location.pathname.startsWith('/chat/') && location.pathname.length > 6;
+  const isSubsection = ['/search', '/private', '/notifications', '/profile', '/edit-profile'].some(path =>
+    location.pathname === path || location.pathname.startsWith(path + '/')
+  );
 
   const handleScroll = useCallback(() => {
     // Header behavior: 
     // 1. Active chat (/chat/:id): Header is completely hidden (chat has its own)
     // 2. ALL other sections: Always show header - NO SCROLL HIDING anywhere for stability
-    
+
     // Active chat: App header is hidden
     if (isInActiveChat) {
       setHeaderVisible(false);
       ticking.current = false;
       return;
     }
-    
+
     // ALL sections: FORCE header always visible - disable scroll hiding completely
     setHeaderVisible(true);
     lastScrollY.current = 0;
@@ -500,17 +514,17 @@ function LayoutContent({ children }: LayoutProps) {
     if (!isInActiveChat) {
       setHeaderVisible(true);
       lastScrollY.current = 0;
-      
+
       // Interval to keep forcing header visible every 100ms for 3 seconds
       // This prevents any race conditions or delayed scroll events from hiding it
       const interval = setInterval(() => {
         setHeaderVisible(true);
         lastScrollY.current = 0;
       }, 100);
-      
+
       // Stop after 3 seconds
       const timeout = setTimeout(() => clearInterval(interval), 3000);
-      
+
       return () => {
         clearInterval(interval);
         clearTimeout(timeout);
@@ -524,7 +538,7 @@ function LayoutContent({ children }: LayoutProps) {
       setHeaderVisible(true);
       return;
     }
-    
+
     // Only attach scroll listener for active chat (where header is hidden)
     const el = feedCenterRef.current;
     if (el) el.addEventListener('scroll', handleScroll, { passive: true });
@@ -557,7 +571,7 @@ function LayoutContent({ children }: LayoutProps) {
   useEffect(() => {
     const mainSections = ['/', '/chat', '/music-adventure', '/education', '/random-connect', '/marketplace'];
     const currentPath = location.pathname;
-    
+
     // Check if current path is a main section
     const isMainSection = mainSections.some(section => {
       if (section === currentPath) return true;
@@ -565,12 +579,12 @@ function LayoutContent({ children }: LayoutProps) {
       if (currentPath.startsWith(section) && (currentPath === section || currentPath[section.length] === '?')) return true;
       return false;
     });
-    
+
     // Save the last visited section (excluding home details like profiles, etc.)
     if (isMainSection && currentPath !== '/') {
       try {
         localStorage.setItem('lumatha_last_section', currentPath.split('?')[0]);
-      } catch {}
+      } catch { }
     }
   }, [location.pathname]);
 
@@ -623,31 +637,31 @@ function LayoutContent({ children }: LayoutProps) {
                       : location.pathname.startsWith('/settings')
                         ? 'Settings'
                         : 'Home';
-      const feedScopes = [
-        { id: 'global', icon: Globe, label: 'Global', desc: 'From every corner' },
-        { id: 'regional', icon: Flag, label: 'Regional', desc: 'Regional feed' },
-        { id: 'following', icon: Heart, label: 'Following', desc: 'From you follow' },
-        { id: 'ghost', icon: Ghost, label: 'Ghost', desc: 'Disappears in 24h' },
-      ] as const;
-      const [activeFeedScope, setActiveFeedScope] = useState(() => (localStorage.getItem('lumatha_feed_scope') || 'global'));
+  const feedScopes = [
+    { id: 'global', icon: Globe, label: 'Global', desc: 'From every corner' },
+    { id: 'regional', icon: Flag, label: 'Regional', desc: 'Regional feed' },
+    { id: 'following', icon: Heart, label: 'Following', desc: 'From you follow' },
+    { id: 'ghost', icon: Ghost, label: 'Ghost', desc: 'Disappears in 24h' },
+  ] as const;
+  const [activeFeedScope, setActiveFeedScope] = useState(() => (localStorage.getItem('lumatha_feed_scope') || 'global'));
 
-      useEffect(() => {
-        const syncScope = () => setActiveFeedScope(localStorage.getItem('lumatha_feed_scope') || 'global');
-        window.addEventListener('lumatha_feed_scope_change', syncScope as EventListener);
-        return () => window.removeEventListener('lumatha_feed_scope_change', syncScope as EventListener);
-      }, []);
+  useEffect(() => {
+    const syncScope = () => setActiveFeedScope(localStorage.getItem('lumatha_feed_scope') || 'global');
+    window.addEventListener('lumatha_feed_scope_change', syncScope as EventListener);
+    return () => window.removeEventListener('lumatha_feed_scope_change', syncScope as EventListener);
+  }, []);
 
-      const setFeedScope = (scope: string) => {
-        setActiveFeedScope(scope);
-        localStorage.setItem('lumatha_feed_scope', scope);
-        window.dispatchEvent(new CustomEvent('lumatha_feed_scope_change', { detail: scope }));
-      };
+  const setFeedScope = (scope: string) => {
+    setActiveFeedScope(scope);
+    localStorage.setItem('lumatha_feed_scope', scope);
+    window.dispatchEvent(new CustomEvent('lumatha_feed_scope_change', { detail: scope }));
+  };
 
   const APP_HEADER_PX = 88;
   return (
-  <div className="app-layout w-full relative min-h-screen bg-[#0B0D1F]" style={{ ['--lumatha-app-header-height' as any]: headerVisible ? '88px' : '0px' }}>
+    <div className="app-layout w-full relative min-h-screen bg-[#0B0D1F]" style={{ ['--lumatha-app-header-height' as any]: headerVisible ? '88px' : '0px' }}>
       <BackgroundOrnaments />
-      {isMobile && <MobileSidebarDrawer open={mobileSidebarOpen} onClose={() => setMobileSidebarOpen(false)} onNavigate={(url) => { 
+      {isMobile && <MobileSidebarDrawer open={mobileSidebarOpen} onClose={() => setMobileSidebarOpen(false)} onNavigate={(url) => {
         // Set active zone based on navigation for Layout 2 & 3
         let zone = '';
         if (layoutMode === 2) {
@@ -663,8 +677,8 @@ function LayoutContent({ children }: LayoutProps) {
           localStorage.setItem('lumatha_active_zone', zone);
           window.dispatchEvent(new CustomEvent('lumatha_zone_change', { detail: zone }));
         }
-        navigate(url); 
-        setMobileSidebarOpen(false); 
+        navigate(url);
+        setMobileSidebarOpen(false);
       }} isActive={(p) => location.pathname === p} unreadMessages={unreadMessages} items={currentMenuItems} />}
       {!isMobile && <DesktopSidebar isActive={(p) => location.pathname === p} onNavigate={(url) => {
         // Set active zone based on navigation for Layout 2 & 3
@@ -691,21 +705,32 @@ function LayoutContent({ children }: LayoutProps) {
       )}>
         {/* App Header - Hidden in active chat (chat has its own header) */}
         <header className={cn(
-          "sticky top-0 z-50 w-full h-[88px] bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 translate-y-0",
+          "sticky top-0 z-50 w-full bg-[#0B0D1F]/95 backdrop-blur-xl border-b border-white/5 translate-y-0",
           // No transition anywhere to prevent any animation shifts
           "transition-none",
           // Only active chat hides the header completely
-          isInActiveChat && "hidden"
+          isInActiveChat && "hidden",
+          // Subsections have smaller header without LUMATHA banner
+          isSubsection ? "h-[60px]" : "h-[88px]"
         )}>
-          <div className="grid h-full grid-cols-[auto_1fr_auto] items-center gap-3 px-3 md:px-5">
+          <div className={cn("grid h-full items-center gap-3 px-3 md:px-5", isSubsection ? "grid-cols-[auto_1fr_auto]" : "grid-cols-[auto_1fr_auto]")}>
             {/* Left side - menu/back button and branding */}
             <div className="flex items-center gap-2 min-w-0 justify-self-start">
-              {isChatListView ? (
+              {isSubsection ? (
+                // Subsections: Show back button only, no LUMATHA banner
+                <button
+                  onClick={handleBack}
+                  className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5 shrink-0"
+                  aria-label="Go back"
+                >
+                  <ArrowLeft className="w-5 h-5 text-blue-500" strokeWidth={2} />
+                </button>
+              ) : isChatListView ? (
                 // Chat list: Show hamburger + LUMATHA like other sections for consistency
                 <>
                   {isMobile && (
-                    <button 
-                      onClick={handleMobileLeadingAction} 
+                    <button
+                      onClick={handleMobileLeadingAction}
                       className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5 shrink-0"
                     >
                       <Menu className="w-5 h-5 text-blue-500" strokeWidth={2} />
@@ -731,8 +756,8 @@ function LayoutContent({ children }: LayoutProps) {
                 <>
                   {['/', '/search', '/private', '/notifications'].includes(location.pathname) || location.pathname.startsWith('/profile/') ? (
                     // Home subsections: Back icon
-                    <button 
-                      onClick={handleBack} 
+                    <button
+                      onClick={handleBack}
                       className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5 shrink-0"
                       aria-label="Go back"
                     >
@@ -741,8 +766,8 @@ function LayoutContent({ children }: LayoutProps) {
                   ) : (
                     // Other sections: Sidebar icon (mobile only, desktop has visible sidebar)
                     isMobile && (
-                      <button 
-                        onClick={handleMobileLeadingAction} 
+                      <button
+                        onClick={handleMobileLeadingAction}
                         className="w-10 h-10 flex items-center justify-center rounded-lg transition-transform active:scale-90 hover:bg-white/5 shrink-0"
                         aria-label="Menu"
                       >
@@ -754,10 +779,10 @@ function LayoutContent({ children }: LayoutProps) {
                 </>
               )}
             </div>
-            
+
             {/* Center - kept empty for feed */}
             <div className="flex items-center justify-center min-w-0 px-2" />
-            
+
             {/* Right side - section actions */}
             <div className="flex items-center gap-1 justify-end min-w-0 justify-self-end">
               {isChatListView ? (
@@ -817,7 +842,7 @@ function LayoutContent({ children }: LayoutProps) {
             </div>
           </div>
         </header>
-        
+
         {/* Content area */}
         <div className={cn(
           "flex-1 transition-all duration-500",
@@ -827,7 +852,7 @@ function LayoutContent({ children }: LayoutProps) {
         )}>
           {children}
         </div>
-        
+
         {/* Bottom navigation - Home only; controlled by scroll events to hide on scroll down */}
         {isMobile && location.pathname === '/' && bottomNavVisible && <SubNavigation visible={true} />}
       </main>
